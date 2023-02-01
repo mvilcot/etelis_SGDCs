@@ -1,9 +1,9 @@
 .Rproj.user
 desktop.ini
 
-Data/
-Intermediate/
-Results/
+_raw_data/
+data/
+intermediate/
+results/
 _archive/
--36_radiator_genomic_converter_20221115@1129/
-test-\[diffCalc\]/
+scripts/unsorted/
