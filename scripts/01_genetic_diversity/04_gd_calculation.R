@@ -1,16 +1,12 @@
 
-library(hierfstat)
-library(mmod)
 # library("radiator")
-# library("adegenet")
 # library("HierDpart")
-# library("betapart")
 # library("diveRsity")
 
-## ---- Set parameters ----
+## ---- set parameters ----
 # filters
 filters <- "missind_callrate0.70_maf0.05"
-level <- "site"
+level <- "station"
 
 # Read genlight  
 genlight <- readRDS(paste0("intermediate/01_genetic_diversity/Genlight_Etelis_coruscans_ordered_", filters, ".RDS"))
@@ -25,22 +21,29 @@ print(paste("removing", level, ":", names(which(table(genlight@pop) < 2))))
 genlight <- gl.drop.pop(genlight, pop.list = names(which(table(genlight@pop) < 2)), recalc = T, mono.rm = T)
 genlight
 
+exclusion_list_site <- c("Cocos_Keeling")
+exclusion_list_station <- c("Cocos (Keeling)", 
+                            "New Caledonia (Antigonia)",
+                            "New Caledonia (Jumeau)", 
+                            "New Caledonia (Poum)")
 
 
-## ---- Convert to other formats ----
+
+
+## ---- convert to other formats ----
 # Genind 
 genind <- dartR::gl2gi(genlight) # same than adegenet::df2genind
 genind
 
-# Genpop class 
-genpop <- adegenet::genind2genpop(genind) 
-genpop
-
+# # Genpop class
+# genpop <- adegenet::genind2genpop(genind)
+# genpop
+# 
 # Genepop (Rousset)
 # genomic_converter(genlight, output = "genepop")
 # genepop <- dartR::gl2genepop(genlight, outfile = 'Intermediate/GenepopdartR_DartSeq_Etelis_coruscans_grouped_missind_callrate0.70_maf0.05_allsites.genepop_test2.gen', outpath = ".")
 # genepop
-
+# 
 # Hierfstat format
 # ghierfstat <- hierfstat::genind2hierfstat(genind)
 
@@ -53,7 +56,7 @@ BS <- hierfstat::basic.stats(genind) # same result
 BS
 BSo <- BS$overall # over all samples
 
-# Jost Additive framework 
+# Jost Additive framework
 Hs = BSo[["Hs"]]
 Ht = BSo[["Ht"]]
 Hst = (Ht-Hs)/(1-Hs)
@@ -72,31 +75,36 @@ Jst = Jt/Js # or 1/(1-Hst)
 # GstPP   <- k*(Ht-Hs)/ ((k*Ht-Hs)*(1-Hs))
 
 # Gst Hedrick
-GstPP_hed <- Gst_Hedrick(genind)
+GstPP.hed <- Gst_Hedrick(genind)
 
 # create global table
-table_gd_global <- 
-  cbind(Ho=BSo["Ho"], Hs, Ht, Hst, Dst, 
+gd_global <-
+  cbind(Ho=BSo["Ho"], Hs, Ht, Hst, Dst,
         Js, Jt, Jst,
         Fst=BSo["Fst"], Fis=BSo["Fis"],
         Dstp=BSo["Dstp"], Dest=BSo["Dest"],
         # Gst, GstP, GstPP,
-        Gstpp_hed=GstPP_hed$global) %>% 
+        Gstpp.hed=GstPP.hed$global) %>%
   as_tibble()
 
 
-## ---- alpha gd by location ----
-table_gd_alpha <-
-  data.frame(Hs = colMeans(BS$Hs, na.rm = T))
 
-# table_gd_alpha_site2 <- 
-#   as.data.frame(BS$Hs) %>% 
+
+## ---- alpha gd by location ----
+gd_alpha <-
+  data.frame(Hs = colMeans(BS$Hs, na.rm = T),
+             Ho = colMeans(BS$Ho, na.rm = T)) %>% 
+  rownames_to_column(var = level)
+
+
+# gd_alpha_site2 <-
+#   as.data.frame(BS$Hs) %>%
 #   rownames_to_column("loci") %>%
-#   pivot_longer(-loci, names_to = "site") %>% 
-#   group_by(site) %>% 
+#   pivot_longer(-loci, names_to = "site") %>%
+#   group_by(site) %>%
 #   summarise(Hs=mean(value, na.rm=T), .groups = "keep")
 
-# table_gd_alpha_site3 <- 
+# gd_alpha_site3 <-
 #   data.frame(Hs = apply(BS$Hs, MARGIN = 2, FUN = mean, na.rm = T)) # mean by population
 
 
@@ -107,19 +115,19 @@ Fst_pair <- genet.dist(genind, method = "WC84")
 
 # G"st
 # Gst_Hedrick(genind) # Gst global = 0.045
-GstPP_hed_pair <- pairwise_Gst_Hedrick(genind)
+GstPP.hed_pair <- pairwise_Gst_Hedrick(genind)
 
 
 list_gd_beta_pair <-
-  list(Fst_pair, GstPP_hed_pair)
+  list(Fst_pair, GstPP.hed_pair)
 
 
 
 
 ## ---- export ----
-write.csv(table_gd_global, "results/02_species_diversity/sd_table_global", level, ".csv", row.names = FALSE)
-write.csv(table_gd_alpha, "results/02_species_diversity/sd_table_", level, ".csv", row.names = FALSE)
-saveRDS(list_gd_beta_site, "results/02_species_diversity/sd_list_pairwise_", level, ".RDS")
+write.csv(gd_global, paste0("results/01_genetic_diversity/gd_table_global_", level, ".csv"), row.names = F, quote = F)
+write.csv(gd_alpha, paste0("results/01_genetic_diversity/gd_table_", level, ".csv"), row.names = F, quote = F)
+saveRDS(GstPP.hed_pair, paste0("results/01_genetic_diversity/gd_list_pairwise_", level, "_GstPP.hed.RDS"))
 
 
 
@@ -141,12 +149,13 @@ saveRDS(list_gd_beta_site, "results/02_species_diversity/sd_list_pairwise_", lev
 # ## Jaccard
 # GDbetaJAC <- HierJd("Intermediate/test.gen", ncode = 3, r = 1, nreg = 1)
 # saveRDS(GDbetaJAC, "Results/test_HierJd_betaGD_stations_noinf2.RDS")
-# # !!!!!!!!!!!!!!!!! Error in HierJd("Intermediate/test.gen", ncode = 3) : !!!!!!!!!!!! ####
+# # !!!!!!!!!!!!!!!!! Error in HierJd("Intermediate/test.gen", ncode = 3) : !!!!!!!!!!!!
 # # argument "r" is missing, with no default
 # # In addition: There were 27 warnings (use warnings() to see them)
 # 
-# ########### ICI ################
-# ## Jaccard Betapart
+# 
+# 
+# ## TEST Jaccard Betapart
 # PAalleles <- as.data.frame(genind@tab)
 # PAallelesTEST <- PAalleles
 # PAallelesTEST[PAallelesTEST > 0] <- 1 

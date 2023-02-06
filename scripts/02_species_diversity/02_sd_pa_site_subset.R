@@ -2,26 +2,36 @@
 # This script creates a PA matrix for each community subset for each station
 # The output is a list of PA matrices per community delineation across stations
 
-## ----------- load ------------------------------------------------------------
+## ---- load ----
 data_PA <- readRDS("data/PA_Mat_GaspObis.RDS")
 
 
-## ----------- define stations -------------------------------------------------
+## ---- define stations ----
 # extract sample sites from meta data
 sites_vect <- 
   data_sites %>% 
   select(c(station, Longitude_approx, Latitude_approx)) %>%
-  vect(geom = c("Longitude_approx","Latitude_approx"), crs = "WGS84")
+  vect(geom = c("Longitude_approx", "Latitude_approx"), crs = "WGS84")
+# writeVector(sites_vect, "intermediate/00_sampling_sites/sites_vect.gpkg")
+
 
 # add 100km buffer around each sample site
 sites_vect <- 
   sites_vect %>% 
-  buffer(width = 100000)
+  buffer(width = 50000)
+# writeVector(sites_vect, "intermediate/00_sampling_sites/sites_vect_buffer.gpkg")
+
+
+# create raster of PA grid for Qgis 
+PA_sub <- 
+  data_PA[,1:2] %>% 
+  cbind(1) %>% 
+  rast(crs = "WGS84")
+# writeRaster(PA_sub, "intermediate/00_sampling_sites/matrix_PA.gpkg")
 
 
 
-
-## ----------- PA by station -----------------------------------------------
+## ---- PA by station ----
 
 # # reduce PA data to species of interest (too heavy otherwise)
 # list_commFULL <-
@@ -73,7 +83,7 @@ saveRDS(PAstation, "intermediate/02_species_diversity/PA_Mat_GaspObis_station.RD
 
 
 
-# ## ----------- Method 2: Loop on each species (too long) ----------------------
+# ## ---- Method 2: Loop on each species (too long) ----
 # list_species <- colnames(data_PA)[!colnames(data_PA) %in% c("Longitude", "Latitude")]
 # 
 # PAstation <- 
@@ -129,7 +139,7 @@ saveRDS(PAstation, "intermediate/02_species_diversity/PA_Mat_GaspObis_station.RD
 
 
 
-## ----------- Method 3: subset by station (error GASCOYE) --------------------
+# ## ---- Method 3: subset by station (error GASCOYE) ----
 # 
 # library(sf)
 # data_PAsf <- st_as_sf(data_PA, coords = c("Longitude", "Latitude"), crs=4326, remove=FALSE)
@@ -162,7 +172,7 @@ saveRDS(PAstation, "intermediate/02_species_diversity/PA_Mat_GaspObis_station.RD
 # 
 
 
-## ----------- PA by site -------------------------------------------------
+## ---- PA by site ----
 
 sites_sub <-
   data_sites %>% 
@@ -181,7 +191,7 @@ saveRDS(PAsite, "intermediate/02_species_diversity/PA_Mat_GaspObis_site.RDS")
 
 
 
-## ----------- PA all stations -------------------------------------------------
+## ---- PA all stations ----
 
 PAall <-
   PAsite %>% 

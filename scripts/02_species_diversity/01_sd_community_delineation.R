@@ -3,13 +3,65 @@
 ## load ----
 data_PA <- readRDS("data/PA_Mat_GaspObis.RDS")
 
+
+
+## subset PA to different phylogenetic scales ----
 list_communities <- list()
+
+# subset to family of interest
+gen = "Etelis"
+fam = "Lutjanidae"
+ord = "Lutjaniformes"
+cla = "Actinopteri"
+
+
+# keep only species in target family, and for which we have presence data
+list_species <- 
+  data_species2 %>% 
+  filter(genus %in% gen) %>%
+  filter(species %in% colnames(data_PA)) %>% 
+  pull(species) # keep only species info
+
+list_communities[[gen]] <- list_species
+
+
+# keep only species in target family, and for which we have presence data
+list_species <- 
+  data_species2 %>% 
+  filter(family %in% fam) %>%
+  filter(species %in% colnames(data_PA)) %>% 
+  pull(species) # keep only species info
+
+list_communities[[fam]] <- list_species
+
+
+# keep only species in target family, and for which we have presence data
+list_species <- 
+  data_species2 %>% 
+  filter(order %in% ord) %>%
+  filter(species %in% colnames(data_PA)) %>% 
+  pull(species) # keep only species info
+
+list_communities[[ord]] <- list_species
+
+
+# keep only species in target family, and for which we have presence data
+list_species <- 
+  data_species2 %>% 
+  filter(class %in% cla) %>%
+  filter(species %in% colnames(data_PA)) %>% 
+  pull(species) # keep only species info
+
+list_communities[[cla]] <- list_species
+
+
+saveRDS(list_communities, "intermediate/02_species_diversity/List_community_phylogenetic_scale.RDS")
+
+
 
 
 ## subset PA to family ----
-
-# subset to family of interest
-fam = "Lutjanidae"
+list_communities <- list()
 
 # keep only species in target family, and for which we have presence data
 list_species <- 
@@ -18,12 +70,7 @@ list_species <-
   filter(species %in% colnames(data_PA)) %>% 
   pull(species) # keep only species info
 
-# create PA matrix for those species
 list_communities[[fam]] <- list_species
-  # data_PA %>% 
-  # select(all_of(c("Longitude", "Latitude", list_species)))
-
-
 
 
 
@@ -51,8 +98,6 @@ colnames(data_depth) <- depth_categories
 write.csv(data_depth, "intermediate/02_species_diversity/species_depth_categories.csv", row.names = F, quote = F)
 
 
-
-
 for (depth in depth_categories){
   
   #subset species from range
@@ -66,9 +111,6 @@ for (depth in depth_categories){
   list_communities[[depth]] <- list_species
 
 }
-
-
-
 
 
 
