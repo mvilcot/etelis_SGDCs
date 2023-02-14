@@ -12,7 +12,8 @@ library(ggplot2)        # plots
 library(wesanderson)    # palette
 library(ggh4x)
 library(paletteer)      # palette
-library(patchwork)
+library(patchwork)      # easy multiple plot
+library(gridExtra)      # easy multiple plot
 
 # spatial
 library(terra)          # raster-type package

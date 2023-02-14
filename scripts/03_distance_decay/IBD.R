@@ -13,8 +13,8 @@
 ## ---- load data ----
 
 # read GD and SD beta distance matrix
-level = "site"
-gd_beta <- readRDS(paste0("results/01_genetic_diversity/gd_list_pairwise_", level, "_GstPP_hed.RDS"))
+level = "station"
+gd_beta <- readRDS(paste0("results/01_genetic_diversity/gd_list_pairwise_", level, ".RDS"))
 sd_beta <- readRDS(paste0("results/02_species_diversity/sd_list_pairwise_", level, ".RDS"))
 # sd_beta <- readRDS(paste0("results/02_species_diversity/sd_list_pairwise_", level, "_phylogenetic_scale.RDS"))
 
@@ -23,15 +23,15 @@ list_communities <- readRDS("intermediate/02_species_diversity/List_community.RD
 # list_communities <- readRDS("intermediate/02_species_diversity/List_community_phylogenetic_scale.RDS")
 
 # parameters
-metricSD = "beta.jne"
-metricGD = "GstPP.hed"
+metricSD = "beta.jtu"
+metricGD = "Fst"
 comm = names(list_communities)[1]
 
 
 ## ---- setup beta data ----
 # get distance matrix
 mat_SDbeta <- as.matrix(sd_beta[[comm]][[metricSD]])
-mat_GDbeta <- as.matrix(gd_beta)
+mat_GDbeta <- as.matrix(gd_beta[[metricGD]])
 
 # keep only sampling sites present in both GD and SD
 mat_SDbeta <- mat_SDbeta[rownames(mat_SDbeta) %in% rownames(mat_GDbeta),
@@ -103,7 +103,7 @@ merge_beta <-
 # get bathymetry data
 Bathy <- getNOAA.bathy(lon1 = -180, lon2 = 180,
                        lat1 = -25, lat2 = 25,
-                       resolution = 100)
+                       resolution = 10)
 saveRDS(Bathy, "intermediate/03_distance_decay/bathymetry.RDS")
 color_blues <- colorRampPalette(c("purple", "blue", "cadetblue1", "cadetblue2", "white"))
 
@@ -140,19 +140,19 @@ merge_beta <-
 
 
 
-# ## ---- subset to specific locations ----
-# patt = "Seychelles"
-# 
-# mat_SDbeta <- mat_SDbeta[!grepl(patt, rownames(mat_SDbeta)),
-#                          !grepl(patt, colnames(mat_SDbeta))]
-# mat_GDbeta <- mat_GDbeta[!grepl(patt, rownames(mat_GDbeta)),
-#                          !grepl(patt, colnames(mat_GDbeta))]
-# mat_geodist <- mat_geodist[!grepl(patt, rownames(mat_geodist)),
-#                            !grepl(patt, colnames(mat_geodist))]
-# mat_lcdist <- mat_lcdist[!grepl(patt, rownames(mat_lcdist)),
-#                          !grepl(patt, colnames(mat_lcdist))]
-# 
-# merge_beta <- merge_beta[!grepl(patt, merge_beta[[level]]),]
+## ---- subset to specific locations ----
+patt = "Seychelles"
+
+mat_SDbeta <- mat_SDbeta[!grepl(patt, rownames(mat_SDbeta)),
+                         !grepl(patt, colnames(mat_SDbeta))]
+mat_GDbeta <- mat_GDbeta[!grepl(patt, rownames(mat_GDbeta)),
+                         !grepl(patt, colnames(mat_GDbeta))]
+mat_geodist <- mat_geodist[!grepl(patt, rownames(mat_geodist)),
+                           !grepl(patt, colnames(mat_geodist))]
+mat_lcdist <- mat_lcdist[!grepl(patt, rownames(mat_lcdist)),
+                         !grepl(patt, colnames(mat_lcdist))]
+
+merge_beta <- merge_beta[!grepl(patt, merge_beta[[level]]),]
 
 
 
@@ -170,9 +170,9 @@ metricDIST = 'lcdist'; matDIST = mat_lcdist
 # summary(lm(merge_beta[[metricGD]] ~ merge_beta[[metricDIST]]))
 # 
 # 
-# # MRM
-# MRM(merge_beta[[metricSD]] ~ merge_beta[[metricDIST]], nperm = 9999)
-# MRM(merge_beta[[metricGD]] ~ merge_beta[[metricDIST]], nperm = 9999)
+# MRM
+MRM(merge_beta[[metricSD]] ~ merge_beta[[metricDIST]], nperm = 9999)
+MRM(merge_beta[[metricGD]] ~ merge_beta[[metricDIST]], nperm = 9999)
 
 
 # Mantel
@@ -185,7 +185,7 @@ stat_SGDCmantel <- vegan::mantel(as.dist(mat_SDbeta), as.dist(mat_GDbeta), permu
 ## ---- plot ----
 # add Seychelles color
 merge_beta$Seychelles <- "No"
-merge_beta[grep("Seychelles", merge_beta$site),]$Seychelles <- "Yes"
+merge_beta[grep("Seychelles", merge_beta[[level]]),]$Seychelles <- "Yes"
 
 # species IBD
 ggSD <- 
@@ -231,7 +231,7 @@ ggSGDCs <-
 
 ggSD + ggGD + ggSGDCs + plot_annotation(title = comm)
 ggsave(width = 20, height = 6, 
-       filename = paste0("results/03_distance_decay/IBD_beta_all_", level, "_", comm, "_", metricGD, "_", metricSD, "_", metricDIST, ".png"))
+       filename = paste0("results/03_distance_decay/IBD_beta_noSeychelles_", level, "_", comm, "_", metricGD, "_", metricSD, "_", metricDIST, ".png"))
 
 
 

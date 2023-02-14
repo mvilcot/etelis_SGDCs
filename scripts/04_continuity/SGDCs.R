@@ -1,16 +1,15 @@
 
-library(gridExtra)
+
 
 ## ---- load ----
 level = "site"
 # level = "station"
 
-
 list_communities <- readRDS("intermediate/02_species_diversity/List_community.RDS")
 
 gd_global <- read.csv(paste0("results/01_genetic_diversity/gd_table_global_", level, ".csv"))
 gd_alpha <- read.csv(paste0("results/01_genetic_diversity/gd_table_", level, ".csv"))
-gd_beta <- readRDS(paste0("results/01_genetic_diversity/gd_list_pairwise_site_GstPP_hed.RDS"))
+gd_beta <- readRDS(paste0("results/01_genetic_diversity/gd_list_pairwise_", level, ".RDS"))
 
 sd_global <- read.csv("results/02_species_diversity/sd_table_global.csv")
 sd_alpha <- read.csv(paste0("results/02_species_diversity/sd_table_", level, ".csv"))
@@ -59,22 +58,54 @@ ggsave(gg_grob, width = 15, height = 8,
        filename = paste0("results/04_continuity/SGDCs_alpha_all_", level, "_", metricGD, "_", metricSD, ".png"))
 
 
+## ---- compare Fst, Gst" ----
+list_GDbeta <- list()
+
+for (metricGD in names(gd_beta)){
+  
+  # get distance matrix
+  mat_GDbeta <- as.matrix(gd_beta[[metricGD]])
+
+  # order rows alphabetically
+  mat_GDbeta <- mat_GDbeta[order(rownames(mat_GDbeta)), order(colnames(mat_GDbeta))]
+  
+  # pivot longer distance matrix
+  melt_GDbeta <- melt.dist(dist = mat_GDbeta, metric = metricGD)
+  
+  #
+  list_GDbeta[[metricGD]] <- melt_GDbeta
+
+}
+
+# merge two distance matrix into one df
+GDbeta <- 
+  plyr::join_all(list_GDbeta,
+            by = c(paste0(level, "1"), paste0(level, "2")))
+
+ggplot(GDbeta, aes(.data[["Fst"]], .data[["GstPP.hed"]])) +
+  geom_point()
+  
+
+
+
+
+
 
 ## ---- beta-SGDCs ----
 
 metricSD = "beta.jtu"
-metricGD = "GstPP.hed"
+metricGD = "Fst"
 patt = "all"
 
 gg_list <- list()
-
+comm = names(list_communities)[2]
 for (comm in names(list_communities)){
   print(comm)
   
-  ## ---- setup beta data ----
+  ## ---- setup beta distance matrix ----
   # get distance matrix
   mat_SDbeta <- as.matrix(sd_beta[[comm]][[metricSD]])
-  mat_GDbeta <- as.matrix(gd_beta)
+  mat_GDbeta <- as.matrix(gd_beta[[metricGD]])
   
   # keep only sampling sites present in both GD and SD
   mat_SDbeta <- mat_SDbeta[rownames(mat_SDbeta) %in% rownames(mat_GDbeta),
@@ -85,6 +116,19 @@ for (comm in names(list_communities)){
   # order rows alphabetically
   mat_SDbeta <- mat_SDbeta[order(rownames(mat_SDbeta)), order(colnames(mat_SDbeta))]
   mat_GDbeta <- mat_GDbeta[order(rownames(mat_GDbeta)), order(colnames(mat_GDbeta))]
+  
+  
+  
+  ## ---- subset to specific locations ----
+  patt = "Seychelles"
+  
+  mat_SDbeta <- mat_SDbeta[!grepl(patt, rownames(mat_SDbeta)),
+                           !grepl(patt, colnames(mat_SDbeta))]
+  mat_GDbeta <- mat_GDbeta[!grepl(patt, rownames(mat_GDbeta)),
+                           !grepl(patt, colnames(mat_GDbeta))]
+  
+  
+  ## ---- merge and melt beta distance matrix ----
   
   # pivot longer distance matrix
   melt_SDbeta <- melt.dist(dist = mat_SDbeta, metric = metricSD)
@@ -100,18 +144,6 @@ for (comm in names(list_communities)){
                                "-", 
                                merge_beta[[paste0(level, "2")]])
   
-  
-  
-  ## ---- subset to specific locations ----
-  patt = "Seychelles"
-
-  mat_SDbeta <- mat_SDbeta[!grepl(patt, rownames(mat_SDbeta)),
-                           !grepl(patt, colnames(mat_SDbeta))]
-  mat_GDbeta <- mat_GDbeta[!grepl(patt, rownames(mat_GDbeta)),
-                           !grepl(patt, colnames(mat_GDbeta))]
-
-  merge_beta <- merge_beta[!grepl(patt, merge_beta[[level]]),]
-
   
   
   ## ---- statistics ----
@@ -142,9 +174,8 @@ for (comm in names(list_communities)){
 }
 
 
-gg_grob <- arrangeGrob(grobs = gg_list, ncol=2)
+gg_grob <- arrangeGrob(grobs = gg_list, ncol=3)
 ggsave(gg_grob, width = 15, height = 8, 
-       filename = paste0("results/04_continuity/SGDCs_beta_noSeychelles_", level, "_", metricGD, "_", metricSD, "_phylogenetic_scale.png"))
-
+       filename = paste0("results/04_continuity/SGDCs_beta_noSeychelles_", level, "_", metricGD, "_", metricSD, ".png"))
 
 

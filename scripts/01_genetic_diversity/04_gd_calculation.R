@@ -6,7 +6,7 @@
 ## ---- set parameters ----
 # filters
 filters <- "missind_callrate0.70_maf0.05"
-level <- "station"
+level <- "site"
 
 # Read genlight  
 genlight <- readRDS(paste0("intermediate/01_genetic_diversity/Genlight_Etelis_coruscans_ordered_", filters, ".RDS"))
@@ -115,11 +115,12 @@ Fst_pair <- genet.dist(genind, method = "WC84")
 
 # G"st
 # Gst_Hedrick(genind) # Gst global = 0.045
-GstPP.hed_pair <- pairwise_Gst_Hedrick(genind)
+GstPP.hed_pair <- readRDS(paste0("results/01_genetic_diversity/gd_list_pairwise_", level, "_GstPP.hed.RDS"))
+# GstPP.hed_pair <- pairwise_Gst_Hedrick(genind)
 
 
 list_gd_beta_pair <-
-  list(Fst_pair, GstPP.hed_pair)
+  list(Fst = Fst_pair, GstPP.hed = GstPP.hed_pair)
 
 
 
@@ -127,7 +128,7 @@ list_gd_beta_pair <-
 ## ---- export ----
 write.csv(gd_global, paste0("results/01_genetic_diversity/gd_table_global_", level, ".csv"), row.names = F, quote = F)
 write.csv(gd_alpha, paste0("results/01_genetic_diversity/gd_table_", level, ".csv"), row.names = F, quote = F)
-saveRDS(GstPP.hed_pair, paste0("results/01_genetic_diversity/gd_list_pairwise_", level, "_GstPP.hed.RDS"))
+saveRDS(list_gd_beta_pair, paste0("results/01_genetic_diversity/gd_list_pairwise_", level, ".RDS"))
 
 
 
