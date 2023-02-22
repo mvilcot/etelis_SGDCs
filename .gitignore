@@ -7,3 +7,6 @@ intermediate/
 results/
 _archive/
 scripts/unsorted/
+test.plink.map
+test.plink.ped
+plink.exe

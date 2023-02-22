@@ -1,7 +1,8 @@
 
-# library("radiator")
-# library("HierDpart")
-# library("diveRsity")
+library(HierDpart)
+
+
+gl2
 
 ## ---- set parameters ----
 # filters
@@ -38,15 +39,46 @@ genind
 # # Genpop class
 # genpop <- adegenet::genind2genpop(genind)
 # genpop
-# 
-# Genepop (Rousset)
-# genomic_converter(genlight, output = "genepop")
-# genepop <- dartR::gl2genepop(genlight, outfile = 'Intermediate/GenepopdartR_DartSeq_Etelis_coruscans_grouped_missind_callrate0.70_maf0.05_allsites.genepop_test2.gen', outpath = ".")
-# genepop
-# 
-# Hierfstat format
-# ghierfstat <- hierfstat::genind2hierfstat(genind)
 
+# # Genepop (Rousset)
+# genomic_converter(genlight, output = "genepop")
+genepop <- dartR::gl2genepop(genlight, outfile = paste0('Intermediate/Genepop_Etelis_coruscans_ordered_', filters, '.genepop.gen', outpath = "."))
+genepop
+
+# Hierfstat format
+ghierfstat <- hierfstat::genind2hierfstat(genind)
+
+# data frame format
+gdf <- genind2df(genind)
+gdf2 <- 
+  gdf %>% 
+  select(-pop)
+
+alleles <- 
+  read.table(text = gsub("/", "-", colnames(gdf2)), sep = "-", as.is = TRUE) %>%# get base variant for each SNP
+  select(3, 4) %>%
+  cbind(colnames(gdf2), .) %>%
+  dplyr::rename(name = 1, var1 = 2, var2 = 3)
+  
+for (i in 1:nrow(alleles)){
+  allele1 <- alleles[i, "var1"]
+  allele2 <- alleles[i, "var2"]
+  
+  gdf2[!is.na(gdf[,i]) & gdf2[,i] == paste0(allele1, allele1), i] <- 0
+  gdf2[!is.na(gdf[,i]) & gdf2[,i] == paste0(allele1, allele2), i] <- 1
+  gdf2[!is.na(gdf[,i]) & gdf2[,i] == paste0(allele2, allele1), i] <- 1
+  gdf2[!is.na(gdf[,i]) & gdf2[,i] == paste0(allele2, allele2), i] <- 2
+  
+}
+test <- as.data.frame(sapply(gdf2, as.numeric))
+rownames(test) <- rownames(gdf2)
+
+
+
+# plink
+genlight$chromosome <- as.factor("1")
+gl2plink(genlight, bed_file = F, 
+         outpath = getwd(), outfile = "test.plink")
 
 
 ## ---- global genetic diversity ----
@@ -121,6 +153,17 @@ GstPP.hed_pair <- readRDS(paste0("results/01_genetic_diversity/gd_list_pairwise_
 
 list_gd_beta_pair <-
   list(Fst = Fst_pair, GstPP.hed = GstPP.hed_pair)
+
+############## !!!!!!!!!!!!!!ICI!!!!!!!!!!!!!!!!!!!!!! ###########
+# Jaccard
+JacHier <- HierJd("_archive/-36_radiator_genomic_converter_20221115@1129/radiator_data_20221115@1129_genepop.gen", 
+                  ncode=3, nreg=1, r=1)
+print(JacHier)
+
+
+
+library(jacpop)
+jac <- generate_pw_jaccard(geno = test)
 
 
 
