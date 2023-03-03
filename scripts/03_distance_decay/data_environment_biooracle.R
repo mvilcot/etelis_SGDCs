@@ -6,6 +6,16 @@ library(tidyverse)
 library(readxl)
 library(terra)
 library(sdmpredictors)
+level = "site"
+
+
+layers_velocity <- 
+  list_layers() %>%
+  filter(dataset_code == "Bio-ORACLE") %>% 
+  filter(grepl("Current velocity", name))
+write.csv(layers_velocity, "intermediate/00_sampling_sites/layers_bio-oracle_velocity.csv",
+          quote = F, row.names = F)
+
 
 # variables
 variables <-
@@ -16,42 +26,45 @@ variables <-
     "BO_salinity",
     "BO_sstmean",
     "BO_sstmax",
-    "BO_sstmin")
+    "BO_sstmin",
+    "BO21_tempmean_bdmean",
+    "BO22_curvelltmax_bdmean")
 
 # load ----
 # environmental predictors
 data_variables <-
-  load_layers(variables)
+  sdmpredictors::load_layers(variables)
 
-# sample meta data
-data_sample <-
-  read_excel("./data/sample_meta/data_sample.xlsx",
-             guess_max = 10000)
 
-data_rad <-
-  read_excel("./data/sample_meta/data_RAD.xlsx")
 
 # wrangle data ----
 # convert rasters to spatRaster
 data_variables <- rast(data_variables)
 
-# sample coordinates
-data_coords <-
-  left_join(data_rad,data_sample) %>%       # filter only rad samples
-  dplyr::select(c(longitude,latitude,sample_site)) %>%  # retain only coord data
-  distinct() %>%                            # remove duplicates
-  vect(geom=c("longitude", "latitude"))     # convert to spatial vector 
+# get mean coordinates by location
+data_coord <- 
+  data_sites %>% 
+  group_by(.data[[level]]) %>% 
+  summarise(longitude=mean(Longitude_approx),
+            latitude=mean(Latitude_approx)) %>% 
+  column_to_rownames(level)
+
+vect_coord <-
+  data_coord %>% 
+  vect(geom = c("longitude", "latitude"))     # convert to spatial vector 
 
 # extract variables by site ----
 site_variables <- 
   extract(data_variables,
-          data_coords,
+          vect_coord,
           xy = TRUE,
           ID = FALSE,
           bind = TRUE)
 
 site_variables <- 
-  as.data.frame(site_variables)
+  as.data.frame(site_variables) %>% 
+  rename(longitude = "x", latitude = "y")
+  cbind(data_coord)
 
 # export ----
 write_csv(site_variables,

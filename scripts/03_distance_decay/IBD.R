@@ -12,11 +12,13 @@
 
 ## ---- load data ----
 
-# read GD and SD beta distance matrix
-level = "station"
+# read GD and SD genetic diversity
+level = "site"
+
 gd_beta <- readRDS(paste0("results/01_genetic_diversity/gd_list_pairwise_", level, ".RDS"))
 sd_beta <- readRDS(paste0("results/02_species_diversity/sd_list_pairwise_", level, ".RDS"))
 # sd_beta <- readRDS(paste0("results/02_species_diversity/sd_list_pairwise_", level, "_phylogenetic_scale.RDS"))
+
 
 # communities delineation
 list_communities <- readRDS("intermediate/02_species_diversity/List_community.RDS")
@@ -103,7 +105,7 @@ merge_beta <-
 # get bathymetry data
 Bathy <- getNOAA.bathy(lon1 = -180, lon2 = 180,
                        lat1 = -25, lat2 = 25,
-                       resolution = 10)
+                       resolution = 100)
 saveRDS(Bathy, "intermediate/03_distance_decay/bathymetry.RDS")
 color_blues <- colorRampPalette(c("purple", "blue", "cadetblue1", "cadetblue2", "white"))
 
@@ -227,13 +229,63 @@ ggSGDCs <-
   labs(title = "SGDC")
 
 
-## ---- plot ----
+# merge plots
 
 ggSD + ggGD + ggSGDCs + plot_annotation(title = comm)
 ggsave(width = 20, height = 6, 
        filename = paste0("results/03_distance_decay/IBD_beta_noSeychelles_", level, "_", comm, "_", metricGD, "_", metricSD, "_", metricDIST, ".png"))
 
 
+## ---- distance decay ----
+
+mat_SDbeta <- as.dist(mat_SDbeta)
+mat_GDbeta <- as.dist(mat_GDbeta)
+mat_lcdist <- as.dist(mat_lcdist)
+
+# distance decay models
+decaySD_exp <- decay.model(mat_SDbeta, mat_lcdist, y.type="dissim", model.type="exp", perm=999)
+decaySD_pow <- decay.model(mat_SDbeta, mat_lcdist, y.type="dissim", model.type="pow", perm=999)
+decayGD_exp <- decay.model(mat_GDbeta, mat_lcdist, y.type="dissim", model.type="exp", perm=999)
+decayGD_pow <- decay.model(mat_GDbeta, mat_lcdist, y.type="dissim", model.type="pow", perm=999)
+
+# plots
+png(paste0("results/03_distance_decay/Decay_beta_noSeychelles_", level, "_", comm, "_", metricGD, "_", metricSD, "_", metricDIST, ".png"),
+    width = 15, height = 6, units = 'in', res = 300)
+par(mfrow=c(1,2))
+
+# plot(rnorm(100),typ="n",xlim=c(0,10000),ylim=c(0,0.5),cex.lab=0.6,cex.axis=0.5,mgp=c(2,0.5,0),tcl=-0.25,
+#      xlab="",ylab="",las=1,axes=F)
+# mtext(text = "\u03b2 diversity between sample sites",side=2,line=1.7,at=0.25,cex=0.7) 
+# mtext(text ="Geographical distance between sample sites (km)",side=1,line=1.5,at=5000,cex=0.7)
+# mtext(text="(b)",side=2,line=1.7,at=0.6,las=2,cex=1.2,font=3)
+# 
+# axis(side=1,at=c(0,2000,4000,6000,8000,10000),labels =c("0","2000","4000","6000","8000","10000"),
+#      tcl=-0.25,cex.axis=0.6,mgp=c(3,0.25,0))
+# axis(side=2,at=seq(0,0.5,0.1),labels=seq(0,0.5,0.1),tcl=-0.25,cex.axis=0.6,las=2,mgp=c(3,0.5,0))
+
+plot(mat_lcdist, mat_SDbeta, pch = 16)
+plot.decay(decaySD_exp, col="green", remove.dots=T, add=T, lwd=2)
+plot.decay(decaySD_pow, col="blue", remove.dots=T, add=T, lwd=2)
+
+plot(mat_lcdist, mat_GDbeta, pch = 16)
+plot.decay(decayGD_exp, col="green", remove.dots=T, add=T, lwd=2)
+plot.decay(decayGD_pow, col="blue", remove.dots=T, add=T, lwd=2)
+
+dev.off()
+
+# stats values
+
+stats_decay <- list(decaySD_exp = decaySD_exp,
+                    decaySD_pow = decaySD_pow,
+                    decayGD_exp = decayGD_exp,
+                    decayGD_pow = decayGD_pow)
+
+table_decay <- do.call(rbind,lapply(1:length(stats_decay),function(i){
+  c(names(stats_decay)[i],stats_decay[[i]]$b.slope,stats_decay[[i]]$pseudo.r.squared,stats_decay[[i]]$p.value)
+}))
+colnames(table_decay) <- c("model","Slope","Pseudo_R2","P.value")
+table_decay <- data.frame(model=table_decay[,1],
+                    apply(table_decay[,2:4],2,as.numeric))
 
 
 

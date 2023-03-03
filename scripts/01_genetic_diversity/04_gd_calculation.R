@@ -213,4 +213,3 @@ saveRDS(list_gd_beta_pair, paste0("results/01_genetic_diversity/gd_list_pairwise
 
 
 
-

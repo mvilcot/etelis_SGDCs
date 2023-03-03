@@ -49,7 +49,7 @@ data_samples <-
 # species data
 data_Etelis <- readRDS("data/Presence_data_Fishbase_Etelis_coruscans.RDS")
 data_species <- read.csv("data/data_species_depth_range_teleo.csv")
-data_species2 <- read.csv("data/data_species.csv")
+# data_species2 <- read.csv("data/data_species.csv")
 
 
 
@@ -70,20 +70,20 @@ melt.dist <- function(distmat, metric) {
 
 
 
-# check species database
-temp1 <-
-  data_species %>%
-  dplyr::filter(family == "Lutjanidae")
-
-temp2 <-
-  data_species2 %>%
-  dplyr::filter(family == "Lutjanidae")
-
-species1 <- temp1$species
-species2 <- temp2$species
-
-species1[!(species1 %in% species2)]
-species2[!(species2 %in% species1)]
+# # check species database
+# temp1 <-
+#   data_species %>%
+#   dplyr::filter(family == "Lutjanidae")
+# 
+# temp2 <-
+#   data_species2 %>%
+#   dplyr::filter(family == "Lutjanidae")
+# 
+# species1 <- temp1$species
+# species2 <- temp2$species
+# 
+# species1[!(species1 %in% species2)]
+# species2[!(species2 %in% species1)]
 
 
 
