@@ -1,12 +1,18 @@
 # This script calculates species richness per site and jaccard indices between
 # sites
 
+
+
 ## ---- load ----
 PAstation <- readRDS("intermediate/02_species_diversity/PA_Mat_GaspObis_station.RDS")
 PAsite <- readRDS("intermediate/02_species_diversity/PA_Mat_GaspObis_site.RDS")
 PAall <- readRDS("intermediate/02_species_diversity/PA_Mat_GaspObis_allstations.RDS")
-list_communities <- readRDS("intermediate/02_species_diversity/List_community.RDS")
-# list_communities <- readRDS("intermediate/02_species_diversity/List_community_phylogenetic_scale.RDS")
+
+# comm_delin = "depth_category"
+comm_delin = "taxonomic_scale"
+# comm_delin = "phylogenetic_distance"
+
+list_communities <- readRDS(paste0("intermediate/02_species_diversity/List_community_", comm_delin, ".RDS"))
 
 
 ## ---- initiate ----
@@ -142,15 +148,11 @@ sd_global <-
 
 
 ## ---- export ----
-write.csv(sd_global, "results/02_species_diversity/sd_table_global.csv", row.names = FALSE)
-write.csv(sd_alpha_site, "results/02_species_diversity/sd_table_site.csv", row.names = FALSE)
-write.csv(sd_alpha_station, "results/02_species_diversity/sd_table_station.csv", row.names = FALSE)
-saveRDS(list_sd_beta_site_pair, "results/02_species_diversity/sd_list_pairwise_site.RDS")
-saveRDS(list_sd_beta_station_pair, "results/02_species_diversity/sd_list_pairwise_station.RDS")
+write.csv(sd_global, paste0("results/02_species_diversity/sd_table_global_", comm_delin, ".csv"), row.names = FALSE)
+write.csv(sd_alpha_site, paste0("results/02_species_diversity/sd_table_site_", comm_delin, ".csv"), row.names = FALSE)
+write.csv(sd_alpha_station, paste0("results/02_species_diversity/sd_table_station_", comm_delin, ".csv"), row.names = FALSE)
+saveRDS(list_sd_beta_site_pair, paste0("results/02_species_diversity/sd_list_pairwise_site_", comm_delin, ".RDS"))
+saveRDS(list_sd_beta_station_pair, paste0("results/02_species_diversity/sd_list_pairwise_station_", comm_delin, ".RDS"))
 
-
-
-# saveRDS(list_sd_beta_site_pair, "results/02_species_diversity/sd_list_pairwise_site_phylogenetic_scale.RDS")
-# saveRDS(list_sd_beta_station_pair, "results/02_species_diversity/sd_list_pairwise_station_phylogenetic_scale.RDS")
 
 

@@ -24,6 +24,7 @@ library(marmap)         # bathymetry data
 # taxonomy
 library(fishtree)       # fish tree of life 
 library(betapart)       # jaccard diversity
+library(ape)
 
 # genetics
 # library(ggtern) # hwe
@@ -49,7 +50,7 @@ data_samples <-
 # species data
 data_Etelis <- readRDS("data/Presence_data_Fishbase_Etelis_coruscans.RDS")
 data_species <- read.csv("data/data_species_depth_range_teleo.csv")
-# data_species2 <- read.csv("data/data_species.csv")
+data_species2 <- read.csv("data/data_species.csv")
 
 
 

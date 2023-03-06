@@ -1,33 +1,22 @@
 
-# library(adegenet)
-# library(hierfstat)
-# library(ecodist)
-# library(vegan)
-# library(reshape2)
-
-# https://popgen.nescent.org/StartSNP.html
-# https://popgen.nescent.org/DifferentiationSNP.html
-
-
 
 ## ---- load data ----
 
-# read GD and SD genetic diversity
+# parameters
 level = "site"
+comm_delin = "taxonomic_scale"
 
+# read GD and SD genetic diversity
 gd_beta <- readRDS(paste0("results/01_genetic_diversity/gd_list_pairwise_", level, ".RDS"))
-sd_beta <- readRDS(paste0("results/02_species_diversity/sd_list_pairwise_", level, ".RDS"))
-# sd_beta <- readRDS(paste0("results/02_species_diversity/sd_list_pairwise_", level, "_phylogenetic_scale.RDS"))
-
+sd_beta <- readRDS(paste0("results/02_species_diversity/sd_list_pairwise_", level, "_", comm_delin, ".RDS"))
 
 # communities delineation
-list_communities <- readRDS("intermediate/02_species_diversity/List_community.RDS")
-# list_communities <- readRDS("intermediate/02_species_diversity/List_community_phylogenetic_scale.RDS")
+list_communities <- readRDS(paste0("intermediate/02_species_diversity/List_community_", comm_delin, ".RDS"))
 
 # parameters
 metricSD = "beta.jtu"
 metricGD = "Fst"
-comm = names(list_communities)[1]
+comm = names(list_communities)[2]
 
 
 ## ---- setup beta data ----
@@ -140,8 +129,6 @@ merge_beta <-
 
 
 
-
-
 ## ---- subset to specific locations ----
 patt = "Seychelles"
 
@@ -157,6 +144,9 @@ mat_lcdist <- mat_lcdist[!grepl(patt, rownames(mat_lcdist)),
 merge_beta <- merge_beta[!grepl(patt, merge_beta[[level]]),]
 
 
+# write.csv(merge_beta, "intermediate/03_distance_decay/temp_merge_beta.csv", 
+#           row.names = F, quote = F)
+
 
 
 
@@ -166,16 +156,13 @@ merge_beta <- merge_beta[!grepl(patt, merge_beta[[level]]),]
 # metricDIST = 'geodist'; matDIST = mat_geodist
 metricDIST = 'lcdist'; matDIST = mat_lcdist
 
+# LM
+summary(lm(merge_beta[[metricSD]] ~ merge_beta[[metricDIST]]))
+summary(lm(merge_beta[[metricGD]] ~ merge_beta[[metricDIST]]))
 
-# # LM
-# summary(lm(merge_beta[[metricSD]] ~ merge_beta[[metricDIST]]))
-# summary(lm(merge_beta[[metricGD]] ~ merge_beta[[metricDIST]]))
-# 
-# 
 # MRM
 MRM(merge_beta[[metricSD]] ~ merge_beta[[metricDIST]], nperm = 9999)
 MRM(merge_beta[[metricGD]] ~ merge_beta[[metricDIST]], nperm = 9999)
-
 
 # Mantel
 stat_SDmantel <- vegan::mantel(as.dist(mat_SDbeta), as.dist(matDIST), permutations = 9999)
@@ -216,7 +203,7 @@ ggGD <-
 
 # SGDCs
 ggSGDCs <-
-  ggplot(merge_beta, ) +
+  ggplot(merge_beta) +
   geom_point(aes(.data[[metricSD]], .data[[metricGD]], color = Seychelles)) +
   scale_color_brewer(palette="Dark2") +
   # xlab(paste0(metricSD, " (", comm, ")")) +
@@ -234,6 +221,25 @@ ggSGDCs <-
 ggSD + ggGD + ggSGDCs + plot_annotation(title = comm)
 ggsave(width = 20, height = 6, 
        filename = paste0("results/03_distance_decay/IBD_beta_noSeychelles_", level, "_", comm, "_", metricGD, "_", metricSD, "_", metricDIST, ".png"))
+
+
+
+
+## ---- beta-SGDCs decomposition ----
+
+SGDC.decomp(SD = merge_beta$beta.jtu, 
+            GD = merge_beta$Fst, 
+            FACTOR = merge_beta[,c("geodist","lcdist")])
+
+
+
+
+
+
+
+
+
+
 
 
 ## ---- distance decay ----

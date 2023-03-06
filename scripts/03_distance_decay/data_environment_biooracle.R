@@ -1,11 +1,6 @@
 # script to extract environmental variables from the bio-oracle database
 
-# set ----
-# packages
-library(tidyverse)
-library(readxl)
-library(terra)
-library(sdmpredictors)
+## ---- parameters ----
 level = "site"
 
 
@@ -17,7 +12,7 @@ write.csv(layers_velocity, "intermediate/00_sampling_sites/layers_bio-oracle_vel
           quote = F, row.names = F)
 
 
-# variables
+## ---- load environmental predictors ----
 variables <-
   c("BO_chlomean",
     "BO_dissox",
@@ -30,14 +25,12 @@ variables <-
     "BO21_tempmean_bdmean",
     "BO22_curvelltmax_bdmean")
 
-# load ----
-# environmental predictors
 data_variables <-
   sdmpredictors::load_layers(variables)
 
 
 
-# wrangle data ----
+## ---- wrangle data ----
 # convert rasters to spatRaster
 data_variables <- rast(data_variables)
 
@@ -63,12 +56,14 @@ site_variables <-
 
 site_variables <- 
   as.data.frame(site_variables) %>% 
-  rename(longitude = "x", latitude = "y")
-  cbind(data_coord)
+  # dplyr::rename(longitude = "x", latitude = "y") %>% 
+  cbind(data_coord) %>% 
+  rownames_to_column("site")
 
 # export ----
-write_csv(site_variables,
-          "./data/environment/bio_oracle/bio_oracle_variables.csv")
+write.csv(site_variables, 
+          "intermediate/03_distance_decay/bio_oracle_variables.csv", 
+          row.names = F, quote = F)
 
 
 

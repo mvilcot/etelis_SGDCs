@@ -2,24 +2,20 @@
 
 ## ---- load data ----
 level = "site"
-
-gd_global <- read.csv(paste0("results/01_genetic_diversity/gd_table_global_", level, ".csv"))
-sd_global <- read.csv(paste0("results/02_species_diversity/sd_table_global.csv"))
+comm_delin = "taxonomic_scale"
 
 gd_alpha <- read.csv(paste0("results/01_genetic_diversity/gd_table_", level, ".csv"))
-sd_alpha <- read.csv(paste0("results/02_species_diversity/sd_table_", level, ".csv"))
+sd_alpha <- read.csv(paste0("results/02_species_diversity/sd_table_", level, "_", comm_delin, ".csv"))
 
 
 ## ---- handle data ----
 # remove sites
 gd_alpha <- 
   gd_alpha %>% 
-  # filter(site != "Hawaii") %>% 
   filter(site != "Seychelles")
   
 sd_alpha <- 
   sd_alpha %>% 
-  # filter(site != "Hawaii") %>% 
   filter(site != "Seychelles")
 
 # scale metrics
@@ -40,6 +36,14 @@ table_alpha <-
   select(site, community, Hs, richness_site) %>% 
   pivot_longer(cols = c("Hs", "richness_site"), names_to = "metric")
 
+
+## ---- plot ----
 ggplot(table_alpha, aes(x=site, y=value, color=metric)) + 
   geom_boxplot() +
   facet_wrap(~community, scale="free")
+
+
+
+
+
+

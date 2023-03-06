@@ -1,6 +1,5 @@
 ## ---- set session ----
 # load packages
-library(fishtree)
 library(readxl)
 library(phylotools)
 

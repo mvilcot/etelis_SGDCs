@@ -1,23 +1,14 @@
 
-################################   Genetic diversity ~ Distance to Coral Triangle (CT)   #############################
+## ---- Geographic distances to CT ----
 
-# ----------------- Geographic distances to CT ------------------------------
+# coordinates of the center of the Coral Triangle
+center_CT <- 
+  data.frame(longitude=133.679826, 
+             latitude=-1.307436)
 
-library("raster")
-library("dartR")
-library("hierfstat")
-library("adegenet")
-
-# Read data - Population mean coordinates:
-coord_pop <- read.csv("Data/sites_coordinates.csv") 
-# View(coord_pop)
-sum(coord_pop$number_samples) # 369 indiv
-
-# Coordinates of the center of the Coral Triangle:
-center_CT <- data.frame(longitude=133.679826, latitude=-1.307436)
-
-# Calculate distance from the different stations to the CT (in meters):
-coord_pop$dist_to_CT <- pointDistance(coord_pop[,6:5], center_CT, lonlat=TRUE) 
+# compute distance from the different stations to the CT (in meters)
+coord_pop$dist_to_CT <- 
+  pointDistance(coord_pop[,6:5], center_CT, lonlat=TRUE) 
 
 # Create new dataframe with distance to CT values:
 dist_CT <- pointDistance(coord_pop[,6:5], center_CT, lonlat=TRUE) 
@@ -25,7 +16,7 @@ dist_CT <- pointDistance(coord_pop[,6:5], center_CT, lonlat=TRUE)
 CT <- data.frame(dist_CT) ; print(CT)
 
 
-# ----------------- Genetic diversity metrics ------------------------------
+## ---- Genetic diversity metrics ----
 sites <- "noCOCO" 
 filters <- "missind_callrate0.70_maf0.05"
 genlight <- readRDS(paste0("Intermediate/Genlight_DartSeq_Etelis_coruscans_grouped_", filters, "_", sites, ".RDS"))
@@ -61,7 +52,7 @@ text(test2$Hs ~ test2$dist_to_CT, labels = test$Station)
 
 
 
-# ----------------- Genetic diversity metrics ~ Distance to CT ------------------------------
+## ---- Genetic diversity metrics ~ Distance to CT ----
 
 plot(test$FIS ~ test$dist_to_CT, xlab = "Distance to Coral Triangle (m)", ylab = "FIS")
 text(test$FIS ~ test$dist_to_CT, labels = test$Station)
@@ -90,10 +81,5 @@ summary(model)
 m2 <- lm(test$FIS ~ test$dist_to_CT)
 summary(m2)
 
-
-
-
-
-# ----------------- FAIRE A L'ECHELLE DES POPS !! ------------------------------
 
 
