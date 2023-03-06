@@ -46,7 +46,7 @@ vect_coord <-
   data_coord %>% 
   vect(geom = c("longitude", "latitude"))     # convert to spatial vector 
 
-# extract variables by site ----
+## ---- extract variables by site ----
 site_variables <- 
   extract(data_variables,
           vect_coord,
@@ -60,12 +60,16 @@ site_variables <-
   cbind(data_coord) %>% 
   rownames_to_column("site")
 
-# export ----
+
+## ---- export ----
 write.csv(site_variables, 
           "intermediate/03_distance_decay/bio_oracle_variables.csv", 
           row.names = F, quote = F)
 
 
-
-
+## ---- plot ----
+# Generate a nice color ramp and plot the map
+my.colors = colorRampPalette(c("#5E85B8","#EDF0C0","#C13127"))
+plot(data_variables$BO_salinity, col=my.colors(1000))
+title(cex.sub = 1.25, sub = "Maximum temperature at the sea bottom (ºC)")
 
