@@ -9,6 +9,8 @@ comm_delin = "taxonomic_scale_Fishbase"
 # read GD and SD genetic diversity
 gd_beta <- readRDS(paste0("results/01_genetic_diversity/gd_list_pairwise_", level, ".RDS"))
 sd_beta <- readRDS(paste0("results/02_species_diversity/sd_list_pairwise_", level, "_", comm_delin, ".RDS"))
+gd_alpha <- read.csv()
+
 
 # communities delineation
 list_communities <- readRDS(paste0("intermediate/02_species_diversity/List_community_", comm_delin, ".RDS"))
@@ -292,6 +294,9 @@ table_decay <- do.call(rbind,lapply(1:length(stats_decay),function(i){
 colnames(table_decay) <- c("model","Slope","Pseudo_R2","P.value")
 table_decay <- data.frame(model=table_decay[,1],
                     apply(table_decay[,2:4],2,as.numeric))
+
+
+
 
 
 

@@ -1,22 +1,57 @@
 
 ## ---- load ----
-level = "site"
+level = "station"
 
+gd_alpha <- read.csv(paste0("results/01_genetic_diversity/gd_table_", level, ".csv"))
 gd_beta <- readRDS(paste0("results/01_genetic_diversity/gd_list_pairwise_", level, ".RDS"))
-bs <- readRDS("intermediate/01_genetic_diversity/basic_stats.RDS")
+BS <- readRDS(paste0("intermediate/01_genetic_diversity/basic_stats_", level, ".RDS"))
+
+order_sites <- c("Seychelles", "Cocos_Keeling", "Christmas_Island", "W_Australia",
+                 "Guam", "New_Caledonia", "Fiji", "Tonga", "American_Samoa", "Hawaii")
 
 
-
-## ---- alpha GD by site ----
+## ---- alpha GD by location ----
 
 gd_alpha_loci <- 
-  as_tibble(bs[["Hs"]]) %>% 
+  as_tibble(BS[["Hs"]]) %>% 
   pivot_longer(cols = everything(), 
                names_to = level, 
                values_to = "Hs")
 
-ggplot(gd_alpha_loci, aes(x=site, y=.data[["Hs"]])) + 
-  geom_boxplot()
+if(level== "site"){gd_alpha_loci[[level]] <- factor(gd_alpha_loci[[level]], levels = order_sites)}
+if(level== "station"){gd_alpha_loci[[level]] <- factor(gd_alpha_loci[[level]], levels = data_sites$station)}
+
+ggplot(gd_alpha_loci, aes(x=.data[[level]], y=.data[["Hs"]])) + 
+  geom_boxplot() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+
+ggsave(paste0("results/01_genetic_diversity/plot_alpha_Hs_by_", level, ".png"),
+       width = 10, height = 8)
+
+
+## ---- Hs ~ Fst pop specific ----
+
+library(ggrepel)
+
+corP <- cor(gd_alpha$Hs, gd_alpha$popFst.WG)
+model <- summary(lm(Hs ~ popFst.WG, data = gd_alpha))
+
+ggplot(gd_alpha, aes(x=popFst.WG, y=Hs)) + 
+  geom_smooth(method='lm', formula=y~x, colour = "grey35") +
+  geom_point() +
+  geom_text_repel(aes(label=.data[[level]])) +
+  annotate('text', x=max(gd_alpha$popFst.WG), y=max(gd_alpha$Hs), 
+           hjust=1, vjust=1, size=4.5,
+           label=paste0("LM adjusted R² = ", round(model$adj.r.squared, 3), 
+                        ", P = ", round(coef(model)[2,4], 4),
+                        "\n Pearson = ", round(corP, 4)))
+  
+
+
+ggsave(paste0("results/01_genetic_diversity/plot_Hs_Fst_pop_specific_", level, ".png"),
+       width = 10, height = 8)
+
+
 
 
 
