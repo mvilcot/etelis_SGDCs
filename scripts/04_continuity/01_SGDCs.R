@@ -4,7 +4,8 @@ level = "site"
 # level = "station"
 
 # comm_delin = "depth_category"
-comm_delin = "taxonomic_scale"
+# comm_delin = "taxonomic_scale"
+comm_delin = "taxonomic_scale_Fishbase"
 # comm_delin = "phylogenetic_distance"
 
 list_communities <- readRDS(paste0("intermediate/02_species_diversity/List_community_", comm_delin, ".RDS"))

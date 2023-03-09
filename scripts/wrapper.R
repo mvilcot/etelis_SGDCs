@@ -49,9 +49,17 @@ data_samples <-
 
 # species data
 data_Etelis <- readRDS("data/Presence_data_Fishbase_Etelis_coruscans.RDS")
+
+# taxonomy data
 data_species <- read.csv("data/data_species_depth_range_teleo.csv")
 data_species2 <- read.csv("data/data_species.csv")
+data_fishbase <- rfishbase::load_taxa()
+data_fishtree <- read.csv("data/PFC_taxonomy.csv")
 
+
+colnames(data_fishbase) <- 
+  tolower(colnames(data_fishbase))
+data_fishbase$species <- gsub(" ", "_", data_fishbase$species)
 
 
 ## ---- load functions ----

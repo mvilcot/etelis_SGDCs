@@ -4,7 +4,7 @@
 
 # parameters
 level = "site"
-comm_delin = "taxonomic_scale"
+comm_delin = "taxonomic_scale_Fishbase"
 
 # read GD and SD genetic diversity
 gd_beta <- readRDS(paste0("results/01_genetic_diversity/gd_list_pairwise_", level, ".RDS"))
