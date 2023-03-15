@@ -2,11 +2,8 @@
 desktop.ini
 
 _raw_data/
+_archive/
 data/
 intermediate/
 results/
-_archive/
 scripts/unsorted/
-test.plink.map
-test.plink.ped
-plink.exe

@@ -4,12 +4,11 @@
 
 # parameters
 level = "site"
-comm_delin = "taxonomic_scale_Fishbase"
+comm_delin = "taxonomic_scale"
 
 # read GD and SD genetic diversity
 gd_beta <- readRDS(paste0("results/01_genetic_diversity/gd_list_pairwise_", level, ".RDS"))
 sd_beta <- readRDS(paste0("results/02_species_diversity/sd_list_pairwise_", level, "_", comm_delin, ".RDS"))
-gd_alpha <- read.csv()
 
 
 # communities delineation
@@ -18,7 +17,7 @@ list_communities <- readRDS(paste0("intermediate/02_species_diversity/List_commu
 # parameters
 metricSD = "beta.jtu"
 metricGD = "Fst"
-comm = names(list_communities)[2]
+comm = names(list_communities)[1]
 
 
 ## ---- setup beta data ----
@@ -131,24 +130,24 @@ merge_beta <-
 
 
 
-## ---- subset to specific locations ----
-patt = "Seychelles"
-
-mat_SDbeta <- mat_SDbeta[!grepl(patt, rownames(mat_SDbeta)),
-                         !grepl(patt, colnames(mat_SDbeta))]
-mat_GDbeta <- mat_GDbeta[!grepl(patt, rownames(mat_GDbeta)),
-                         !grepl(patt, colnames(mat_GDbeta))]
-mat_geodist <- mat_geodist[!grepl(patt, rownames(mat_geodist)),
-                           !grepl(patt, colnames(mat_geodist))]
-mat_lcdist <- mat_lcdist[!grepl(patt, rownames(mat_lcdist)),
-                         !grepl(patt, colnames(mat_lcdist))]
-
-merge_beta <- merge_beta[!grepl(patt, merge_beta[[level]]),]
-
-
-# write.csv(merge_beta, "intermediate/03_distance_decay/temp_merge_beta.csv", 
-#           row.names = F, quote = F)
-
+# ## ---- subset to specific locations ----
+# patt = "Seychelles"
+# 
+# mat_SDbeta <- mat_SDbeta[!grepl(patt, rownames(mat_SDbeta)),
+#                          !grepl(patt, colnames(mat_SDbeta))]
+# mat_GDbeta <- mat_GDbeta[!grepl(patt, rownames(mat_GDbeta)),
+#                          !grepl(patt, colnames(mat_GDbeta))]
+# mat_geodist <- mat_geodist[!grepl(patt, rownames(mat_geodist)),
+#                            !grepl(patt, colnames(mat_geodist))]
+# mat_lcdist <- mat_lcdist[!grepl(patt, rownames(mat_lcdist)),
+#                          !grepl(patt, colnames(mat_lcdist))]
+# 
+# merge_beta <- merge_beta[!grepl(patt, merge_beta[[level]]),]
+# 
+# 
+# # write.csv(merge_beta, "intermediate/03_distance_decay/temp_merge_beta.csv", 
+# #           row.names = F, quote = F)
+# 
 
 
 
@@ -222,12 +221,14 @@ ggSGDCs <-
 
 ggSD + ggGD + ggSGDCs + plot_annotation(title = comm)
 ggsave(width = 20, height = 6, 
-       filename = paste0("results/03_distance_decay/IBD_beta_noSeychelles_", level, "_", comm, "_", metricGD, "_", metricSD, "_", metricDIST, ".png"))
+       filename = paste0("results/03_distance_decay/IBD_beta_all_", level, "_", comm, "_", metricGD, "_", metricSD, "_", metricDIST, ".png"))
 
 
 
 
-## ---- beta-SGDCs decomposition ----
+## ---- decomposition SGDCs ----
+
+source("scripts/04_continuity/sgdcs_decomposition_Lamy.R")
 
 SGDC.decomp(SD = merge_beta$beta.jtu, 
             GD = merge_beta$Fst, 

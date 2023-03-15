@@ -20,6 +20,8 @@ library(terra)          # raster-type package
 library(sdmpredictors)  # bio-oracle portal
 library(geodist)        # geographic distance
 library(marmap)         # bathymetry data
+library(gdistance)
+# library(raster)
 
 # taxonomy
 library(fishtree)       # fish tree of life 
@@ -102,6 +104,7 @@ dir.create("intermediate/00_sampling_sites/", showWarnings = F)
 dir.create("intermediate/01_genetic_diversity/", showWarnings = F)
 dir.create("intermediate/02_species_diversity/", showWarnings = F)
 dir.create("intermediate/03_distance_decay/", showWarnings = F)
+dir.create("intermediate/05_re_Lesturgie/", showWarnings = F)
 
 dir.create("results/", showWarnings = F)
 dir.create("results/00_sampling_sites/", showWarnings = F)
@@ -109,6 +112,7 @@ dir.create("results/01_genetic_diversity/", showWarnings = F)
 dir.create("results/02_species_diversity/", showWarnings = F)
 dir.create("results/03_distance_decay/", showWarnings = F)
 dir.create("results/04_continuity/", showWarnings = F)
+dir.create("results/05_re_Lesturgie/", showWarnings = F)
 
 
 
