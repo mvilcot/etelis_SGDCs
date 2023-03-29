@@ -21,7 +21,6 @@ library(sdmpredictors)  # bio-oracle portal
 library(geodist)        # geographic distance
 library(marmap)         # bathymetry data
 library(gdistance)
-# library(raster)
 
 # taxonomy
 library(fishtree)       # fish tree of life 
@@ -29,7 +28,6 @@ library(betapart)       # jaccard diversity
 library(ape)
 
 # genetics
-# library(ggtern) # hwe
 library(adegenet)
 library(dartR)          # SNPs filtering
 library(pcadapt)
@@ -37,6 +35,14 @@ library(qvalue)
 library(OutFLANK)
 library(hierfstat)
 library(mmod)
+library(pegas)          # genind2loci
+library(jacpop)         # generate_pw_jaccard
+
+# phylogenetics
+library(picante)        # pd, mpd
+library(ggtree)         # beautiful tree plot
+library(phytools)       # midpoint.root
+
 
 
 ## ---- load data ----
@@ -55,13 +61,12 @@ data_Etelis <- readRDS("data/Presence_data_Fishbase_Etelis_coruscans.RDS")
 # taxonomy data
 data_species <- read.csv("data/data_species_depth_range_teleo.csv")
 data_species2 <- read.csv("data/data_species.csv")
-data_fishbase <- rfishbase::load_taxa()
 data_fishtree <- read.csv("data/PFC_taxonomy.csv")
-
-
-colnames(data_fishbase) <- 
-  tolower(colnames(data_fishbase))
-data_fishbase$species <- gsub(" ", "_", data_fishbase$species)
+# data_fishbase <- rfishbase::load_taxa()
+# 
+# colnames(data_fishbase) <- 
+#   tolower(colnames(data_fishbase))
+# data_fishbase$species <- gsub(" ", "_", data_fishbase$species)
 
 
 ## ---- load functions ----
@@ -78,6 +83,68 @@ melt.dist <- function(distmat, metric) {
   
   return(distmat)
 }
+
+
+
+read.genlight <- function(filters = "missind_callrate0.70_maf0.05",
+                          level = "site",
+                          removeless2ind = FALSE,
+                          site2drop = NULL,
+                          site2keep = NULL,
+                          station2drop = NULL,
+                          station2keep = NULL){
+  
+  # read genlight  
+  genlight <- readRDS(paste0("intermediate/01_genetic_diversity/Genlight_Etelis_coruscans_ordered_", filters, ".RDS"))
+  
+  # set population to site
+  genlight@pop <- 
+    genlight@other[["ind.metrics"]][["site"]] %>%
+    droplevels()
+  
+  # drop sites
+  if (!is.null(site2drop)){
+    genlight <- gl.drop.pop(genlight, pop.list = site2drop, recalc = T, mono.rm = T)
+  }
+  
+  # keep populations
+  if (!is.null(site2keep)){
+    genlight <- gl.keep.pop(genlight, pop.list = site2keep, recalc = T, mono.rm = T)
+  }
+  
+  # set population to station
+  if (level == "station"){
+    genlight@pop <- 
+      genlight@other[["ind.metrics"]][["site"]] %>%
+      droplevels()
+  }
+
+  # drop sites
+  if (!is.null(station2drop)){
+    genlight <- gl.drop.pop(genlight, pop.list = station2drop, recalc = T, mono.rm = T)
+  }
+  
+  # keep populations
+  if (!is.null(station2keep)){
+    genlight <- gl.keep.pop(genlight, pop.list = station2keep, recalc = T, mono.rm = T)
+  }
+  
+  # set population to final level
+  genlight@pop <- 
+    genlight@other[["ind.metrics"]][[level]] %>%
+    droplevels()
+  
+  # remove populations with less than two individuals
+  if (removeless2ind == TRUE){
+    print(paste("removing", level, ":", names(which(table(genlight@pop) < 2))))
+    genlight <- gl.drop.pop(genlight, pop.list = names(which(table(genlight@pop) < 2)), recalc = T, mono.rm = T)
+  }
+
+  # return
+  return(genlight)  
+}
+
+
 
 
 
@@ -119,3 +186,7 @@ dir.create("results/05_re_Lesturgie/", showWarnings = F)
 ## ---- load scripts ----
 # 1. ...
 # source("scripts/01_genetic_diversity/01_snp_fitering.R")
+
+
+
+

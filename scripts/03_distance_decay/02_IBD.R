@@ -1,5 +1,4 @@
 
-
 ## ---- load data ----
 
 # parameters
@@ -16,8 +15,9 @@ list_communities <- readRDS(paste0("intermediate/02_species_diversity/List_commu
 
 # parameters
 metricSD = "beta.jtu"
-metricGD = "Fst"
+metricGD = "jtu"
 comm = names(list_communities)[1]
+
 
 
 ## ---- setup beta data ----
@@ -218,7 +218,6 @@ ggSGDCs <-
 
 
 # merge plots
-
 ggSD + ggGD + ggSGDCs + plot_annotation(title = comm)
 ggsave(width = 20, height = 6, 
        filename = paste0("results/03_distance_decay/IBD_beta_all_", level, "_", comm, "_", metricGD, "_", metricSD, "_", metricDIST, ".png"))

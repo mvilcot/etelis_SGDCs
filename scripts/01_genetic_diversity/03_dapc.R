@@ -1,36 +1,36 @@
 
-##########!!!!! NEED TO AUMOMATIZE PARAMETERS WITH FUNCTION !!!!! ##############
-
 ## ---- read SNPs dataset ----
 
-# set parameters
-filters <- "missind_callrate0.70_maf0.05"
+# parameters
+filters = "missind_callrate0.70_maf0.05"
+level = "station"
 
-# sites <- "allsites"
-sites <- "noSeychelles"
+# read genlight
+genlight <- 
+  read.genlight(filters, level,
+                removeless2ind = FALSE,
+                site2drop = NULL,
+                site2keep = NULL,
+                station2drop = NULL,
+                station2keep = NULL)
+
+
+# ---- !!!!!!!!!!!!!!!!! AUTOMATISER PROBLEME SITES DANS NOMS DE FICHIERS --------
+# drop or keep pop
+sites <- "allsites"
+# sites <- "noSeychelles"
 # sites <- "Hawaii"
 # sites <- "NCaledonia"
 # sites <- "WAustralia"
-
-# level <- "site"
-level <- "station"
-
-# read genlight
-genlight <- readRDS(paste0("intermediate/01_genetic_diversity/Genlight_Etelis_coruscans_ordered_", filters, ".RDS"))
-genlight
-
-# drop or keep pop
 # genlight <- gl.drop.pop(genlight, pop.list = c("Seychelles"), recalc = T, mono.rm = T)
 # genlight <- gl.keep.pop(genlight, pop.list = c("Hawaii"), recalc = T, mono.rm = T)
 # genlight <- gl.keep.pop(genlight, pop.list = c("New_Caledonia"), recalc = T, mono.rm = T)
 # genlight <- gl.keep.pop(genlight, pop.list = c("W_Australia"), recalc = T, mono.rm = T)
-genlight@pop <-
-  genlight@other[["ind.metrics"]][[level]] %>%
-  droplevels()
+
 
 
 ## ---- DAPC ----
-
+### !!!!!!!!!!!!!!!
 # DAPC - populations as prior
 # set.seed(999) # Setting a seed for a consistent result
 # dapc <- dapc(genlight)

@@ -1,22 +1,20 @@
 
 
 ## ---- read Genlight into PCAdapt format ----
-# set parameters
-filters <- "missind_callrate0.70_maf0.05"
+# parameters
+filters = "missind_callrate0.70_maf0.05"
+level = "site"
 
 # read genlight
 genlight <- 
-  readRDS(paste0("intermediate/01_genetic_diversity/Genlight_Etelis_coruscans_ordered_", filters, ".RDS"))
-genlight
+  read.genlight(filters, level, removeless2ind = FALSE)
 
-# transform Genlight as data frame
-df <- as.data.frame(genlight)
-genotype <- t(df)
+# transform to data frame
+gdf <- as.data.frame(genlight)
+genotype <- t(gdf)
+gdf$pop <- genlight$pop # set population information
 
-# set population information
-df$pop <- genlight$pop
-
-# get into pcadapt format
+# transform to pcadapt format
 genotype_pca <- read.pcadapt(genotype)
 
 
@@ -101,6 +99,5 @@ genlight <- gl.drop.loc(genlight, loc.list = outlier_loci$loci)
 genlight 
 # 18892 SNPs remaining
 
-filters <- "missind_callrate0.70_maf0.05_pcadapt"
 saveRDS(genlight, paste0("intermediate/01_genetic_diversity/Genlight_Etelis_coruscans_ordered_", filters, ".RDS"))
 

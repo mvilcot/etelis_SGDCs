@@ -1,41 +1,47 @@
 
-# library(HierDpart)
-
-
 ## ---- parameters ----
 # filters
-filters <- "missind_callrate0.70_maf0.05"
-level <- "station"
+filters = "missind_callrate0.70_maf0.05"
+level = "site"
 
-# Read genlight  
-genlight <- readRDS(paste0("intermediate/01_genetic_diversity/Genlight_Etelis_coruscans_ordered_", filters, ".RDS"))
-genlight
-
-# Set population to site/station
-genlight@pop <- genlight@other[["ind.metrics"]][[level]]
-genlight
-
-# Remove populations with less than two individuals
-print(paste("removing", level, ":", names(which(table(genlight@pop) < 2))))
-genlight <- gl.drop.pop(genlight, pop.list = names(which(table(genlight@pop) < 2)), recalc = T, mono.rm = T)
-genlight
-
-# exclusion_list_site <- c("Cocos_Keeling")
-# exclusion_list_station <- c("Cocos (Keeling)", 
-#                             "New Caledonia (Antigonia)",
-#                             "New Caledonia (Jumeau)", 
-#                             "New Caledonia (Poum)")
-
+# read genlight  
+genlight <- 
+  read.genlight(filters, level, removeless2ind = TRUE)
 
 
 
 ## ---- convert to other formats ----
+
 # genind 
-genind <- dartR::gl2gi(genlight) # same than adegenet::df2genind
-genind
+genind <- dartR::gl2gi(genlight)
 
 # hierfstat format
 ghierfstat <- hierfstat::genind2hierfstat(genind)
+
+# SNP presence/absence lfmm (package LEA, SilicoDArT)
+geno <- dartR::gl2geno(genlight)
+
+# matrix
+gmatrix <- as.matrix(genlight) # one column by SNP
+gmatrixPA <- gmatrix[ , colSums(is.na(gmatrix))==0]
+gmatrixPA[gmatrixPA >= 1] <- 1
+# gmatrix2 <- as.matrix(genind@tab) # one column by allele
+# gmatrix2PA <- gmatrix2[ , colSums(is.na(gmatrix2))==0]
+# gmatrix2PA[gmatrix2PA >= 1] <- 1
+
+gmatrixPAloc <- as.data.frame(gmatrixPA)
+gmatrixPAloc[[level]] <- genlight@pop
+gmatrixPAloc <- 
+  aggregate(gmatrixPAloc[,-ncol(gmatrixPAloc)], by=list(location=gmatrixPAloc[[level]]), FUN=max) %>% ##by site
+  column_to_rownames("location")
+
+
+
+## ---- tess3r ----
+# https://bcm-uga.github.io/TESS3_encho_sen/articles/main-vignette.html
+
+library(tess3r)
+
 
 
 
@@ -73,6 +79,17 @@ popFst <- betas(ghierfstat, nboot=1000)
 # bias <- bs.D$summary.global.het[1]- obs.D$global.het
 # bs.D$summary.global.het- bias
 
+# Jaccard
+### either pairwise by individual, then average
+# jac <- beta.multi(gmatrixPA, index.family="jaccard")
+# jac2 <- beta.pair(gmatrix2PA, index.family="jaccard")
+# 
+# jacSIM <- generate_pw_jaccard(geno = gmatrix, 
+#                            pop.label = genlight$pop,
+#                            plot_it = FALSE)
+
+### or PA by site first, then pairwise jaccard
+jac_multi <- beta.multi(gmatrixPAloc, index.family="jaccard")
 
 # create global table
 gd_global <-
@@ -84,7 +101,10 @@ gd_global <-
         Dest = BSo["Dest"],
         Gstpp.hed = GstPP.hed$global,
         D.Jost = JostD$global.het,
-        popFst.WG = popFst$betaW) %>%
+        popFst.WG = popFst$betaW,
+        jtu = jac_multi$beta.JTU,
+        jac = jac_multi$beta.JAC,
+        jne = jac_multi$beta.JNE) %>%
   as_tibble()
 
 
@@ -114,14 +134,23 @@ GstPP.hed_pair <- pairwise_Gst_Hedrick(genind)
 # Jost D
 JostD_pair <- pairwise_D(genind)
 
+# Jaccard
+### either PA by site first, then pairwise jaccard
+jac_pair <- beta.pair(gmatrixPAloc, index.family="jaccard")
+
+### or pairwise by individual, then average
+jac_pair <- beta.pair(gmatrixPA, index.family="jaccard")
+
+
 
 # put into list
 list_gd_beta_pair <-
   list(Fst = Fst_pair, 
        GstPP.hed = GstPP.hed_pair,
-       D.Jost = JostD_pair)
-
-
+       D.Jost = JostD_pair,
+       jtu = jac_pair$beta.jtu,
+       jac = jac_pair$beta.jac,
+       jne = jac_pair$beta.jne)
 
 
 ## ---- export ----
@@ -130,7 +159,13 @@ write.csv(gd_global, paste0("results/01_genetic_diversity/gd_table_global_", lev
 write.csv(gd_alpha, paste0("results/01_genetic_diversity/gd_table_", level, ".csv"), row.names = F, quote = F)
 saveRDS(list_gd_beta_pair, paste0("results/01_genetic_diversity/gd_list_pairwise_", level, ".RDS"))
 
-
+gd_beta <- 
+  list(Fst = list_gd_beta_pair$Fst, 
+       GstPP.hed = list_gd_beta_pair$GstPP.hed,
+       D.Jost = list_gd_beta_pair$JostD,
+       jtu = jac_pair$beta.jtu,
+       jac = jac_pair$beta.jac,
+       jne = jac_pair$beta.jne)
 
 
 ## ---- DRAFTS ----
@@ -157,26 +192,23 @@ saveRDS(list_gd_beta_pair, paste0("results/01_genetic_diversity/gd_list_pairwise
 # 
 # 
 # 
-# ## TEST Jaccard Betapart
-# PAalleles <- as.data.frame(genind@tab)
-# PAallelesTEST <- PAalleles
-# PAallelesTEST[PAallelesTEST > 0] <- 1 
+## TEST Jaccard Betapart
+PAalleles <- as.matrix(as.data.frame(genind@tab))
+PAallelesTEST <- PAalleles[ , colSums(is.na(PAalleles))==0]
+PAallelesTEST[PAallelesTEST > 0] <- 1
+test <- beta.pair(PAallelesTEST, index.family="jaccard")
+
+PAallelesTEST$site <- genind@pop
+PAallelesTESTagg <- aggregate(PAallelesTEST[,-ncol(PAallelesTEST)], by=list(Site=PAallelesTEST$site), FUN=max) ##by site
+test <- beta.multi(PAallelesTEST[,-ncol(PAallelesTEST)], index.family="jaccard")
 # 
-# PAallelesTEST$site <- genind@pop
-# PAallelesTESTagg <- aggregate(PAallelesTEST[,-ncol(PAallelesTEST)], by=list(Site=PAallelesTEST$site), FUN=max) ##by site
 # 
-# 
-# test <- beta.multi(PAallelesTEST[,-ncol(PAallelesTEST)], index.family="jaccard")
-# 
-# 
-# # Jaccard
-# JacHier <- HierJd("_archive/-36_radiator_genomic_converter_20221115@1129/radiator_data_20221115@1129_genepop.gen", 
+# Jaccard
+# library(HierDpart)
+# JacHier <- HierJd("_archive/-36_radiator_genomic_converter_20221115@1129/radiator_data_20221115@1129_genepop.gen",
 #                   ncode=3, nreg=1, r=1)
 # print(JacHier)
 # 
-# 
-# library(jacpop)
-# jac <- generate_pw_jaccard(geno = test)
 
 
 
@@ -191,10 +223,10 @@ saveRDS(list_gd_beta_pair, paste0("results/01_genetic_diversity/gd_list_pairwise
 # 
 # gd_alpha_site3 <-
 #   data.frame(Hs = apply(BS$Hs, MARGIN = 2, FUN = mean, na.rm = T)) # mean by population
-
-
-
-
+# 
+# 
+# 
+# 
 ## ---- convert to other formats ---- #
 # # Genpop class
 # genpop <- adegenet::genind2genpop(genind)
