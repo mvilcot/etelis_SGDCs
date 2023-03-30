@@ -15,7 +15,7 @@ list_communities <- readRDS(paste0("intermediate/02_species_diversity/List_commu
 
 # parameters
 metricSD = "beta.jtu"
-metricGD = "jtu"
+metricGD = "Fst"
 comm = names(list_communities)[1]
 
 
@@ -112,7 +112,8 @@ trans <- trans.mat(Bathy, min.depth=-5, max.depth=NULL)
 mat_lcdist <- 
   lc.dist(trans, data_coord, res = "dist") %>% 
   as.matrix()
-# write.csv(as.matrix(dist_geo), file = "intermediate/03_distance_decay/least_cost_distance.csv")
+write.csv(mat_lcdist, 
+          file = "intermediate/03_distance_decay/least_cost_distance.csv", row.names = T, quote = F)
 
 # keep only sites present in SD and GD
 mat_lcdist <- mat_lcdist[order(rownames(mat_lcdist)), order(colnames(mat_lcdist))]
