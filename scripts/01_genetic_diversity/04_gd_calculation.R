@@ -10,6 +10,8 @@ genlight <-
 
 
 
+
+
 ## ---- convert to other formats ----
 
 # genind 
@@ -49,9 +51,8 @@ library(tess3r)
 ## ---- mean genetic diversity ----
 
 # basic stats
-BS <- hierfstat::basic.stats(genind) # same result
-BS
-BSo <- BS$overall # over all samples
+BS <- hierfstat::basic.stats(genind)
+BSo <- BS$overall
 
 # Jost additive framework Dst = Ht - Hs
 Hs = BSo[["Hs"]]
@@ -159,13 +160,6 @@ write.csv(gd_global, paste0("results/01_genetic_diversity/gd_table_global_", lev
 write.csv(gd_alpha, paste0("results/01_genetic_diversity/gd_table_", level, ".csv"), row.names = F, quote = F)
 saveRDS(list_gd_beta_pair, paste0("results/01_genetic_diversity/gd_list_pairwise_", level, ".RDS"))
 
-gd_beta <- 
-  list(Fst = list_gd_beta_pair$Fst, 
-       GstPP.hed = list_gd_beta_pair$GstPP.hed,
-       D.Jost = list_gd_beta_pair$JostD,
-       jtu = jac_pair$beta.jtu,
-       jac = jac_pair$beta.jac,
-       jne = jac_pair$beta.jne)
 
 
 ## ---- DRAFTS ----

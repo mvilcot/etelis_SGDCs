@@ -1,6 +1,6 @@
 # Wrapper script for the Etelis coruscans analyses
 
-## ---- load libraries ----
+## ---- libraries ----
 # scripts
 library(tidyverse)      # the beautiful beautiful tidyverse
 library(pracma)         # findintervals
@@ -45,7 +45,7 @@ library(phytools)       # midpoint.root
 
 
 
-## ---- load data ----
+## ---- data ----
 # genetic data
 data_samples <- read.csv("data/metadata_samples.csv")
 data_sites <- read.csv("data/metadata_sites.csv")
@@ -69,7 +69,7 @@ data_fishtree <- read.csv("data/PFC_taxonomy.csv")
 # data_fishbase$species <- gsub(" ", "_", data_fishbase$species)
 
 
-## ---- load functions ----
+## ---- functions ----
 melt.dist <- function(distmat, metric) {
   if(class(distmat)[1] == "dist") {distmat <- as.matrix(dist)}
   distmat[upper.tri(distmat, diag = T)] <- NA
@@ -136,7 +136,7 @@ read.genlight <- function(filters = "missind_callrate0.70_maf0.05",
   
   # remove populations with less than two individuals
   if (removeless2ind == TRUE){
-    print(paste("removing", level, ":", names(which(table(genlight@pop) < 2))))
+    cat("removing", level, ":", names(which(table(genlight@pop) < 2)), "\n")
     genlight <- gl.drop.pop(genlight, pop.list = names(which(table(genlight@pop) < 2)), recalc = T, mono.rm = T)
   }
 
@@ -165,7 +165,7 @@ read.genlight <- function(filters = "missind_callrate0.70_maf0.05",
 
 
 
-## ---- create arborescence ----
+## ---- arborescence ----
 dir.create("intermediate/", showWarnings = F)
 dir.create("intermediate/00_sampling_sites/", showWarnings = F)
 dir.create("intermediate/01_genetic_diversity/", showWarnings = F)
@@ -183,7 +183,7 @@ dir.create("results/05_re_Lesturgie/", showWarnings = F)
 
 
 
-## ---- load scripts ----
+## ---- scripts ----
 # 1. ...
 # source("scripts/01_genetic_diversity/01_snp_fitering.R")
 
