@@ -163,4 +163,19 @@ plot(perm$sss[,1], perm$sss[,3])
 plot(perm$sss2[,2], perm$sss2[,3])
 
 
+## ---- get least cost distance mat from resistance ---
+v <- as.numeric(raster$layer@data@values)
+q <- as.numeric(v)
+q[which(v==500)] <- 1 # ocean
+q[which(v==1000)] <- 23 # seamounts
+q[which(v==2000)] <- 100 # coral
+
+raster_new <- setValues(raster_final_crop, q)
+tr1 <- transition(raster_new, mean, directions=8)  
+tr2 <- geoCorrection(tr1, type="r")
+mat_IBR <- costDistance(tr2, coords)
+mantel.randtest(mat_IBR, gd_beta$Fst)
+
+write.csv(as.matrix(mat_IBR), "intermediate/05_re_Lesturgie/least_cost_distance_IBR_23_100.csv")
+
 
