@@ -66,7 +66,8 @@ cell.resistance <- function(raster, param_file, mat_fst, coords, IBR=F, LC=T){
   
   
   
-  fst <- mat_fst/(1-mat_fst)
+  # fst <- mat_fst/(1-mat_fst)
+  fst <- mat_fst
   
   # list of positions of each variable (reefs, seamounts)
   vlist <- list()

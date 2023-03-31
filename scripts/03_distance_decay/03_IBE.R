@@ -24,6 +24,12 @@ mat_lcdist <-
   read.csv(file = "intermediate/03_distance_decay/least_cost_distance.csv", row.names = 1)
 
 
+## ---- Matrix distance ----
+mat_IBR <- 
+  read.csv("intermediate/05_re_Lesturgie/least_cost_distance_IBR_23_100.csv", row.names = 1)
+
+
+
 ## ---- Matrix environmental variables ----
 # read variables 
 site_variables <- read.csv("intermediate/03_distance_decay/bio_oracle_variables.csv",
@@ -78,15 +84,18 @@ mat_SDbeta <- mat_SDbeta[rownames(mat_SDbeta) %in% rownames(mat_GDbeta),
 mat_GDbeta <- mat_GDbeta[rownames(mat_GDbeta) %in% rownames(mat_SDbeta),
                          colnames(mat_GDbeta) %in% colnames(mat_SDbeta)]
 mat_env <- mat_env[rownames(mat_env) %in% rownames(mat_SDbeta),
-                     colnames(mat_env) %in% colnames(mat_SDbeta)]
+                   colnames(mat_env) %in% colnames(mat_SDbeta)]
 mat_lcdist <- mat_lcdist[rownames(mat_lcdist) %in% rownames(mat_SDbeta),
-                   colnames(mat_lcdist) %in% colnames(mat_SDbeta)]
+                         colnames(mat_lcdist) %in% colnames(mat_SDbeta)]
+mat_IBR <- mat_IBR[rownames(mat_IBR) %in% rownames(mat_SDbeta),
+                   colnames(mat_IBR) %in% colnames(mat_SDbeta)]
 
 # order rows alphabetically
 mat_SDbeta <- as.dist(mat_SDbeta[order(rownames(mat_SDbeta)), order(colnames(mat_SDbeta))])
 mat_GDbeta <- as.dist(mat_GDbeta[order(rownames(mat_GDbeta)), order(colnames(mat_GDbeta))])
 mat_env <- as.dist(mat_env[order(rownames(mat_env)), order(colnames(mat_env))])
 mat_lcdist <- as.dist(mat_lcdist[order(rownames(mat_lcdist)), order(colnames(mat_lcdist))])
+mat_IBR <- as.dist(mat_IBR[order(rownames(mat_IBR)), order(colnames(mat_IBR))])
 
 
 
@@ -96,16 +105,17 @@ mat_lcdist <- as.dist(mat_lcdist[order(rownames(mat_lcdist)), order(colnames(mat
 ## ---- MRM ----
 
 MRM(mat_SDbeta ~ mat_lcdist + mat_env , nperm = 9999)
-MRM(mat_SDbeta ~ scale(mat_lcdist) + mat_env , nperm = 9999)
-
-
+MRM(mat_SDbeta ~ mat_IBR + mat_lcdist + mat_env , nperm = 9999)
 
 MRM(mat_GDbeta ~ mat_lcdist + mat_env , nperm = 9999)
-
+MRM(mat_GDbeta ~ mat_IBR + mat_env , nperm = 9999)
+MRM(mat_GDbeta ~ mat_IBR)
+MRM(mat_GDbeta ~ mat_lcdist)
 
 
 cor(mat_lcdist, mat_env)
-
+cor(mat_lcdist, mat_IBR)
+plot(mat_lcdist, mat_IBR)
 
 
 # 
