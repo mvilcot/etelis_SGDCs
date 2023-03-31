@@ -187,14 +187,14 @@ saveRDS(list_gd_beta_pair, paste0("results/01_genetic_diversity/gd_list_pairwise
 # 
 # 
 ## TEST Jaccard Betapart
-PAalleles <- as.matrix(as.data.frame(genind@tab))
-PAallelesTEST <- PAalleles[ , colSums(is.na(PAalleles))==0]
-PAallelesTEST[PAallelesTEST > 0] <- 1
-test <- beta.pair(PAallelesTEST, index.family="jaccard")
-
-PAallelesTEST$site <- genind@pop
-PAallelesTESTagg <- aggregate(PAallelesTEST[,-ncol(PAallelesTEST)], by=list(Site=PAallelesTEST$site), FUN=max) ##by site
-test <- beta.multi(PAallelesTEST[,-ncol(PAallelesTEST)], index.family="jaccard")
+# PAalleles <- as.matrix(as.data.frame(genind@tab))
+# PAallelesTEST <- PAalleles[ , colSums(is.na(PAalleles))==0]
+# PAallelesTEST[PAallelesTEST > 0] <- 1
+# test <- beta.pair(PAallelesTEST, index.family="jaccard")
+# 
+# PAallelesTEST$site <- genind@pop
+# PAallelesTESTagg <- aggregate(PAallelesTEST[,-ncol(PAallelesTEST)], by=list(Site=PAallelesTEST$site), FUN=max) ##by site
+# test <- beta.multi(PAallelesTEST[,-ncol(PAallelesTEST)], index.family="jaccard")
 # 
 # 
 # Jaccard
