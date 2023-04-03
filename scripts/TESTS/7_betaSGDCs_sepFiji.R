@@ -1,71 +1,9 @@
-
-## ---- load ----
-level = "site"
-# level = "station"
-
-comm_delin = "depth_category"
-# comm_delin = "taxonomic_scale"
-# comm_delin = "taxonomic_scale_Fishbase"
-# comm_delin = "phylogenetic_distance"
-
-list_communities <- readRDS(paste0("intermediate/02_species_diversity/List_community_", comm_delin, ".RDS"))
-
-gd_global <- read.csv(paste0("results/01_genetic_diversity/gd_table_global_", level, ".csv"))
-gd_alpha <- read.csv(paste0("results/01_genetic_diversity/gd_table_", level, ".csv"))
-gd_beta <- readRDS(paste0("results/01_genetic_diversity/gd_list_pairwise_", level, ".RDS"))
-
-sd_global <- read.csv(paste0("results/02_species_diversity/sd_table_global", "_", comm_delin, ".csv"))
-sd_alpha <- read.csv(paste0("results/02_species_diversity/sd_table_", level, "_", comm_delin, ".csv"))
-sd_beta <- readRDS(paste0("results/02_species_diversity/sd_list_pairwise_", level, "_", comm_delin, ".RDS"))
-
-
-# list_communities <- readRDS("intermediate/02_species_diversity/List_community_phylogenetic_scale.RDS")
-# sd_beta <- readRDS(paste0("results/02_species_diversity/sd_list_pairwise_", level, "_phylogenetic_scale.RDS"))
-
-
-
-## ---- alpha-SGDCs ----
-
-table_alpha <-
-  gd_alpha %>% 
-  left_join(sd_alpha, by = level)
-
-metricSD = paste0("richness_", level)
-metricGD = "Ho"
-
-gg_list <- list()
-
-for (comm in names(list_communities)){
-  table_alpha_comm <- 
-    table_alpha %>% 
-    filter(community == comm)
-  
-  sgdc_alpha <- summary(lm(table_alpha_comm[[metricGD]] ~ table_alpha_comm[[metricSD]]))
-  
-  gg_list[[comm]] <- 
-    ggplot(table_alpha_comm, aes(.data[[metricSD]], .data[[metricGD]])) +
-    geom_point() +
-    xlab(paste0("richness_", level, " (", comm, ")")) +
-    annotate('text', 
-             x=min(table_alpha_comm[[metricSD]]), y=max(table_alpha_comm[[metricGD]]),
-             hjust = 0, vjust = 1,
-             label=paste0("LM adj.R² = ", sprintf("%.3f", sgdc_alpha$adj.r.squared), "\np = ", sprintf("%.3f", coef(sgdc_alpha)[2,4])))
-    
-  # ggsave(gg, device = "png", height = 4, width = 6, units = "in",
-  #        filename = paste0("results/04_continuity/SGDCs_alpha_all_", level, "_", metricGD, "_", metricSD, "_", comm, ".png"))
-  
-}
-
-gg_grob <- arrangeGrob(grobs = gg_list, ncol=3)
-plot(gg_grob)
-ggsave(gg_grob, width = 15, height = 8, 
-       filename = paste0("results/04_continuity/SGDCs_alpha_all_", level, "_", metricGD, "_", metricSD, "_",  comm_delin, ".png"))
-
-
-
+# read GD and SD genetic diversity
+gd_beta <- readRDS("results/TEST/gd_list_pairwise_site_FijiSep.RDS")
+sd_beta <- readRDS("results/TEST/sd_list_pairwise_site_depth_category_sepFiji.RDS")
 
 ## ---- beta-SGDCs ----
-
+comm_delin = "depth_category"
 metricSD = "beta.jtu"
 metricGD = "Fst"
 patt = "all"
@@ -150,41 +88,10 @@ for (comm in names(list_communities)){
   
   # ggsave(gg, device = "png", height = 4, width = 6, units = "in",
   #        filename = paste0("results/04_continuity/SGDCs_beta_", patt, "_", level, "_", metricGD, "_", metricSD, "_", comm, ".png"))
-
+  
 }
 
 gg_grob <- arrangeGrob(grobs = gg_list, ncol=3)
 plot(gg_grob)
 ggsave(gg_grob, width = 15, height = 8, 
-       filename = paste0("results/04_continuity/SGDCs_beta_noSeychelles_", level, "_", metricGD, "_", metricSD, "_",  comm_delin, ".png"))
-
-
-# likelihood ratio test
-library(lmtest)
-names(list_communities)
-lrtest(stat_lm[[1]], stat_lm[[2]])
-
-
-
-## ---- beta-SGDCs by phylogenetic scale ----
-SGDCs <- 
-  do.call(rbind.data.frame, stat_list) 
-colnames(SGDCs) <- names(stat_list[[1]])
-# colnames(SGDCs) <- "R2"
-rownames(SGDCs) <- names(stat_list)
-
-SGDCs$phylodist <- gsub(pattern = "phylodist_", replacement = "", 
-                       rownames(SGDCs))
-SGDCs
-
-plot(SGDCs$phylodist, SGDCs$R2)
-summary(lm(SGDCs$phylodist ~ SGDCs$R2))
-
-
-
-
-
-
-
-
-
+       filename = paste0("results/TEST/SGDCs_beta_noSeychelles_", level, "_", metricGD, "_", metricSD, "_",  comm_delin, ".png"))

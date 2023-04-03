@@ -1,29 +1,41 @@
+########### SPECIFIC TO FIJI ###############
+data_samples <- read.csv("scripts/TESTS/metadata_samples_Fiji.csv")
+data_sites <- read.csv("scripts/TESTS/metadata_sites_Fiji.csv")
+
+data_samples <- 
+  data_samples %>% 
+  left_join(data_sites, by = c("station", "site"))
+
 
 ## ---- load data ----
 
 # parameters
 level = "site"
-comm_delin = "taxonomic_scale"
+comm_delin = "depth_category"
 
 # read GD and SD genetic diversity
-gd_beta <- readRDS(paste0("results/01_genetic_diversity/gd_list_pairwise_", level, ".RDS"))
-sd_beta <- readRDS(paste0("results/02_species_diversity/sd_list_pairwise_", level, "_", comm_delin, ".RDS"))
-
+gd_beta <- readRDS("results/TEST/gd_list_pairwise_site_FijiSep.RDS")
+sd_beta <- readRDS("results/TEST/sd_list_pairwise_site_depth_category_sepFiji.RDS")
 
 # communities delineation
-list_communities <- readRDS(paste0("intermediate/02_species_diversity/List_community_", comm_delin, ".RDS"))
+list_communities <- readRDS("intermediate/TEST/List_community_depth_category_sepFiji.RDS")
 
 # parameters
 metricSD = "beta.jtu"
 metricGD = "Fst"
 comm = names(list_communities)[1]
-
+comm
 
 
 ## ---- setup beta data ----
 # get distance matrix
 mat_SDbeta <- as.matrix(sd_beta[[comm]][[metricSD]])
 mat_GDbeta <- as.matrix(gd_beta[[metricGD]])
+
+## REMOVE COCOS
+mat_GDbeta <- mat_GDbeta[!grepl("Cocos", rownames(mat_GDbeta)),
+                         !grepl("Cocos", colnames(mat_GDbeta))]
+rownames(mat_GDbeta)
 
 # keep only sampling sites present in both GD and SD
 mat_SDbeta <- mat_SDbeta[rownames(mat_SDbeta) %in% rownames(mat_GDbeta),
@@ -96,24 +108,19 @@ merge_beta <-
 Bathy <- getNOAA.bathy(lon1 = -180, lon2 = 180,
                        lat1 = -25, lat2 = 25,
                        resolution = 100)
-saveRDS(Bathy, "intermediate/03_distance_decay/bathymetry.RDS")
 color_blues <- colorRampPalette(c("purple", "blue", "cadetblue1", "cadetblue2", "white"))
 
 # save bathymetry map
-pdf(file = "results/03_distance_decay/bathymetry_plot.pdf", height=7, width=14)
 plot.bathy(Bathy, step=2000, deepest.isobath = -14000, shallowest.isobath = 0, image = TRUE, bpal = color_blues(20))
 scaleBathy(Bathy, deg = 5, x = "topleft", inset = 5)
 points(data_coord[["longitude"]], data_coord[["latitude"]],
        pch = 21, col = "black", bg = "red", cex = 1.3)
-dev.off()
 
 # compute least-cost distance
 trans <- trans.mat(Bathy, min.depth=-5, max.depth=NULL)
 mat_lcdist <- 
   lc.dist(trans, data_coord, res = "dist") %>% 
   as.matrix()
-write.csv(mat_lcdist, 
-          file = "intermediate/03_distance_decay/least_cost_distance.csv", row.names = T, quote = F)
 
 # keep only sites present in SD and GD
 mat_lcdist <- mat_lcdist[order(rownames(mat_lcdist)), order(colnames(mat_lcdist))]
@@ -131,23 +138,23 @@ merge_beta <-
 
 
 
-## ---- subset to specific locations ----
-patt = "Seychelles"
-
-mat_SDbeta <- mat_SDbeta[!grepl(patt, rownames(mat_SDbeta)),
-                         !grepl(patt, colnames(mat_SDbeta))]
-mat_GDbeta <- mat_GDbeta[!grepl(patt, rownames(mat_GDbeta)),
-                         !grepl(patt, colnames(mat_GDbeta))]
-mat_geodist <- mat_geodist[!grepl(patt, rownames(mat_geodist)),
-                           !grepl(patt, colnames(mat_geodist))]
-mat_lcdist <- mat_lcdist[!grepl(patt, rownames(mat_lcdist)),
-                         !grepl(patt, colnames(mat_lcdist))]
-
-merge_beta <- merge_beta[!grepl(patt, merge_beta[[level]]),]
-
-
-# write.csv(merge_beta, "intermediate/03_distance_decay/temp_merge_beta.csv",
-#           row.names = F, quote = F)
+# ## ---- subset to specific locations ----
+# patt = "Seychelles"
+# 
+# mat_SDbeta <- mat_SDbeta[!grepl(patt, rownames(mat_SDbeta)),
+#                          !grepl(patt, colnames(mat_SDbeta))]
+# mat_GDbeta <- mat_GDbeta[!grepl(patt, rownames(mat_GDbeta)),
+#                          !grepl(patt, colnames(mat_GDbeta))]
+# mat_geodist <- mat_geodist[!grepl(patt, rownames(mat_geodist)),
+#                            !grepl(patt, colnames(mat_geodist))]
+# mat_lcdist <- mat_lcdist[!grepl(patt, rownames(mat_lcdist)),
+#                          !grepl(patt, colnames(mat_lcdist))]
+# 
+# merge_beta <- merge_beta[!grepl(patt, merge_beta[[level]]),]
+# 
+# 
+# # write.csv(merge_beta, "intermediate/03_distance_decay/temp_merge_beta.csv",
+# #           row.names = F, quote = F)
 
 
 
@@ -165,6 +172,7 @@ summary(lm(merge_beta[[metricGD]] ~ merge_beta[[metricDIST]]))
 # MRM
 MRM(merge_beta[[metricSD]] ~ merge_beta[[metricDIST]], nperm = 9999)
 MRM(merge_beta[[metricGD]] ~ merge_beta[[metricDIST]], nperm = 9999)
+MRM(merge_beta[[metricSD]] ~ merge_beta[[metricGD]], nperm = 9999)
 
 # Mantel
 stat_SDmantel <- vegan::mantel(as.dist(mat_SDbeta), as.dist(matDIST), permutations = 9999)
@@ -178,23 +186,26 @@ stat_SGDCmantel <- vegan::mantel(as.dist(mat_SDbeta), as.dist(mat_GDbeta), permu
 merge_beta$Seychelles <- "No"
 merge_beta[grep("Seychelles", merge_beta[[level]]),]$Seychelles <- "Yes"
 
+### FIJI
+merge_beta$Fiji <- "No"
+merge_beta[grep("Fiji", merge_beta[[level]]),]$Fiji <- "Yes"
+
 # species IBD
 ggSD <- 
-  ggplot(merge_beta) +
-  geom_point(aes(.data[[metricDIST]], .data[[metricSD]], 
-                 color = Seychelles), show.legend = F) +
+  ggplot(merge_beta, aes(.data[[metricDIST]], .data[[metricSD]], color = Fiji)) +
+  geom_point(show.legend = F) +
   scale_color_brewer(palette="Dark2") +
   annotate('text', 
            x=min(merge_beta[[metricDIST]]), y=max(merge_beta[[metricSD]]),
            hjust = 0, vjust = 1,
            label=paste0("r Mantel = ", round(stat_SDmantel$statistic, 4), "\np = ", round(stat_SDmantel$signif, 5))) + 
   labs(title = "Species IBD")
-
+ggSD
 # genetic IBD
 ggGD <- 
   ggplot(merge_beta) +
   geom_point(aes(.data[[metricDIST]], .data[[metricGD]], 
-                 color = Seychelles), show.legend = F) +
+                 color = Fiji), show.legend = F) +
   scale_color_brewer(palette="Dark2") +
   annotate('text', 
            x=min(merge_beta[[metricDIST]]), y=max(merge_beta[[metricGD]]),
@@ -202,14 +213,13 @@ ggGD <-
            label=paste0("r Mantel = ", round(stat_GDmantel$statistic, 4), "\np = ", round(stat_GDmantel$signif, 5))) +
   labs(title = "Genetics IBD")
 
-
 # SGDCs
 ggSGDCs <-
-  ggplot(merge_beta) +
-  geom_point(aes(.data[[metricSD]], .data[[metricGD]], color = Seychelles)) +
+  ggplot(merge_beta, aes(.data[[metricSD]], .data[[metricGD]], color = Fiji)) +
+  geom_point() +
   scale_color_brewer(palette="Dark2") +
   # xlab(paste0(metricSD, " (", comm, ")")) +
-  # geom_text_repel(aes(label = sites), size=3) +
+  # geom_text_repel(aes(label = site), size=3) +
   # ggtitle(paste0(patt)) +
   annotate('text', 
            x=min(merge_beta[[metricSD]]), y=max(merge_beta[[metricGD]]),
@@ -221,7 +231,8 @@ ggSGDCs <-
 # merge plots
 ggSD + ggGD + ggSGDCs + plot_annotation(title = comm)
 ggsave(width = 20, height = 6, 
-       filename = paste0("results/03_distance_decay/IBD_beta_noSeychelles_", level, "_", comm, "_", metricGD, "_", metricSD, "_", metricDIST, ".png"))
+       filename = paste0("results/TEST/IBD_beta_all_", level, "_", comm, "_", metricGD, "_", metricSD, "_", metricDIST, "_sepFiji.png"))
+
 
 
 
@@ -241,63 +252,69 @@ SGDC.decomp(SD = merge_beta$beta.jtu,
 
 
 
-
-
-
-
-## ---- distance decay ----
-
-mat_SDbeta <- as.dist(mat_SDbeta)
-mat_GDbeta <- as.dist(mat_GDbeta)
-mat_lcdist <- as.dist(mat_lcdist)
-
-# distance decay models
-decaySD_exp <- decay.model(mat_SDbeta, mat_lcdist, y.type="dissim", model.type="exp", perm=999)
-decaySD_pow <- decay.model(mat_SDbeta, mat_lcdist, y.type="dissim", model.type="pow", perm=999)
-decayGD_exp <- decay.model(mat_GDbeta, mat_lcdist, y.type="dissim", model.type="exp", perm=999)
-decayGD_pow <- decay.model(mat_GDbeta, mat_lcdist, y.type="dissim", model.type="pow", perm=999)
-
-# plots
-png(paste0("results/03_distance_decay/Decay_beta_noSeychelles_", level, "_", comm, "_", metricGD, "_", metricSD, "_", metricDIST, ".png"),
-    width = 15, height = 6, units = 'in', res = 300)
-par(mfrow=c(1,2))
-
-# plot(rnorm(100),typ="n",xlim=c(0,10000),ylim=c(0,0.5),cex.lab=0.6,cex.axis=0.5,mgp=c(2,0.5,0),tcl=-0.25,
-#      xlab="",ylab="",las=1,axes=F)
-# mtext(text = "\u03b2 diversity between sample sites",side=2,line=1.7,at=0.25,cex=0.7) 
-# mtext(text ="Geographical distance between sample sites (km)",side=1,line=1.5,at=5000,cex=0.7)
-# mtext(text="(b)",side=2,line=1.7,at=0.6,las=2,cex=1.2,font=3)
 # 
-# axis(side=1,at=c(0,2000,4000,6000,8000,10000),labels =c("0","2000","4000","6000","8000","10000"),
-#      tcl=-0.25,cex.axis=0.6,mgp=c(3,0.25,0))
-# axis(side=2,at=seq(0,0.5,0.1),labels=seq(0,0.5,0.1),tcl=-0.25,cex.axis=0.6,las=2,mgp=c(3,0.5,0))
+# ## ---- distance decay ----
+# 
+# mat_SDbeta <- as.dist(mat_SDbeta)
+# mat_GDbeta <- as.dist(mat_GDbeta)
+# mat_lcdist <- as.dist(mat_lcdist)
+# 
+# # distance decay models
+# decaySD_exp <- decay.model(mat_SDbeta, mat_lcdist, y.type="dissim", model.type="exp", perm=999)
+# decaySD_pow <- decay.model(mat_SDbeta, mat_lcdist, y.type="dissim", model.type="pow", perm=999)
+# decayGD_exp <- decay.model(mat_GDbeta, mat_lcdist, y.type="dissim", model.type="exp", perm=999)
+# decayGD_pow <- decay.model(mat_GDbeta, mat_lcdist, y.type="dissim", model.type="pow", perm=999)
+# 
+# # plots
+# png(paste0("results/03_distance_decay/Decay_beta_noSeychelles_", level, "_", comm, "_", metricGD, "_", metricSD, "_", metricDIST, "_sepFiji.png"),
+#     width = 15, height = 6, units = 'in', res = 300)
+# par(mfrow=c(1,2))
+# 
+# # plot(rnorm(100),typ="n",xlim=c(0,10000),ylim=c(0,0.5),cex.lab=0.6,cex.axis=0.5,mgp=c(2,0.5,0),tcl=-0.25,
+# #      xlab="",ylab="",las=1,axes=F)
+# # mtext(text = "\u03b2 diversity between sample sites",side=2,line=1.7,at=0.25,cex=0.7) 
+# # mtext(text ="Geographical distance between sample sites (km)",side=1,line=1.5,at=5000,cex=0.7)
+# # mtext(text="(b)",side=2,line=1.7,at=0.6,las=2,cex=1.2,font=3)
+# # 
+# # axis(side=1,at=c(0,2000,4000,6000,8000,10000),labels =c("0","2000","4000","6000","8000","10000"),
+# #      tcl=-0.25,cex.axis=0.6,mgp=c(3,0.25,0))
+# # axis(side=2,at=seq(0,0.5,0.1),labels=seq(0,0.5,0.1),tcl=-0.25,cex.axis=0.6,las=2,mgp=c(3,0.5,0))
+# 
+# plot(mat_lcdist, mat_SDbeta, pch = 16)
+# plot.decay(decaySD_exp, col="green", remove.dots=T, add=T, lwd=2)
+# plot.decay(decaySD_pow, col="blue", remove.dots=T, add=T, lwd=2)
+# 
+# plot(mat_lcdist, mat_GDbeta, pch = 16)
+# plot.decay(decayGD_exp, col="green", remove.dots=T, add=T, lwd=2)
+# plot.decay(decayGD_pow, col="blue", remove.dots=T, add=T, lwd=2)
+# 
+# dev.off()
+# 
+# # stats values
+# 
+# stats_decay <- list(decaySD_exp = decaySD_exp,
+#                     decaySD_pow = decaySD_pow,
+#                     decayGD_exp = decayGD_exp,
+#                     decayGD_pow = decayGD_pow)
+# 
+# table_decay <- do.call(rbind,lapply(1:length(stats_decay),function(i){
+#   c(names(stats_decay)[i],stats_decay[[i]]$b.slope,stats_decay[[i]]$pseudo.r.squared,stats_decay[[i]]$p.value)
+# }))
+# colnames(table_decay) <- c("model","Slope","Pseudo_R2","P.value")
+# table_decay <- data.frame(model=table_decay[,1],
+#                     apply(table_decay[,2:4],2,as.numeric))
+# 
+# 
 
-plot(mat_lcdist, mat_SDbeta, pch = 16)
-plot.decay(decaySD_exp, col="green", remove.dots=T, add=T, lwd=2)
-plot.decay(decaySD_pow, col="blue", remove.dots=T, add=T, lwd=2)
 
-plot(mat_lcdist, mat_GDbeta, pch = 16)
-plot.decay(decayGD_exp, col="green", remove.dots=T, add=T, lwd=2)
-plot.decay(decayGD_pow, col="blue", remove.dots=T, add=T, lwd=2)
+temp1 <- as.matrix(gd_beta$Fst)
+temp1 <- as.dist(temp1[!grepl("Cocos", rownames(temp1)),
+                         !grepl("Cocos", colnames(temp1))])
 
-dev.off()
+temp2 <- as.matrix(gd_beta$GstPP.hed)
+temp2 <- as.dist(temp2[!grepl("Cocos", rownames(temp2)),
+                       !grepl("Cocos", colnames(temp2))])
 
-# stats values
-
-stats_decay <- list(decaySD_exp = decaySD_exp,
-                    decaySD_pow = decaySD_pow,
-                    decayGD_exp = decayGD_exp,
-                    decayGD_pow = decayGD_pow)
-
-table_decay <- do.call(rbind,lapply(1:length(stats_decay),function(i){
-  c(names(stats_decay)[i],stats_decay[[i]]$b.slope,stats_decay[[i]]$pseudo.r.squared,stats_decay[[i]]$p.value)
-}))
-colnames(table_decay) <- c("model","Slope","Pseudo_R2","P.value")
-table_decay <- data.frame(model=table_decay[,1],
-                    apply(table_decay[,2:4],2,as.numeric))
-
-
-
-
+plot(temp1, temp2)
 
 

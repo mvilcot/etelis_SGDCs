@@ -6,9 +6,16 @@ level = "site"
 
 # read genlight  
 genlight <- 
-  read.genlight(filters, level, removeless2ind = FALSE)
+  read.genlight(filters, level, removeless2ind = TRUE)
 
-data_samplesFiji <- read.csv("data/metadata_samples_Fiji.csv")
+########### SPECIFIC TO FIJI ###############
+data_samples <- read.csv("scripts/TESTS/metadata_samples_Fiji.csv")
+data_sites <- read.csv("scripts/TESTS/metadata_sites_Fiji.csv")
+
+data_samples <- 
+  data_samples %>% 
+  left_join(data_sites, by = c("station", "site"))
+
 
 # replace metadata
 genlight@other[["ind.metrics"]] <- 
@@ -105,9 +112,9 @@ list_gd_beta_pair <-
 
 
 ## ---- export ----
-saveRDS(BS, paste0("intermediate/01_genetic_diversity/TEST/basic_stats_", level, "_FijiSep.RDS"))
-write.csv(gd_global, paste0("results/01_genetic_diversity/TEST/gd_table_global_", level, "_FijiSep.csv"), row.names = F, quote = F)
-write.csv(gd_alpha, paste0("results/01_genetic_diversity/TEST/gd_table_", level, "_FijiSep.csv"), row.names = F, quote = F)
-saveRDS(list_gd_beta_pair, paste0("results/01_genetic_diversity/TEST/gd_list_pairwise_", level, "_FijiSep.RDS"))
+saveRDS(BS, paste0("intermediate/TEST/basic_stats_", level, "_FijiSep.RDS"))
+write.csv(gd_global, paste0("results/TEST/gd_table_global_", level, "_FijiSep.csv"), row.names = F, quote = F)
+write.csv(gd_alpha, paste0("results/TEST/gd_table_", level, "_FijiSep.csv"), row.names = F, quote = F)
+saveRDS(list_gd_beta_pair, paste0("results/TEST/gd_list_pairwise_", level, "_FijiSep.RDS"))
 
 
