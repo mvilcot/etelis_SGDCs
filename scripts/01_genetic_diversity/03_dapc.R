@@ -1,40 +1,36 @@
+# a faire tourner sans Cocos
+# sans Seychelles
+# juste Hawaii stations
+
+
 
 ## ---- read SNPs dataset ----
 
 # parameters
 filters = "missind_callrate0.70_maf0.05"
-level = "station"
+level = "site"
+sites = "noCocos"
 
 # read genlight
 genlight <- 
   read.genlight(filters, level,
-                removeless2ind = FALSE,
+                removeless2ind = TRUE,
                 site2drop = NULL,
                 site2keep = NULL,
                 station2drop = NULL,
                 station2keep = NULL)
 
 
-# ---- !!!!!!!!!!!!!!!!! AUTOMATISER PROBLEME SITES DANS NOMS DE FICHIERS --------
-# drop or keep pop
-sites <- "allsites"
-# sites <- "noSeychelles"
-# sites <- "Hawaii"
-# sites <- "NCaledonia"
-# sites <- "WAustralia"
-# genlight <- gl.drop.pop(genlight, pop.list = c("Seychelles"), recalc = T, mono.rm = T)
-# genlight <- gl.keep.pop(genlight, pop.list = c("Hawaii"), recalc = T, mono.rm = T)
-# genlight <- gl.keep.pop(genlight, pop.list = c("New_Caledonia"), recalc = T, mono.rm = T)
-# genlight <- gl.keep.pop(genlight, pop.list = c("W_Australia"), recalc = T, mono.rm = T)
+
+## ---- Smearplot ----
+gl.smearplot(genlight, plot_colors = c("blue", "red", "green", "white"))
 
 
 
-## ---- DAPC ----
-### !!!!!!!!!!!!!!!
-# DAPC - populations as prior
-# set.seed(999) # Setting a seed for a consistent result
-# dapc <- dapc(genlight)
-# saveRDS(dapc, paste0("intermediate/01_genetic_diversity/DAPC_popprior_output_", filters, "_", sites, "_", level, ".RDS"))
+## ---- DAPC pop as prior ----
+set.seed(999) # Setting a seed for a consistent result
+dapc <- dapc(genlight)
+saveRDS(dapc, paste0("intermediate/01_genetic_diversity/DAPC_popprior_output_", filters, "_", sites, "_", level, ".RDS"))
 
 # results
 dapc <- readRDS(paste0("intermediate/01_genetic_diversity/DAPC_popprior_output_", filters, "_", sites, "_", level, ".RDS"))
@@ -44,17 +40,9 @@ dapc <- readRDS(paste0("intermediate/01_genetic_diversity/DAPC_popprior_output_"
 
 
 ## ---- scatter plot ----
-# png(paste0("results/01_genetic_diversity/DAPC_popprior_scatter_", filters, "_", sites, "_", level, ".png"),
-#     height = 12, width = 12,
-#     units = 'in', res = 300)
-# scatter(dapc, scree.pca = F, legend = T, clabel = F, cleg = 0.8)
-# dev.off()
-
-
 # Plot ggplot - adapted from https://github.com/laurabenestan/TD_science_conservation
 
 # get dapc values and metadata
-# dapc <- readRDS(paste0("intermediate/01_genetic_diversity/DAPC_popprior_output_", filters, "_", sites, ".RDS"))
 dapc_geo <- data.frame(id = rownames(dapc$tab), dapc$ind.coord)
 dapc_geo <- 
   data_samples %>% 
@@ -87,13 +75,6 @@ gg1 <- ggplot(dapc_geo, aes(x=LD1, y=LD2, color=grp)) +
 
 
 ## ---- compolot plot ----
-
-# png(paste0("results/01_genetic_diversity/DAPC_popprior_compoplot_", filters, "_", sites, "_", level, ".png"),
-#     height = 8, width = 20,
-#     units = 'in', res = 100)
-# compoplot(dapc, legend = T, show.lab = F, cleg=0.6)
-# dev.off()
-
 # personalized plot from https://luisdva.github.io/rstats/dapc-plot/
 
 # create an object with membership probabilities
