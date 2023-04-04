@@ -34,14 +34,14 @@ dist_loci <-
 tree_gd <- nj(dist_loci)
 
 # export
-saveRDS(tree_gd,
-        "intermediate/01_genetic_diversity/gd_phylo_global.RDS")
+tree_gd %>% 
+  saveRDS("intermediate/1_genetic_diversity/gd_phylo_global.RDS")
 
 
 
 ## ---- plot tree ----
 
-tree_gd <- readRDS("intermediate/01_genetic_diversity/gd_phylo_global.RDS")
+tree_gd <- readRDS("intermediate/1_genetic_diversity/gd_phylo_global.RDS")
 
 # add metadata
 tree_meta <-
@@ -62,7 +62,7 @@ ggtree(tree_gd) %<+%
   theme_tree2()
 
 # save
-ggsave("results/01_genetic_diversity/Tree_nj_genetic_distance.png",
+ggsave("results/1_genetic_diversity/Tree_nj_genetic_distance.png",
        height = 20, width = 8)
 
 
@@ -111,6 +111,6 @@ phylo_metrics <-
              gd_vpd  = var(dist_loci))
 
 ## ---- export ----
-write_csv(phylo_metrics,
-          "intermediate/01_genetic_diversity/gd_phylo_metrics.csv")
+phylo_metrics %>% 
+  write_csv("intermediate/1_genetic_diversity/gd_phylo_metrics.csv")
 

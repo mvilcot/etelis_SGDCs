@@ -6,11 +6,11 @@ level = "site"
 comm_delin = "taxonomic_scale"
 
 # read GD and SD genetic diversity
-gd_beta <- readRDS(paste0("results/01_genetic_diversity/gd_list_pairwise_", level, ".RDS"))
-sd_beta <- readRDS(paste0("results/02_species_diversity/sd_list_pairwise_", level, "_", comm_delin, ".RDS"))
+gd_beta <- readRDS(paste0("results/1_genetic_diversity/gd_list_pairwise_", level, ".RDS"))
+sd_beta <- readRDS(paste0("results/2_species_diversity/sd_list_pairwise_", level, "_", comm_delin, ".RDS"))
 
 # communities delineation
-list_communities <- readRDS(paste0("intermediate/02_species_diversity/List_community_", comm_delin, ".RDS"))
+list_communities <- readRDS(paste0("intermediate/2_species_diversity/List_community_", comm_delin, ".RDS"))
 
 # parameters
 metricSD = "beta.jtu"
@@ -21,18 +21,18 @@ comm = names(list_communities)[1]
 
 ## ---- Matrix distance ----
 mat_lcdist <- 
-  read.csv(file = "intermediate/03_distance_decay/least_cost_distance.csv", row.names = 1)
+  read.csv(file = "intermediate/3_distance_decay/least_cost_distance.csv", row.names = 1)
 
 
 ## ---- Matrix distance ----
 mat_IBR <- 
-  read.csv("intermediate/05_re_Lesturgie/least_cost_distance_IBR_23_100.csv", row.names = 1)
+  read.csv("intermediate/5_re_Lesturgie/least_cost_distance_IBR_23_100.csv", row.names = 1)
 
 
 
 ## ---- Matrix environmental variables ----
 # read variables 
-site_variables <- read.csv("intermediate/03_distance_decay/bio_oracle_variables.csv",
+site_variables <- read.csv("intermediate/3_distance_decay/bio_oracle_variables.csv",
                            row.names = 1)
 
 env <- site_variables[, c(1, 10)] 
@@ -52,7 +52,7 @@ ggplot(pca_coord, aes(Axis1, Axis2, label = .data[[level]])) +
 
 
 # ## ---- merge to GD and SD ----
-# merge_beta <- read.csv("intermediate/03_distance_decay/temp_merge_beta.csv")
+# merge_beta <- read.csv("intermediate/3_distance_decay/temp_merge_beta.csv")
 # 
 # # pivot longer distance matrix
 # melt_env <- 

@@ -8,13 +8,12 @@
 
 # parameters
 filters = "missind_callrate0.70_maf0.05"
-level = "site"
+level = "station"
 sites = "noCocos"
 
 # read genlight
 genlight <- 
   read.genlight(filters, level,
-                removeless2ind = TRUE,
                 site2drop = NULL,
                 site2keep = NULL,
                 station2drop = NULL,
@@ -22,18 +21,14 @@ genlight <-
 
 
 
-## ---- Smearplot ----
-gl.smearplot(genlight, plot_colors = c("blue", "red", "green", "white"))
-
-
 
 ## ---- DAPC pop as prior ----
 set.seed(999) # Setting a seed for a consistent result
 dapc <- dapc(genlight)
-saveRDS(dapc, paste0("intermediate/01_genetic_diversity/DAPC_popprior_output_", filters, "_", sites, "_", level, ".RDS"))
+saveRDS(dapc, paste0("intermediate/1_genetic_diversity/DAPC_popprior_output_", filters, "_", sites, "_", level, ".RDS"))
 
 # results
-dapc <- readRDS(paste0("intermediate/01_genetic_diversity/DAPC_popprior_output_", filters, "_", sites, "_", level, ".RDS"))
+dapc <- readRDS(paste0("intermediate/1_genetic_diversity/DAPC_popprior_output_", filters, "_", sites, "_", level, ".RDS"))
 # print.dapc(dapc)
 # summary.dapc(dapc)
 # predict.dapc(dapc)
@@ -139,7 +134,7 @@ gg2 <- ggplot(probs_long, aes(factor(id), prob, fill = factor(cluster))) +
 
 # save
 gg1 / gg2 + plot_layout(heights = c(3, 1))
-ggsave(paste0("results/01_genetic_diversity/DAPC_popprior_perso_", filters, "_", sites, "_", level, ".png"),
+ggsave(paste0("results/1_genetic_diversity/DAPC_popprior_perso_", filters, "_", sites, "_", level, ".png"),
               height = 12, width = 12)
 
 

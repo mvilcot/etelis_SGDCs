@@ -8,7 +8,7 @@ layers_velocity <-
   list_layers() %>%
   filter(dataset_code == "Bio-ORACLE") %>% 
   filter(grepl("Current velocity", name))
-write.csv(layers_velocity, "intermediate/00_sampling_sites/layers_bio-oracle_velocity.csv",
+write.csv(layers_velocity, "intermediate/0_sampling_design/layers_bio-oracle_velocity.csv",
           quote = F, row.names = F)
 
 
@@ -63,7 +63,7 @@ site_variables <-
 
 ## ---- export ----
 write.csv(site_variables, 
-          "intermediate/03_distance_decay/bio_oracle_variables.csv", 
+          "intermediate/3_distance_decay/bio_oracle_variables.csv", 
           row.names = F, quote = F)
 
 

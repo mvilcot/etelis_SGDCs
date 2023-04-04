@@ -4,8 +4,8 @@
 level = "site"
 comm_delin = "taxonomic_scale"
 
-gd_alpha <- read.csv(paste0("results/01_genetic_diversity/gd_table_", level, ".csv"))
-sd_alpha <- read.csv(paste0("results/02_species_diversity/sd_table_", level, "_", comm_delin, ".csv"))
+gd_alpha <- read.csv(paste0("results/1_genetic_diversity/gd_table_", level, ".csv"))
+sd_alpha <- read.csv(paste0("results/2_species_diversity/sd_table_", level, "_", comm_delin, ".csv"))
 
 
 ## ---- handle data ----

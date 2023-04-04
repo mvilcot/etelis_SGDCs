@@ -43,7 +43,7 @@ tipcol[tip] <- "chartreuse4"
 
 type = "fan"
 
-png(paste0("results/02_species_diversity/Phylogeny_lutjanidae_", type, ".png"),
+png(paste0("results/2_species_diversity/Phylogeny_lutjanidae_", type, ".png"),
     height = 10, width = 10, 
     units = 'in', res = 300)
 

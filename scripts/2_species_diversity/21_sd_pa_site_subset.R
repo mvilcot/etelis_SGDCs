@@ -12,14 +12,14 @@ sites_vect <-
   data_sites %>% 
   select(c(station, Longitude_approx, Latitude_approx)) %>%
   vect(geom = c("Longitude_approx", "Latitude_approx"), crs = "WGS84")
-# writeVector(sites_vect, "intermediate/00_sampling_sites/sites_vect.gpkg")
+# writeVector(sites_vect, "intermediate/0_sampling_design/sites_vect.gpkg")
 
 
 # add 100km buffer around each sample site
 sites_vect <- 
   sites_vect %>% 
   buffer(width = 50000)
-# writeVector(sites_vect, "intermediate/00_sampling_sites/sites_vect_buffer.gpkg")
+# writeVector(sites_vect, "intermediate/0_sampling_design/sites_vect_buffer.gpkg")
 
 
 # create raster of PA grid for Qgis 
@@ -27,7 +27,7 @@ PA_sub <-
   data_PA[,1:2] %>% 
   cbind(1) %>% 
   rast(crs = "WGS84")
-# writeRaster(PA_sub, "intermediate/00_sampling_sites/matrix_PA.gpkg")
+# writeRaster(PA_sub, "intermediate/0_sampling_design/matrix_PA.gpkg")
 
 
 
@@ -79,7 +79,7 @@ PAstation_split <- lapply(PA_split, pa.lonlat2site)
 PAstation <- plyr::join_all(dfs = PAstation_split, type = 'left', by = 'station')
 
 # save
-saveRDS(PAstation, "intermediate/02_species_diversity/PA_Mat_GaspObis_station.RDS")
+saveRDS(PAstation, "intermediate/2_species_diversity/PA_Mat_GaspObis_station.RDS")
 
 
 
@@ -132,7 +132,7 @@ saveRDS(PAstation, "intermediate/02_species_diversity/PA_Mat_GaspObis_station.RD
 # 
 # 
 # # export
-# saveRDS(PAstation, "intermediate/02_species_diversity/PA_Mat_GaspObis_station2.RDS")
+# saveRDS(PAstation, "intermediate/2_species_diversity/PA_Mat_GaspObis_station2.RDS")
 
 
 
@@ -166,7 +166,7 @@ saveRDS(PAstation, "intermediate/02_species_diversity/PA_Mat_GaspObis_station.RD
 #   }else{print(paste("!!!!! ERROR !!!!!", site))}
 # }
 # 
-# saveRDS(PAstations, "intermediate/02_species_diversity/PA_Mat_GaspObis_station2.RDS")
+# saveRDS(PAstations, "intermediate/2_species_diversity/PA_Mat_GaspObis_station2.RDS")
 # 
 # 
 # 
@@ -186,7 +186,7 @@ PAsite <-
   summarise(pa = max(value, na.rm = TRUE), .groups = "keep") %>%  # count presence within all stations of a site 
   pivot_wider(names_from = "species", values_from = "pa")
 
-saveRDS(PAsite, "intermediate/02_species_diversity/PA_Mat_GaspObis_site.RDS")
+saveRDS(PAsite, "intermediate/2_species_diversity/PA_Mat_GaspObis_site.RDS")
 
 
 
@@ -200,7 +200,7 @@ PAall <-
   summarise(pa = max(value, na.rm = TRUE), .groups = "keep") %>%  # count presence within all stations of a site 
   pivot_wider(names_from = "species", values_from = "pa")
 
-saveRDS(PAall, "intermediate/02_species_diversity/PA_Mat_GaspObis_allstations.RDS")
+saveRDS(PAall, "intermediate/2_species_diversity/PA_Mat_GaspObis_allstations.RDS")
 
 
 

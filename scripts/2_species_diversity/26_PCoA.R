@@ -5,7 +5,7 @@ library(glue)
 # get distance matrix
 
 level = "site"
-sd_beta <- readRDS(paste0("results/02_species_diversity/sd_list_pairwise_", level, ".RDS"))
+sd_beta <- readRDS(paste0("results/2_species_diversity/sd_list_pairwise_", level, ".RDS"))
 
 
 
@@ -49,7 +49,7 @@ gg_grob <- arrangeGrob(grobs = gg_list,
           nrow = length(names(sd_beta[[1]])))
 
 ggsave(gg_grob, width = 20, height = 10, 
-       filename = "results/02_species_diversity/PCoA_beta_species_diversity.png")
+       filename = "results/2_species_diversity/PCoA_beta_species_diversity.png")
 
 
 
@@ -57,11 +57,11 @@ ggsave(gg_grob, width = 20, height = 10,
 ## ---- load data ----
 level = "site"
 
-gd_global <- read.csv(paste0("results/01_genetic_diversity/gd_table_global_", level, ".csv"))
-sd_global <- read.csv(paste0("results/02_species_diversity/sd_table_global.csv"))
+gd_global <- read.csv(paste0("results/1_genetic_diversity/gd_table_global_", level, ".csv"))
+sd_global <- read.csv(paste0("results/2_species_diversity/sd_table_global.csv"))
 
-gd_alpha <- read.csv(paste0("results/01_genetic_diversity/gd_table_", level, ".csv"))
-sd_alpha <- read.csv(paste0("results/02_species_diversity/sd_table_", level, ".csv"))
+gd_alpha <- read.csv(paste0("results/1_genetic_diversity/gd_table_", level, ".csv"))
+sd_alpha <- read.csv(paste0("results/2_species_diversity/sd_table_", level, ".csv"))
 
 
 ## ---- handle data ----

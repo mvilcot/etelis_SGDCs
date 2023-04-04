@@ -2,9 +2,9 @@
 ## ---- load ----
 level = "station"
 
-gd_alpha <- read.csv(paste0("results/01_genetic_diversity/gd_table_", level, ".csv"))
-gd_beta <- readRDS(paste0("results/01_genetic_diversity/gd_list_pairwise_", level, ".RDS"))
-BS <- readRDS(paste0("intermediate/01_genetic_diversity/basic_stats_", level, ".RDS"))
+gd_alpha <- read.csv(paste0("results/1_genetic_diversity/gd_table_", level, ".csv"))
+gd_beta <- readRDS(paste0("results/1_genetic_diversity/gd_list_pairwise_", level, ".RDS"))
+BS <- readRDS(paste0("intermediate/1_genetic_diversity/basic_stats_", level, ".RDS"))
 
 order_sites <- c("Seychelles", "Cocos_Keeling", "Christmas_Island", "W_Australia",
                  "Guam", "New_Caledonia", "Fiji", "Tonga", "American_Samoa", "Hawaii")
@@ -25,7 +25,7 @@ ggplot(gd_alpha_loci, aes(x=.data[[level]], y=.data[["Hs"]])) +
   geom_boxplot() +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
 
-ggsave(paste0("results/01_genetic_diversity/plot_alpha_Hs_by_", level, ".png"),
+ggsave(paste0("results/1_genetic_diversity/plot_alpha_Hs_by_", level, ".png"),
        width = 10, height = 8)
 
 
@@ -48,7 +48,7 @@ ggplot(gd_alpha, aes(x=popFst.WG, y=Hs)) +
   
 
 
-ggsave(paste0("results/01_genetic_diversity/plot_Hs_Fst_pop_specific_", level, ".png"),
+ggsave(paste0("results/1_genetic_diversity/plot_Hs_Fst_pop_specific_", level, ".png"),
        width = 10, height = 8)
 
 

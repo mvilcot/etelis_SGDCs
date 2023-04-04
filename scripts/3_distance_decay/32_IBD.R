@@ -6,12 +6,12 @@ level = "site"
 comm_delin = "taxonomic_scale"
 
 # read GD and SD genetic diversity
-gd_beta <- readRDS(paste0("results/01_genetic_diversity/gd_list_pairwise_", level, ".RDS"))
-sd_beta <- readRDS(paste0("results/02_species_diversity/sd_list_pairwise_", level, "_", comm_delin, ".RDS"))
+gd_beta <- readRDS(paste0("results/1_genetic_diversity/gd_list_pairwise_", level, ".RDS"))
+sd_beta <- readRDS(paste0("results/2_species_diversity/sd_list_pairwise_", level, "_", comm_delin, ".RDS"))
 
 
 # communities delineation
-list_communities <- readRDS(paste0("intermediate/02_species_diversity/List_community_", comm_delin, ".RDS"))
+list_communities <- readRDS(paste0("intermediate/2_species_diversity/List_community_", comm_delin, ".RDS"))
 
 # parameters
 metricSD = "beta.jtu"
@@ -96,11 +96,11 @@ merge_beta <-
 Bathy <- getNOAA.bathy(lon1 = -180, lon2 = 180,
                        lat1 = -25, lat2 = 25,
                        resolution = 100)
-saveRDS(Bathy, "intermediate/03_distance_decay/bathymetry.RDS")
+saveRDS(Bathy, "intermediate/3_distance_decay/bathymetry.RDS")
 color_blues <- colorRampPalette(c("purple", "blue", "cadetblue1", "cadetblue2", "white"))
 
 # save bathymetry map
-pdf(file = "results/03_distance_decay/bathymetry_plot.pdf", height=7, width=14)
+pdf(file = "results/3_distance_decay/bathymetry_plot.pdf", height=7, width=14)
 plot.bathy(Bathy, step=2000, deepest.isobath = -14000, shallowest.isobath = 0, image = TRUE, bpal = color_blues(20))
 scaleBathy(Bathy, deg = 5, x = "topleft", inset = 5)
 points(data_coord[["longitude"]], data_coord[["latitude"]],
@@ -113,7 +113,7 @@ mat_lcdist <-
   lc.dist(trans, data_coord, res = "dist") %>% 
   as.matrix()
 write.csv(mat_lcdist, 
-          file = "intermediate/03_distance_decay/least_cost_distance.csv", row.names = T, quote = F)
+          file = "intermediate/3_distance_decay/least_cost_distance.csv", row.names = T, quote = F)
 
 # keep only sites present in SD and GD
 mat_lcdist <- mat_lcdist[order(rownames(mat_lcdist)), order(colnames(mat_lcdist))]
@@ -146,7 +146,7 @@ mat_lcdist <- mat_lcdist[!grepl(patt, rownames(mat_lcdist)),
 merge_beta <- merge_beta[!grepl(patt, merge_beta[[level]]),]
 
 
-# write.csv(merge_beta, "intermediate/03_distance_decay/temp_merge_beta.csv",
+# write.csv(merge_beta, "intermediate/3_distance_decay/temp_merge_beta.csv",
 #           row.names = F, quote = F)
 
 
@@ -221,14 +221,14 @@ ggSGDCs <-
 # merge plots
 ggSD + ggGD + ggSGDCs + plot_annotation(title = comm)
 ggsave(width = 20, height = 6, 
-       filename = paste0("results/03_distance_decay/IBD_beta_noSeychelles_", level, "_", comm, "_", metricGD, "_", metricSD, "_", metricDIST, ".png"))
+       filename = paste0("results/3_distance_decay/IBD_beta_noSeychelles_", level, "_", comm, "_", metricGD, "_", metricSD, "_", metricDIST, ".png"))
 
 
 
 
 ## ---- decomposition SGDCs ----
 
-source("scripts/04_continuity/sgdcs_decomposition_Lamy.R")
+source("scripts/4_continuity/sgdcs_decomposition_Lamy.R")
 
 SGDC.decomp(SD = merge_beta$beta.jtu, 
             GD = merge_beta$Fst, 
@@ -258,7 +258,7 @@ decayGD_exp <- decay.model(mat_GDbeta, mat_lcdist, y.type="dissim", model.type="
 decayGD_pow <- decay.model(mat_GDbeta, mat_lcdist, y.type="dissim", model.type="pow", perm=999)
 
 # plots
-png(paste0("results/03_distance_decay/Decay_beta_noSeychelles_", level, "_", comm, "_", metricGD, "_", metricSD, "_", metricDIST, ".png"),
+png(paste0("results/3_distance_decay/Decay_beta_noSeychelles_", level, "_", comm, "_", metricGD, "_", metricSD, "_", metricDIST, ".png"),
     width = 15, height = 6, units = 'in', res = 300)
 par(mfrow=c(1,2))
 

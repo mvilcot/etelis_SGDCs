@@ -5,7 +5,7 @@ level = "site"
 
 # read genlight and remove locations with less than 2 individuals
 genlight <- 
-  read.genlight(filters, level, removeless2ind = TRUE)
+  read.genlight(filters, level)
 
 
 
@@ -50,9 +50,10 @@ genlight_list <- lapply(1:100, function(i){
                 ind.list = samples_to_keep,
                 mono.rm = TRUE)
   
+  # iteration
   i = i+1
 })
 
-saveRDS(genlight_list, 
-        "intermediate/01_genetic_diversity/Genlight_Etelis_coruscans_ordered_missind_callrate0.70_maf0.05_resampled.RDS")
+genlight_list %>% 
+  saveRDS("intermediate/1_genetic_diversity/Genlight_Etelis_coruscans_ordered_missind_callrate0.70_maf0.05_resampled.RDS")
 

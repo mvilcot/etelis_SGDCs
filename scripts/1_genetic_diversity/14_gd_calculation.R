@@ -6,9 +6,7 @@ level = "site"
 
 # read genlight  
 genlight <- 
-  read.genlight(filters, level, removeless2ind = TRUE)
-
-
+  read.genlight(filters, level)
 
 
 
@@ -155,10 +153,10 @@ list_gd_beta_pair <-
 
 
 ## ---- export ----
-saveRDS(BS, paste0("intermediate/01_genetic_diversity/basic_stats_", level, ".RDS"))
-write.csv(gd_global, paste0("results/01_genetic_diversity/gd_table_global_", level, ".csv"), row.names = F, quote = F)
-write.csv(gd_alpha, paste0("results/01_genetic_diversity/gd_table_", level, ".csv"), row.names = F, quote = F)
-saveRDS(list_gd_beta_pair, paste0("results/01_genetic_diversity/gd_list_pairwise_", level, ".RDS"))
+saveRDS(BS, paste0("intermediate/1_genetic_diversity/basic_stats_", level, ".RDS"))
+write.csv(gd_global, paste0("results/1_genetic_diversity/gd_table_global_", level, ".csv"), row.names = F, quote = F)
+write.csv(gd_alpha, paste0("results/1_genetic_diversity/gd_table_", level, ".csv"), row.names = F, quote = F)
+saveRDS(list_gd_beta_pair, paste0("results/1_genetic_diversity/gd_list_pairwise_", level, ".RDS"))
 
 
 

@@ -14,6 +14,7 @@ library(ggh4x)
 library(paletteer)      # palette
 library(patchwork)      # easy multiple plot
 library(gridExtra)      # easy multiple plot
+library(viridis)
 
 # spatial
 library(terra)          # raster-type package
@@ -52,8 +53,11 @@ data_sites <- read.csv("data/metadata_sites.csv")
 
 data_samples <- 
   data_samples %>% 
-  left_join(data_sites, by = c("station", "site"))
+  left_join(data_sites, by = c("station", "site")) %>%
+  arrange(order)
 
+# data_samples[,1:19] %>%
+#   write.csv("intermediate/0_sampling_design/metadata_samples_ordered.csv", row.names = F, quote = F, na = "")
 
 # species data
 data_Etelis <- readRDS("data/Presence_data_Fishbase_Etelis_coruscans.RDS")
@@ -88,14 +92,13 @@ melt.dist <- function(distmat, metric) {
 
 read.genlight <- function(filters = "missind_callrate0.70_maf0.05",
                           level = "site",
-                          removeless2ind = FALSE,
                           site2drop = NULL,
                           site2keep = NULL,
                           station2drop = NULL,
                           station2keep = NULL){
   
   # read genlight  
-  genlight <- readRDS(paste0("intermediate/01_genetic_diversity/Genlight_Etelis_coruscans_ordered_", filters, ".RDS"))
+  genlight <- readRDS(paste0("intermediate/1_genetic_diversity/Genlight_Etelis_coruscans_ordered_", filters, ".RDS"))
   
   # set population to site
   genlight@pop <- 
@@ -133,12 +136,6 @@ read.genlight <- function(filters = "missind_callrate0.70_maf0.05",
   genlight@pop <- 
     genlight@other[["ind.metrics"]][[level]] %>%
     droplevels()
-  
-  # remove populations with less than two individuals
-  if (removeless2ind == TRUE){
-    cat("removing", level, ":", names(which(table(genlight@pop) < 2)), "\n")
-    genlight <- gl.drop.pop(genlight, pop.list = names(which(table(genlight@pop) < 2)), recalc = T, mono.rm = T)
-  }
 
   # return
   return(genlight)  
@@ -165,27 +162,28 @@ read.genlight <- function(filters = "missind_callrate0.70_maf0.05",
 
 
 
+
 ## ---- arborescence ----
 dir.create("intermediate/", showWarnings = F)
-dir.create("intermediate/00_sampling_sites/", showWarnings = F)
-dir.create("intermediate/01_genetic_diversity/", showWarnings = F)
-dir.create("intermediate/02_species_diversity/", showWarnings = F)
-dir.create("intermediate/03_distance_decay/", showWarnings = F)
-dir.create("intermediate/05_re_Lesturgie/", showWarnings = F)
+dir.create("intermediate/0_sampling_design/", showWarnings = F)
+dir.create("intermediate/1_genetic_diversity/", showWarnings = F)
+dir.create("intermediate/2_species_diversity/", showWarnings = F)
+dir.create("intermediate/3_distance_decay/", showWarnings = F)
+dir.create("intermediate/5_re_Lesturgie/", showWarnings = F)
 
 dir.create("results/", showWarnings = F)
-dir.create("results/00_sampling_sites/", showWarnings = F)
-dir.create("results/01_genetic_diversity/", showWarnings = F)
-dir.create("results/02_species_diversity/", showWarnings = F)
-dir.create("results/03_distance_decay/", showWarnings = F)
-dir.create("results/04_continuity/", showWarnings = F)
-dir.create("results/05_re_Lesturgie/", showWarnings = F)
+dir.create("results/0_sampling_design/", showWarnings = F)
+dir.create("results/1_genetic_diversity/", showWarnings = F)
+dir.create("results/2_species_diversity/", showWarnings = F)
+dir.create("results/3_distance_decay/", showWarnings = F)
+dir.create("results/4_continuity/", showWarnings = F)
+dir.create("results/5_re_Lesturgie/", showWarnings = F)
 
 
 
 ## ---- scripts ----
 # 1. ...
-# source("scripts/01_genetic_diversity/01_snp_fitering.R")
+# source("scripts/1_genetic_diversity/11_snp_fitering.R")
 
 
 

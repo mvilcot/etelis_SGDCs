@@ -15,7 +15,7 @@ dist_Ecoruscans <-
   data.frame(phylodist = dist_phylo[, "Etelis_coruscans"]) %>% 
   rownames_to_column("species")
 
-write.csv(dist_Ecoruscans, "intermediate/02_species_diversity/Phylogenetic_distance_to_Etelis_coruscans.csv",
+write.csv(dist_Ecoruscans, "intermediate/2_species_diversity/Phylogenetic_distance_to_Etelis_coruscans.csv",
           row.names = F, quote = F)
 
 # keep only species in target community, and for which we have presence data
@@ -35,7 +35,7 @@ for (d in dist_chronogram){
     pull(species)
 }
 
-saveRDS(list_communities, "intermediate/02_species_diversity/List_community_phylogenetic_distance.RDS")
+saveRDS(list_communities, "intermediate/2_species_diversity/List_community_phylogenetic_distance.RDS")
 
 
 
@@ -90,7 +90,7 @@ list_species <-
 list_communitiesFB[[cla]] <- list_species
 
 
-saveRDS(list_communitiesFB, "intermediate/02_species_diversity/List_community_taxonomic_scale_Fishbase.RDS")
+saveRDS(list_communitiesFB, "intermediate/2_species_diversity/List_community_taxonomic_scale_Fishbase.RDS")
 
 
 
@@ -130,7 +130,7 @@ data_depth[is.na(data_depth)] <- 0
 data_depth <- data_depth[, 1:5]
 colnames(data_depth) <- depth_categories
 
-# write.csv(data_depth, "intermediate/02_species_diversity/species_depth_categories.csv", 
+# write.csv(data_depth, "intermediate/2_species_diversity/species_depth_categories.csv", 
 #           row.names = T, quote = F)
 
 
@@ -158,7 +158,7 @@ for (depth in depth_categories){
 
 
 # export
-saveRDS(list_communities, "intermediate/02_species_diversity/List_community_depth_category.RDS")
+saveRDS(list_communities, "intermediate/2_species_diversity/List_community_depth_category.RDS")
 
 
 
