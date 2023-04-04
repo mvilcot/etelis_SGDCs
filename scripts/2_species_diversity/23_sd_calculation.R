@@ -9,8 +9,8 @@ PAsite <- readRDS("intermediate/2_species_diversity/PA_Mat_GaspObis_site.RDS")
 PAall <- readRDS("intermediate/2_species_diversity/PA_Mat_GaspObis_allstations.RDS")
 
 # comm_delin = "depth_category"
-# comm_delin = "taxonomic_scale"
-comm_delin = "taxonomic_scale_Fishbase"
+comm_delin = "taxonomic_scale_datasp2"
+# comm_delin = "taxonomic_scale_Fishbase"
 # comm_delin = "phylogenetic_distance"
 
 list_communities <- readRDS(paste0("intermediate/2_species_diversity/List_community_", comm_delin, ".RDS"))
@@ -33,15 +33,15 @@ for (comm in names(list_communities)){
   ## ---- subset to community ----
   PAstation_comm <-
     PAstation %>% 
-    select(all_of(c("station", list_communities[[comm]])))
+    dplyr::select(all_of(c("station", list_communities[[comm]])))
   
   PAsite_comm <-
     PAsite %>% 
-    select(all_of(c("site", list_communities[[comm]])))
+    dplyr::select(all_of(c("site", list_communities[[comm]])))
   
   PAall_comm <-
     PAall %>% 
-    select(all_of(list_communities[[comm]]))
+    dplyr::select(all_of(list_communities[[comm]]))
   
   ## ---- alpha diversity ----
   # Species richness at each station
@@ -149,11 +149,11 @@ sd_global <-
 
 
 ## ---- export ----
-write.csv(sd_global, paste0("results/2_species_diversity/sd_table_global_", comm_delin, ".csv"), row.names = FALSE)
-write.csv(sd_alpha_site, paste0("results/2_species_diversity/sd_table_site_", comm_delin, ".csv"), row.names = FALSE)
-write.csv(sd_alpha_station, paste0("results/2_species_diversity/sd_table_station_", comm_delin, ".csv"), row.names = FALSE)
-saveRDS(list_sd_beta_site_pair, paste0("results/2_species_diversity/sd_list_pairwise_site_", comm_delin, ".RDS"))
-saveRDS(list_sd_beta_station_pair, paste0("results/2_species_diversity/sd_list_pairwise_station_", comm_delin, ".RDS"))
+sd_global %>% write.csv(paste0("results/2_species_diversity/sd_table_global_", comm_delin, ".csv"), row.names = FALSE)
+sd_alpha_site %>%  write.csv(paste0("results/2_species_diversity/sd_table_site_", comm_delin, ".csv"), row.names = FALSE)
+sd_alpha_station %>% write.csv(paste0("results/2_species_diversity/sd_table_station_", comm_delin, ".csv"), row.names = FALSE)
+list_sd_beta_site_pair %>% saveRDS(paste0("results/2_species_diversity/sd_list_pairwise_site_", comm_delin, ".RDS"))
+list_sd_beta_station_pair %>% saveRDS(paste0("results/2_species_diversity/sd_list_pairwise_station_", comm_delin, ".RDS"))
 
 
 

@@ -10,7 +10,7 @@ data_PA <- readRDS("data/PA_Mat_GaspObis.RDS")
 # extract sample sites from meta data
 sites_vect <- 
   data_sites %>% 
-  select(c(station, Longitude_approx, Latitude_approx)) %>%
+  dplyr::select(c(station, Longitude_approx, Latitude_approx)) %>%
   vect(geom = c("Longitude_approx", "Latitude_approx"), crs = "WGS84")
 # writeVector(sites_vect, "intermediate/0_sampling_design/sites_vect.gpkg")
 
@@ -77,6 +77,14 @@ PAstation_split <- lapply(PA_split, pa.lonlat2site)
 
 # re-join all
 PAstation <- plyr::join_all(dfs = PAstation_split, type = 'left', by = 'station')
+
+# order
+PAstation <-
+  PAstation %>% 
+  arrange(factor(station, levels = levels(data_samples$station)))
+  # left_join(data_sites[,c("station", "order")]) %>% 
+  # arrange(order) %>% 
+  # dplyr::select(-order)
 
 # save
 saveRDS(PAstation, "intermediate/2_species_diversity/PA_Mat_GaspObis_station.RDS")
@@ -176,7 +184,7 @@ saveRDS(PAstation, "intermediate/2_species_diversity/PA_Mat_GaspObis_station.RDS
 
 sites_sub <-
   data_sites %>% 
-  select(site, station)
+  dplyr::select(site, station)
   
 PAsite <-
   sites_sub %>%
@@ -185,6 +193,13 @@ PAsite <-
   group_by(site, species) %>% 
   summarise(pa = max(value, na.rm = TRUE), .groups = "keep") %>%  # count presence within all stations of a site 
   pivot_wider(names_from = "species", values_from = "pa")
+
+
+# order
+PAsite <-
+  PAsite %>% 
+  arrange(factor(site, levels = levels(data_samples$site)))
+
 
 saveRDS(PAsite, "intermediate/2_species_diversity/PA_Mat_GaspObis_site.RDS")
 

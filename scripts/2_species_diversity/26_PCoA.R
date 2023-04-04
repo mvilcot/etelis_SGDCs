@@ -5,7 +5,9 @@ library(glue)
 # get distance matrix
 
 level = "site"
-sd_beta <- readRDS(paste0("results/2_species_diversity/sd_list_pairwise_", level, ".RDS"))
+comm_delin = "taxonomic_scale_datasp2"
+
+sd_beta <- readRDS(paste0("results/2_species_diversity/sd_list_pairwise_", level, "_", comm_delin, ".RDS"))
 
 
 
@@ -48,6 +50,8 @@ gg_grob <- arrangeGrob(grobs = gg_list,
           ncol = length(names(sd_beta)), 
           nrow = length(names(sd_beta[[1]])))
 
+plot(gg_grob)
+
 ggsave(gg_grob, width = 20, height = 10, 
        filename = "results/2_species_diversity/PCoA_beta_species_diversity.png")
 
@@ -58,10 +62,10 @@ ggsave(gg_grob, width = 20, height = 10,
 level = "site"
 
 gd_global <- read.csv(paste0("results/1_genetic_diversity/gd_table_global_", level, ".csv"))
-sd_global <- read.csv(paste0("results/2_species_diversity/sd_table_global.csv"))
+sd_global <- read.csv(paste0("results/2_species_diversity/sd_table_global_", comm_delin, ".csv"))
 
 gd_alpha <- read.csv(paste0("results/1_genetic_diversity/gd_table_", level, ".csv"))
-sd_alpha <- read.csv(paste0("results/2_species_diversity/sd_table_", level, ".csv"))
+sd_alpha <- read.csv(paste0("results/2_species_diversity/sd_table_", level, "_", comm_delin, ".csv"))
 
 
 ## ---- handle data ----
@@ -91,8 +95,15 @@ sd_alpha <-
 table_alpha <- 
   gd_alpha %>% 
   left_join(sd_alpha, by = level) %>% 
-  select(site, community, Hs, richness_site) %>% 
+  dplyr::select(site, community, Hs, richness_site) %>% 
   pivot_longer(cols = c("Hs", "richness_site"), names_to = "metric")
+
+# plot
+# relevel
+sd_alpha$site <- 
+  sd_alpha$site %>% 
+  ordered(levels = levels(data_samples$site))
 
 ggplot(sd_alpha, aes(x=site, y=richness_site, color=community)) + 
   geom_boxplot() 
+

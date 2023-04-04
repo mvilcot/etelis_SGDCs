@@ -43,34 +43,51 @@ library(jacpop)         # generate_pw_jaccard
 library(picante)        # pd, mpd
 library(ggtree)         # beautiful tree plot
 library(phytools)       # midpoint.root
+library(ape)
 
 
 
 ## ---- data ----
-# genetic data
-data_samples <- read.csv("data/metadata_samples.csv")
-data_sites <- read.csv("data/metadata_sites.csv")
+## genetic data
+# data_samples <- read.csv("data/metadata_samples.csv")
+# data_sites <- read.csv("data/metadata_sites.csv")
+# 
+# data_samples <-
+#   data_samples %>%
+#   left_join(data_sites, by = c("station", "site")) %>%
+#   arrange(order)
 
-data_samples <- 
-  data_samples %>% 
-  left_join(data_sites, by = c("station", "site")) %>%
-  arrange(order)
+data_samples <- read.csv("intermediate/0_sampling_design/metadata_samples_subset.csv")
+data_sites <- read.csv("intermediate/0_sampling_design/metadata_sites_subset.csv")
+
+for (level in c("site", "station")){
+  data_samples[[level]] <- 
+    data_samples[[level]] %>% 
+    ordered(levels = unique(data_samples[order(data_samples$order),][[level]])) %>% 
+    droplevels()
+}
 
 # data_samples[,1:19] %>%
 #   write.csv("intermediate/0_sampling_design/metadata_samples_ordered.csv", row.names = F, quote = F, na = "")
 
-# species data
+## species data
 data_Etelis <- readRDS("data/Presence_data_Fishbase_Etelis_coruscans.RDS")
 
-# taxonomy data
+## taxonomy data
 data_species <- read.csv("data/data_species_depth_range_teleo.csv")
 # data_species2 <- read.csv("data/data_species.csv")
-# data_fishtree <- read.csv("data/PFC_taxonomy.csv")
-# data_fishbase <- rfishbase::load_taxa()
-# 
+data_fishtree <- read.csv("data/PFC_taxonomy.csv")
+data_fishbase <- rfishbase::load_taxa()
+
 # colnames(data_fishbase) <- 
 #   tolower(colnames(data_fishbase))
 # data_fishbase$species <- gsub(" ", "_", data_fishbase$species)
+
+
+## ---- personalised plot ----
+color_perso <- c(viridis(length(levels(data_samples[[level]]))))
+names(color_perso) <- levels(data_samples[[level]])
+
 
 
 ## ---- functions ----

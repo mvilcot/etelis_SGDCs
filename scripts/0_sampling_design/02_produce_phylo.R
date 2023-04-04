@@ -1,0 +1,94 @@
+## ---- wrangle phylogenies ----
+# sample phylogeny
+
+# list_species <- 
+#   data_species %>% 
+#   filter(family %in% "Lutjanidae") %>%
+#   pull(species) # keep only species info
+# tree_sp  <- fishtree_phylogeny(species = list_species)
+
+tree_lutj  <- fishtree_phylogeny(rank = "Lutjanidae")
+tree_lutj$tip.label
+
+
+## ---- plot parameters ----
+# find edges
+edge <- which.edge(tree_lutj, "Etelis_coruscans") # target edge
+tip <- grep("Etelis_coruscans", tree_lutj$tip.label)
+
+# colour edges
+edgecol <- rep('darkgrey', nrow(tree_lutj$edge)) # all default to black
+edgecol[edge] <- "chartreuse4"
+
+# thicken edges
+edgethick <- rep(1, nrow(tree_lutj$edge))
+edgethick[edge] <- 3
+
+# colour tip
+tipcol <- rep('darkgrey', length(tree_lutj$tip.label)) # all default to black
+tipcol[tip] <- "chartreuse4"
+
+# colour tip
+tipfont <- rep(1, length(tree_lutj$tip.label)) # all default to black
+tipfont[tip] <- 2
+
+
+
+## ---- save plot ----
+
+png(paste0("results/0_sampling_design/Phylogeny_lutjanidae_", type, "_raboskytaxo.png"),
+    height = 10, width = 10, 
+    units = 'in', res = 300)
+
+plot.phylo(tree_lutj,
+           type = "fan",
+           align.tip.label = TRUE,
+           edge.color = edgecol,
+           edge.width = edgethick,
+           tip.color = tipcol,
+           font = tipfont,
+           no.margin = TRUE)
+
+dev.off()
+
+
+
+
+## ---- comparative taxonomy !!NOT FINISHED!! ----
+
+data_species2 <- read.csv("data/data_species.csv")
+data_fishtree <- read.csv("data/PFC_taxonomy.csv")
+data_fishbase <- rfishbase::load_taxa()
+
+Lutjanidae <- list()
+
+Lutjanidae$lutj_agnes <- 
+  data_species %>% 
+  dplyr::filter(family == "Lutjanidae") %>% 
+  pull(species) %>% 
+  as.factor()
+
+Lutjanidae$lutj_zurich <- 
+  data_species2 %>% 
+  dplyr::filter(family == "Lutjanidae") %>% 
+  pull(species) %>% 
+  as.factor()
+
+Lutjanidae$lutj_fishtree <- 
+  data_fishtree %>% 
+  dplyr::filter(family == "Lutjanidae") %>% 
+  pull(genus.species) %>% 
+  sub(pattern = " ", replacement = "_") %>% 
+  as.factor()
+
+Lutjanidae$lutj_fishbase <- 
+  data_fishbase %>% 
+  dplyr::filter(Family == "Lutjanidae") %>% 
+  pull(Species) %>% 
+  sub(pattern = " ", replacement = "_") %>% 
+  as.factor()
+
+Lutj_all <- factor(levels(c(Lutjanidae[[1]], Lutjanidae[[2]], Lutjanidae[[3]], Lutjanidae[[4]])))
+
+temp <- sapply(Lutjanidae, function(x) table(x))
+test <- do.call(cbind, temp)

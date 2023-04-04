@@ -39,9 +39,49 @@ saveRDS(list_communities, "intermediate/2_species_diversity/List_community_phylo
 
 
 
+## ---- subset PA by taxonomic scales from Zurich data ----
+list_communities <- list()
 
-## ---- subset PA by taxonomic scales ----
+# subset to family of interest
+fam = "Lutjanidae"
+ord = "Lutjaniformes"
+cla = "Actinopteri"
+
+# keep only species in target family, and for which we have presence data
+list_species <- 
+  data_species2 %>% 
+  filter(family %in% fam) %>%
+  filter(species %in% colnames(data_PA)) %>% 
+  pull(species) # keep only species info
+
+list_communities[[fam]] <- list_species
+
+# keep only species in target family, and for which we have presence data
+list_species <- 
+  data_species2 %>% 
+  filter(order %in% ord) %>%
+  filter(species %in% colnames(data_PA)) %>% 
+  pull(species) # keep only species info
+
+list_communities[[ord]] <- list_species
+
+# keep only species in target family, and for which we have presence data
+list_species <- 
+  data_species2 %>% 
+  filter(class %in% cla) %>%
+  filter(species %in% colnames(data_PA)) %>% 
+  pull(species) # keep only species info
+
+list_communities[[cla]] <- list_species
+
+# save
+saveRDS(list_communities, "intermediate/2_species_diversity/List_community_taxonomic_scale_datasp2.RDS")
+
+
+
+## ---- subset PA by taxonomic scales from Fishbase ----
 list_communitiesFB <- list()
+data_fishbase$Species <- sub(" ", "_", data_fishbase$Species)
 
 # subset to family of interest
 subfam = "Etelinae"
@@ -53,45 +93,40 @@ cla = "Actinopteri"
 # keep only species in target family, and for which we have presence data
 list_species <- 
   data_fishbase %>% 
-  filter(subfamily %in% subfam) %>%
-  filter(species %in% colnames(data_PA)) %>% 
-  pull(species) # keep only species info
+  filter(Subfamily %in% subfam) %>%
+  filter(Species %in% colnames(data_PA)) %>% 
+  pull(Species) # keep only species info
 
 list_communitiesFB[[subfam]] <- list_species
 
-
 # keep only species in target family, and for which we have presence data
 list_species <- 
   data_fishbase %>% 
-  filter(family %in% fam) %>%
-  filter(species %in% colnames(data_PA)) %>% 
-  pull(species) # keep only species info
+  filter(Family %in% fam) %>%
+  filter(Species %in% colnames(data_PA)) %>% 
+  pull(Species) # keep only species info
 
 list_communitiesFB[[fam]] <- list_species
 
-
 # keep only species in target family, and for which we have presence data
 list_species <- 
   data_fishbase %>% 
-  filter(order %in% ord) %>%
-  filter(species %in% colnames(data_PA)) %>% 
-  pull(species) # keep only species info
+  filter(Order %in% ord) %>%
+  filter(Species %in% colnames(data_PA)) %>% 
+  pull(Species) # keep only species info
 
 list_communitiesFB[[ord]] <- list_species
 
-
 # keep only species in target family, and for which we have presence data
 list_species <- 
   data_fishbase %>% 
-  filter(class %in% cla) %>%
-  filter(species %in% colnames(data_PA)) %>% 
-  pull(species) # keep only species info
+  filter(Class %in% cla) %>%
+  filter(Species %in% colnames(data_PA)) %>% 
+  pull(Species) # keep only species info
 
 list_communitiesFB[[cla]] <- list_species
 
-
 saveRDS(list_communitiesFB, "intermediate/2_species_diversity/List_community_taxonomic_scale_Fishbase.RDS")
-
 
 
 
@@ -148,12 +183,12 @@ for (depth in depth_categories){
 
 }
 
-# 
-# list_communities[["submesophotic"]] <-
-#   data_species %>% 
-#   filter(depth_min <= 100) %>% 
-#   filter(depth_max >= 350) %>% 
-#   filter(species %in% colnames(data_PA)) %>% 
+
+# list_communities[["Submesophotic"]] <-
+#   data_species %>%
+#   filter(depth_min <= 100) %>%
+#   filter(depth_max >= 350) %>%
+#   filter(species %in% colnames(data_PA)) %>%
 #   pull(species) # keep species name
 
 

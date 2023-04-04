@@ -111,10 +111,24 @@ gl4@pop <-
   gl4@other$ind.metrics[["site"]]
 
 
-## ---- Save ----
-gl4 %>% 
-  saveRDS(paste0("intermediate/1_genetic_diversity/Genlight_Etelis_coruscans_ordered_", filters, ".RDS"))
+# ## ---- subset metadata ----
+# data_samples <-
+#   data_samples %>%
+#   dplyr::filter(id %in% gl4$ind.names)
+# data_samples %>% write.csv("intermediate/0_sampling_design/metadata_samples_subset.csv",
+#                               row.names = F, quote = T)
+# 
+# data_sites <-
+#   data_sites %>%
+#   dplyr::filter(station %in% data_samples$station)
+# data_sites %>% write.csv("intermediate/0_sampling_design/metadata_sites_subset.csv",
+#                          row.names = F, quote = T)
 
+
+
+## ---- Save ----
+gl4 <-
+  readRDS(paste0("intermediate/1_genetic_diversity/Genlight_Etelis_coruscans_ordered_", filters, ".RDS"))
 
 
 ## ---- Smearplot ----

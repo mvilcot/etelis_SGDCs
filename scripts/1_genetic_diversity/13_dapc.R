@@ -1,15 +1,10 @@
-# a faire tourner sans Cocos
-# sans Seychelles
-# juste Hawaii stations
-
-
 
 ## ---- read SNPs dataset ----
 
 # parameters
-filters = "missind_callrate0.70_maf0.05"
-level = "station"
-sites = "noCocos"
+filters = "missind1_callrate0.70_maf0.05"
+level = "site"
+sites = "noCocos_noSeychelles"
 
 # read genlight
 genlight <- 
@@ -19,13 +14,14 @@ genlight <-
                 station2drop = NULL,
                 station2keep = NULL)
 
+genlight
 
 
 
 ## ---- DAPC pop as prior ----
-set.seed(999) # Setting a seed for a consistent result
-dapc <- dapc(genlight)
-saveRDS(dapc, paste0("intermediate/1_genetic_diversity/DAPC_popprior_output_", filters, "_", sites, "_", level, ".RDS"))
+# set.seed(999) # Setting a seed for a consistent result
+# dapc <- dapc(genlight)
+# saveRDS(dapc, paste0("intermediate/1_genetic_diversity/DAPC_popprior_output_", filters, "_", sites, "_", level, ".RDS"))
 
 # results
 dapc <- readRDS(paste0("intermediate/1_genetic_diversity/DAPC_popprior_output_", filters, "_", sites, "_", level, ".RDS"))
@@ -54,18 +50,16 @@ dapc_geo$grp <- factor(dapc_geo$grp,
 gg1 <- ggplot(dapc_geo, aes(x=LD1, y=LD2, color=grp)) +
   geom_point(size = 3, alpha = 0.4) +
   stat_ellipse(level = 0.67) +
-  # scale_color_manual(values=wes_palette('Zissou1', nlevels(dapc_geo$station), 'continuous')) +
-  # scale_color_paletteer_d("ggthemes::Hue_Circle") +
-  scale_color_viridis_d() +
+  # scale_color_viridis_d() +
+  scale_color_manual(values = color_perso) +
   labs(x="DPC1") +
   labs(y="DPC2") +
-  # geom_text(label=dapc_geo$id,
-  #   nudge_x = 0.25, nudge_y = 0.25,
-  #   check_overlap = T, show.legend = FALSE)+
-  # coord_fixed(ratio = 1) +
+  # geom_text(label=dapc_geo$id, nudge_x = 0.25, nudge_y = 0.25,
+  #           check_overlap = T, show.legend = FALSE)+
   theme_classic() +
+  labs(color = level) +
   labs(tag = "A")
-# gg1
+gg1
 
 
 
@@ -117,9 +111,8 @@ gg2 <- ggplot(probs_long, aes(factor(id), prob, fill = factor(cluster))) +
   labs(x = "Individuals", y = "membership probability") +
   scale_y_continuous(expand = c(0, 0)) +
   scale_x_discrete(expand = expansion(add = 0.5)) +
-  # scale_fill_paletteer_d("ggthemes::Hue_Circle") +
-  # scale_fill_hue() +
-  scale_fill_viridis_d() +
+  # scale_fill_viridis_d() +
+  scale_fill_manual(values = color_perso) +
   theme(
     panel.spacing.x = unit(0.15, "lines"),
     axis.text.x = element_blank(),
@@ -127,8 +120,9 @@ gg2 <- ggplot(probs_long, aes(factor(id), prob, fill = factor(cluster))) +
     panel.grid = element_blank(),
     panel.background = element_rect(fill = 'white', color = 'white'),
     strip.background =element_rect(fill = "white")) +
+  labs(fill = level) +
   labs(tag = "B")
-# gg2
+gg2
 
 
 
