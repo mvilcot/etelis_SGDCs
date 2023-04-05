@@ -48,7 +48,8 @@ library(ape)
 
 
 ## ---- data ----
-## genetic data
+
+# # genetic data
 # data_samples <- read.csv("data/metadata_samples.csv")
 # data_sites <- read.csv("data/metadata_sites.csv")
 # 
@@ -58,8 +59,6 @@ library(ape)
 #   arrange(order)
 
 data_samples <- read.csv("intermediate/0_sampling_design/metadata_samples_subset.csv")
-data_sites <- read.csv("intermediate/0_sampling_design/metadata_sites_subset.csv")
-
 for (level in c("site", "station")){
   data_samples[[level]] <- 
     data_samples[[level]] %>% 
@@ -70,18 +69,47 @@ for (level in c("site", "station")){
 # data_samples[,1:19] %>%
 #   write.csv("intermediate/0_sampling_design/metadata_samples_ordered.csv", row.names = F, quote = F, na = "")
 
-## species data
+
+
+## presence data
 data_Etelis <- readRDS("data/Presence_data_Fishbase_Etelis_coruscans.RDS")
+
+
 
 ## taxonomy data
 data_species <- read.csv("data/data_species_depth_range_teleo.csv")
 # data_species2 <- read.csv("data/data_species.csv")
-data_fishtree <- read.csv("data/PFC_taxonomy.csv")
-data_fishbase <- rfishbase::load_taxa()
+# data_fishtree <- read.csv("data/PFC_taxonomy.csv")
+# data_fishbase <- rfishbase::load_taxa()
 
 # colnames(data_fishbase) <- 
 #   tolower(colnames(data_fishbase))
 # data_fishbase$species <- gsub(" ", "_", data_fishbase$species)
+
+
+
+## spatial data
+data_sites <- read.csv("intermediate/0_sampling_design/metadata_sites_subset.csv")
+
+# relevel
+for (level in c("site", "station")){
+  data_sites[[level]] <- 
+    data_sites[[level]] %>% 
+    ordered(levels = unique(data_sites[order(data_sites$order),][[level]])) %>% 
+    droplevels()
+}
+
+
+# get mean coordinates by location
+coord_site <- 
+  data_sites %>% 
+  group_by(site) %>% 
+  summarise(longitude=mean(Longitude_approx),
+            latitude=mean(Latitude_approx)) %>% 
+  arrange(factor(site, levels(data_samples$site))) %>%
+  column_to_rownames("site")
+
+
 
 
 ## ---- personalised plot ----
@@ -91,8 +119,10 @@ names(color_perso) <- levels(data_samples[[level]])
 
 
 ## ---- functions ----
+
+## Melt distance matrix
 melt.dist <- function(distmat, metric) {
-  if(class(distmat)[1] == "dist") {distmat <- as.matrix(dist)}
+  if(class(distmat)[1] == "dist") {distmat <- as.matrix(distmat)}
   distmat[upper.tri(distmat, diag = T)] <- NA
   distmat <- 
     as.data.frame(distmat) %>% 
@@ -106,7 +136,7 @@ melt.dist <- function(distmat, metric) {
 }
 
 
-
+## Read a genlight, with personalized parameters
 read.genlight <- function(filters = "missind_callrate0.70_maf0.05",
                           level = "site",
                           site2drop = NULL,
@@ -160,6 +190,24 @@ read.genlight <- function(filters = "missind_callrate0.70_maf0.05",
 
 
 
+## Shift longitude [-180,180] to [0, 360]
+# shift.lonst = function(x) {
+#   geom = st_geometry(x)
+#   st_geometry(x) = st_sfc(
+#     lapply(seq_along(geom), function(i) {
+#       geom[[i]][1] = ifelse(geom[[i]][1] < 0, geom[[i]][1] + 360, geom[[i]][1])
+#       return(geom[[i]])
+#     })
+#     , crs = st_crs(geom)
+#   )
+#   return(x)
+# }
+
+shift.lon = function(df) {
+  df$longitude <- sapply(df$longitude, function(i){ifelse(i < 0, i + 360, i)})
+  return(df)
+}
+
 
 
 # # check species database
@@ -185,16 +233,15 @@ dir.create("intermediate/", showWarnings = F)
 dir.create("intermediate/0_sampling_design/", showWarnings = F)
 dir.create("intermediate/1_genetic_diversity/", showWarnings = F)
 dir.create("intermediate/2_species_diversity/", showWarnings = F)
-dir.create("intermediate/3_distance_decay/", showWarnings = F)
-dir.create("intermediate/5_re_Lesturgie/", showWarnings = F)
+dir.create("intermediate/3_distance_metrics/", showWarnings = F)
+dir.create("intermediate/4_continuity/", showWarnings = F)
 
 dir.create("results/", showWarnings = F)
 dir.create("results/0_sampling_design/", showWarnings = F)
 dir.create("results/1_genetic_diversity/", showWarnings = F)
 dir.create("results/2_species_diversity/", showWarnings = F)
-dir.create("results/3_distance_decay/", showWarnings = F)
+dir.create("results/3_distance_metrics/", showWarnings = F)
 dir.create("results/4_continuity/", showWarnings = F)
-dir.create("results/5_re_Lesturgie/", showWarnings = F)
 
 
 

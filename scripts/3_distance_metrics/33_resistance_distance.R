@@ -1,11 +1,119 @@
-# source("scripts/05_re_Lesturgie/01_crea_raster.R")
-library(ade4)
 
+dist_mat <-
+  readRDS("intermediate/3_distance_metrics/dist_geo_envt.RDS")
+
+
+
+#------------------------------------------------------------------------------#
+#--------------------------- 1. CREATE RASTER ----------------------------------
+#------------------------------------------------------------------------------#
+
+## ---- empty raster ----
+raster_empty <- raster(res = 0.6)
+
+
+## ---- coord of reefs: convert in a raster ----
+# reefs coordinates provided by ReefBase (http://www.reefbase.org)
+coord_reefs <- read.csv("data/Lesturgie_2023/raster/Reefs/ReefLocations.csv")
+coord_reefs <- cbind(coord_reefs$LON, coord_reefs$LAT)
+raster_corals <- rasterize(coord_reefs, raster_empty, field=1)
+
+# area_corals <- area(raster_corals)
+# area_cells_c <- sqrt(mean(area_corals[]))
+
+# attribute reefs value to 2000
+A2 <- raster_corals@data@values
+A2[which(is.na(A2)==F)] <- 2000
+raster_corals <- setValues(raster_corals, A2)
+
+
+## ---- coord of seamounts: convert in a raster ----
+# downloaded from https://data.unep-wcmc.org/datasets/41
+shp_seamounts <- shapefile("data/Lesturgie_2023/raster/Seamounts/Seamounts.shp") 
+coord_seamounts <- cbind(shp_seamounts$LONG, shp_seamounts$LAT)
+raster_seamounts <- rasterize(coord_seamounts, raster_empty, field=1)
+
+# attribute seamounts value to 1000
+A1 <- raster_seamounts@data@values
+A1[which(is.na(A1)==F)] <- 1000
+raster_seamounts <- setValues(raster_seamounts, A1)
+
+
+## ---- raster of the world ----
+# downloaded at https://www.naturalearthdata.com/downloads/50m-raster-data/50m-natural-earth-1/
+raster_world <- raster("data/Lesturgie_2023/raster/NE1_50M_SR_W/NE1_50M_SR_W.tif")
+
+# area_world <- area(raster_world)
+# area_cells_w <- sqrt(mean(area_world[]))
+# fa <- area_world/area_cells_w
+
+raster_world <- aggregate(raster_world, fact=18, fun=mean)
+
+
+## ---- merge 3 rasters + pacific centering ----
+raster_merge_0 <- merge(raster_corals, raster_seamounts, raster_world)
+raster_merge_W <- crop(raster_merge_0, extent(-180, 0, -90, 90))
+raster_merge_E <- crop(raster_merge_0, extent(0, 180, -90, 90))   
+extent(raster_merge_W) <- c(180, 360, -90, 90)
+
+raster_merge_PA <- merge(raster_merge_W, raster_merge_E)
+
+
+
+## ---- attribute values to ocean and land ----
+v <- raster_merge_PA$layer@data@values
+w <- v
+for (i in 1:length(v)){
+  if (v[i]<1000){   # if neither coral or seamounts
+    if (v[i]<=140){w[i] <- 500} # 500 for ocean (<140m)
+    if (v[i]>140){w[i] <- 0.000001} # 0.000001 for land 
+  }
+}
+
+raster_final <- setValues(raster_merge_PA, w)
+
+
+
+
+## ---- plot reefs + seamounts ----
+
+df_final <- as.data.frame(raster_final, xy = TRUE)
+df_final$category <- df_final$layer
+df_final$category[df_final$category==0.000001] <- "land"
+df_final$category[df_final$category==500] <- "ocean"
+df_final$category[df_final$category==1000] <- "seamount"
+df_final$category[df_final$category==2000] <- "reef"
+
+ggplot() +
+  geom_raster(data = df_final, aes(x = x, y = y, fill = category)) +
+  scale_fill_manual(values = c("#233143","#E0EAEB","#EDAE49","#d1495b")) +
+  geom_point(data = shift.lon(coord_site), aes(longitude, latitude), color = "darkgreen") +
+  theme_void() +
+  coord_fixed()
+ggsave("results/3_distance_metrics/map_seamounts_corals_ocean.pdf",
+       height = 8, width = 16)
+
+
+## ---- crop to have only IndoP ----
+raster_final_crop <- crop(raster_final, extent(35, 280, -35, 35))
+
+cat("Construction raster complete \n")
+
+
+
+
+
+#------------------------------------------------------------------------------#
+#---------------------- 2. BEST PERMEABILITY VALUES ----------------------------
+#------------------------------------------------------------------------------#
+
+library(ade4)
 
 ## ---- setup data ----
 
 level = "site"
-gd_beta <- readRDS(paste0("results/01_genetic_diversity/gd_list_pairwise_", level, ".RDS"))
+gd_alpha <- read.csv("results/1_genetic_diversity/gd_table_site.csv")
+gd_beta <- readRDS(paste0("results/1_genetic_diversity/gd_list_pairwise_", level, ".RDS"))
 
 v <- raster_final_crop$layer@data@values
 # hist(v)
@@ -39,7 +147,7 @@ cell.resistance <- function(raster, param_file, mat_fst, coords, IBR=F, LC=T){
     else if (param_file[2,col]=='d') {d <- c(d,col)} # d for dependant values
     else {
       v[which(v==param_file[4,col])] <- param_file[1,col] # for fixed values, replace raster value by resistance value
-      }
+    }
   }
   
   lh <- length(h) # how many variable needs to vary
@@ -96,7 +204,7 @@ cell.resistance <- function(raster, param_file, mat_fst, coords, IBR=F, LC=T){
     #print(sss[k,])
     if(length(d)>0){
       cat('Variable 1: iteration ',k, "/", nrow(sss), "\n")
-      }else{cat('Iteration ',k, "/", nrow(sss), "\n")}
+    }else{cat('Iteration ',k, "/", nrow(sss), "\n")}
     
   }
   best_permeability <- sss[which(sss[,3]==max(sss[,3])),]
@@ -121,7 +229,7 @@ cell.resistance <- function(raster, param_file, mat_fst, coords, IBR=F, LC=T){
       }else if(LC==T){
         temp <- costDistance(tr2, coords)
       }
-    
+      
       mantel <- mantel.randtest(temp,fst)
       sss2[k,3] <- mantel$obs
       #print(sss[k,])
@@ -129,8 +237,8 @@ cell.resistance <- function(raster, param_file, mat_fst, coords, IBR=F, LC=T){
     }
     best_permeability <- sss2[which(sss2[,3]==max(sss2[,3])),]
     best_permeability <- t(data.frame(best_permeability)) 
-    }
-   
+  }
+  
   if(length(d)>0){
     colnames(best_permeability) <- c(paste0("p_",colnames(param_file)[h]),paste0("p_",colnames(param_file)[d]),"R")
   }else{
@@ -144,19 +252,15 @@ cell.resistance <- function(raster, param_file, mat_fst, coords, IBR=F, LC=T){
 
 
 
-## ---- apply ----
-coords <- 
-  coord_sites %>% 
-  dplyr::select(c(longitude, latitude)) %>% 
-  as.matrix()
+## ---- find best permeability value ----
 
 perm <- cell.resistance(raster = raster_final_crop, 
                         param_file = param_file,
                         mat_fst = gd_beta$Fst,
-                        coords = coords,
+                        coords = as.matrix(coord_site),
                         IBR = F,
                         LC = T
-                        )
+)
 
 perm$best_permeability
 
@@ -164,19 +268,30 @@ plot(perm$sss[,1], perm$sss[,3])
 plot(perm$sss2[,2], perm$sss2[,3])
 
 
-## ---- get least cost distance mat from resistance ---
-v <- as.numeric(raster$layer@data@values)
+
+
+
+## ---- 3. LEAST COST DISTANCE ----
+v <- as.numeric(raster_final_crop$layer@data@values)
 q <- as.numeric(v)
 q[which(v==500)] <- 1 # ocean
-q[which(v==1000)] <- 23 # seamounts
-q[which(v==2000)] <- 100 # coral
+q[which(v==1000)] <- as.data.frame(perm$best_permeability)$p_seamounts # seamounts
+q[which(v==2000)] <- as.data.frame(perm$best_permeability)$p_corals # coral
 
 raster_new <- setValues(raster_final_crop, q)
 tr1 <- transition(raster_new, mean, directions=8)  
 tr2 <- geoCorrection(tr1, type="r")
-mat_IBR <- costDistance(tr2, coords)
+
+dist_mat$leastcost <- 
+  gdistance::costDistance(tr2, as.matrix(shift.lon(coord_site)))
+
 mantel.randtest(mat_IBR, gd_beta$Fst)
 
-write.csv(as.matrix(mat_IBR), "intermediate/05_re_Lesturgie/least_cost_distance_IBR_23_100.csv")
+
+
+## ---- export ----
+
+dist_mat %>% 
+  saveRDS("intermediate/3_distance_metrics/dist_geo_envt_res.RDS")
 
 
