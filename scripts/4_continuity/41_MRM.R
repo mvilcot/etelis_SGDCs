@@ -1,101 +1,134 @@
+## ---- load ----
+dist_merge <-
+  read_csv("results/3_distance_metrics/dist_geo_envt_res_gd_sd.csv")
+
+dist_mat <-
+  readRDS("intermediate/3_distance_metrics/dist_geo_envt_res_gd_sd.RDS")
+
+
 ## ---- parameters ----
 # communities delineation
 comm_delin = "taxonomic_scale_datasp2"
 list_communities <- readRDS(paste0("intermediate/2_species_diversity/List_community_", comm_delin, ".RDS"))
 
+names(dist_mat)
+
 # parameters
 comm = names(list_communities)[1]
 metricSD = paste(comm, "beta.jtu", sep = ".")
 metricGD = "Fst"
+metricDIST = "environment"
 
 
 ## ---- quick correlations ----
-model <- cor(dist_merge[-c(1:2)])
+model <- cor(dist_merge[-c(1:3)])
 corrplot::corrplot(model)
 
 
+# ## ---- subset sites ----
+# loc = "Seychelles"
+# 
+# for(i in 1:length(dist_mat)){
+#   dist_mat[[i]] <- as.matrix(dist_mat[[i]])
+#   dist_mat[[i]] <- dist_mat[[i]][!grepl(loc, rownames(dist_mat[[i]])),
+#                                  !grepl(loc, colnames(dist_mat[[i]]))]
+#   dist_mat[[i]] <- as.dist(dist_mat[[i]])
+# }
+# 
+# dist_merge <- dist_merge[!grepl(loc, dist_merge$site),]
 
-## ---- statistics ----
 
-# metricDIST = 'geodist'; matDIST = mat_geodist
-metricDIST = 'lcdist'; matDIST = mat_lcdist
 
-# LM
-summary(lm(merge_beta[[metricSD]] ~ merge_beta[[metricDIST]]))
-summary(lm(merge_beta[[metricGD]] ~ merge_beta[[metricDIST]]))
+## ---- IBD simple ----
 
 # MRM
-MRM(merge_beta[[metricSD]] ~ merge_beta[[metricDIST]], nperm = 9999)
-MRM(merge_beta[[metricGD]] ~ merge_beta[[metricDIST]], nperm = 9999)
+sMRM_IBDsd <- MRM(dist_mat[[metricSD]] ~ dist_mat[[metricDIST]], nperm = 9999)
+sMRM_IBDgd <- MRM(dist_mat[[metricGD]] ~ dist_mat[[metricDIST]], nperm = 9999)
+sMRM_SGDC <- MRM(dist_mat[[metricSD]] ~ dist_mat[[metricGD]], nperm = 9999)
+# MRM(dist_merge[[metricSD]] ~ dist_merge[[metricDIST]], nperm = 9999) # same with distance matrix on long df
 
 # Mantel
-stat_SDmantel <- vegan::mantel(as.dist(mat_SDbeta), as.dist(matDIST), permutations = 9999)
-stat_GDmantel <- vegan::mantel(as.dist(mat_GDbeta), as.dist(matDIST), permutations = 9999)
-stat_SGDCmantel <- vegan::mantel(as.dist(mat_SDbeta), as.dist(mat_GDbeta), permutations = 9999)
+sMantel_IBDsd <- vegan::mantel(dist_mat[[metricSD]], dist_mat[[metricDIST]], permutations = 9999)
+sMantel_IBDgd <- vegan::mantel(dist_mat[[metricGD]], dist_mat[[metricDIST]], permutations = 9999)
+sMantel_SGDC <- vegan::mantel(dist_mat[[metricSD]], dist_mat[[metricGD]], permutations = 9999)
 
+# distance decay models
+sDecay_IBDsd <- decay.model(dist_mat[[metricSD]], dist_mat[[metricDIST]], y.type="dissim", model.type="pow", perm=999)
+sDecay_IBDgd <- decay.model(dist_mat[[metricGD]], dist_mat[[metricDIST]], y.type="dissim", model.type="pow", perm=999)
+
+plot(dist_mat[[metricDIST]], dist_mat[[metricSD]], pch = 16)
+plot.decay(sDecay_IBDsd, col="green", remove.dots=T, add=T, lwd=2)
+
+plot(dist_mat[[metricDIST]], dist_mat[[metricGD]], pch = 16)
+plot.decay(sDecay_IBDgd, col="green", remove.dots=T, add=T, lwd=2)
+
+# # multiple
+# MRM(dist_merge[[metricGD]] ~ 
+#       dist_merge[[paste(names(list_communities)[1], "beta.jtu", sep = ".")]] + 
+#       dist_merge[[paste(names(list_communities)[2], "beta.jtu", sep = ".")]] + 
+#       dist_merge[[paste(names(list_communities)[3], "beta.jtu", sep = ".")]] , 
+#     nperm = 9999)
 
 
 ## ---- plot ----
 # add Seychelles color
-merge_beta$Seychelles <- "No"
-merge_beta[grep("Seychelles", merge_beta[[level]]),]$Seychelles <- "Yes"
+dist_merge$Seychelles <- "No"
+dist_merge[grep("Seychelles", dist_merge$site),]$Seychelles <- "Yes"
 
 # species IBD
 ggSD <- 
-  ggplot(merge_beta) +
-  geom_point(aes(.data[[metricDIST]], .data[[metricSD]], 
-                 color = Seychelles), show.legend = F) +
+  ggplot(dist_merge) +
+  geom_point(aes(.data[[metricDIST]], .data[[metricSD]], color = Seychelles), show.legend = F) +
   scale_color_brewer(palette="Dark2") +
   annotate('text', 
-           x=min(merge_beta[[metricDIST]]), y=max(merge_beta[[metricSD]]),
+           x=min(dist_merge[[metricDIST]]), y=max(dist_merge[[metricSD]]),
            hjust = 0, vjust = 1,
-           label=paste0("r Mantel = ", round(stat_SDmantel$statistic, 4), "\np = ", round(stat_SDmantel$signif, 5))) + 
+           label=paste0("r Mantel = ", round(sMantel_IBDsd$statistic, 4), ", p = ", round(sMantel_IBDsd$signif, 5),
+                        "\nr MRM = ", round(sMRM_IBDsd$r.squared[["R2"]], 4), ", p = ", round(sMRM_IBDsd$r.squared[["pval"]], 5))) +
   labs(title = "Species IBD")
 
 # genetic IBD
 ggGD <- 
-  ggplot(merge_beta) +
-  geom_point(aes(.data[[metricDIST]], .data[[metricGD]], 
-                 color = Seychelles), show.legend = F) +
+  ggplot(dist_merge) +
+  geom_point(aes(.data[[metricDIST]], .data[[metricGD]], color = Seychelles), show.legend = F) +
   scale_color_brewer(palette="Dark2") +
   annotate('text', 
-           x=min(merge_beta[[metricDIST]]), y=max(merge_beta[[metricGD]]),
+           x=min(dist_merge[[metricDIST]]), y=max(dist_merge[[metricGD]]),
            hjust = 0, vjust = 1,
-           label=paste0("r Mantel = ", round(stat_GDmantel$statistic, 4), "\np = ", round(stat_GDmantel$signif, 5))) +
+           label=paste0("r Mantel = ", round(sMantel_IBDgd$statistic, 4), ", p = ", round(sMantel_IBDgd$signif, 5),
+                        "\nr MRM = ", round(sMRM_IBDgd$r.squared[["R2"]], 4), ", p = ", round(sMRM_IBDgd$r.squared[["pval"]], 5))) +
   labs(title = "Genetics IBD")
 
 
 # SGDCs
 ggSGDCs <-
-  ggplot(merge_beta) +
+  ggplot(dist_merge) +
   geom_point(aes(.data[[metricSD]], .data[[metricGD]], color = Seychelles)) +
   scale_color_brewer(palette="Dark2") +
-  # xlab(paste0(metricSD, " (", comm, ")")) +
-  # geom_text_repel(aes(label = sites), size=3) +
-  # ggtitle(paste0(patt)) +
   annotate('text', 
-           x=min(merge_beta[[metricSD]]), y=max(merge_beta[[metricGD]]),
+           x=min(dist_merge[[metricSD]]), y=max(dist_merge[[metricGD]]),
            hjust = 0, vjust = 1,
-           label=paste0("r Mantel = ", round(stat_SGDCmantel$statistic, 4), "\np = ", round(stat_SGDCmantel$signif, 4))) +
+           label=paste0("r Mantel = ", round(sMantel_SGDC$statistic, 4), ", p = ", round(sMantel_SGDC$signif, 4),
+                        "\nr MRM = ", round(sMRM_SGDC$r.squared[["R2"]], 4), ", p = ", round(sMRM_SGDC$r.squared[["pval"]], 5))) +
   labs(title = "SGDC")
 
 
 # merge plots
 ggSD + ggGD + ggSGDCs + plot_annotation(title = comm)
 ggsave(width = 20, height = 6, 
-       filename = paste0("results/3_distance_decay/IBD_beta_noSeychelles_", level, "_", comm, "_", metricGD, "_", metricSD, "_", metricDIST, ".png"))
+       filename = paste0("results/4_continuity/IBD_SGDC_beta_allsites_", metricSD, "_", metricGD, "_", metricDIST, ".png"))
 
 
 
 
-## ---- decomposition SGDCs ----
-
-source("scripts/4_continuity/sgdcs_decomposition_Lamy.R")
-
-SGDC.decomp(SD = merge_beta$beta.jtu, 
-            GD = merge_beta$Fst, 
-            FACTOR = merge_beta[,c("geodist","lcdist")])
-
+# ## ---- decomposition SGDCs ----
+# 
+# source("scripts/unsorted/_continuity/sgdcs_decomposition_Lamy.R")
+# 
+# SGDC.decomp(SD = dist_merge[[metricSD]], 
+#             GD = dist_merge[[metricGD]], 
+#             FACTOR = dist_merge[,c("environment","leastcost","seadist")])
+# 
 
 
 
