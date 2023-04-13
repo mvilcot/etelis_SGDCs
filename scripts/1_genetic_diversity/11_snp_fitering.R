@@ -57,7 +57,15 @@ gl <-
 # gl.report.heterozygosity(gl)
 # gl.report.rdepth(gl)
 
-
+options(max.print=2000)
+t1 <- capture.output(gl.report.callrate(gl, method = "ind"))
+t2 <- t1[38:length(t1)-1]
+t3 <- as.data.frame(t2)
+t4 <- read.table(text=sub("^(\\S+)\\s+.*\\s+(\\S+)$", "\\1 \\2", t3$t2),
+                 header=FALSE, stringsAsFactors= FALSE)
+colnames(t4) <- t4[1,]
+t4 <- t4[-1,]
+options(max.print=1000)
 
 
 ## ---- Filtering ----

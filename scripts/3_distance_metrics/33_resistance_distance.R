@@ -115,6 +115,26 @@ level = "site"
 gd_alpha <- read.csv("results/1_genetic_diversity/gd_table_site.csv")
 gd_beta <- readRDS(paste0("results/1_genetic_diversity/gd_list_pairwise_", level, ".RDS"))
 
+
+## ---- subset sites ----
+loc = "Seychelles"
+
+# beta
+for(i in 1:length(gd_beta)){
+  gd_beta[[i]] <- as.matrix(gd_beta[[i]])
+  gd_beta[[i]] <- gd_beta[[i]][!grepl(loc, rownames(gd_beta[[i]])),
+                                 !grepl(loc, colnames(gd_beta[[i]]))]
+  gd_beta[[i]] <- as.dist(gd_beta[[i]])
+}
+
+# alpha
+gd_alpha <- gd_alpha[!grepl(loc, gd_alpha$site),]
+
+# coord
+coord_site <- coord_site[!grepl(loc, rownames(coord_site)),]
+
+
+
 v <- raster_final_crop$layer@data@values
 # hist(v)
 
@@ -282,6 +302,16 @@ raster_new <- setValues(raster_final_crop, q)
 tr1 <- transition(raster_new, mean, directions=8)  
 tr2 <- geoCorrection(tr1, type="r")
 
+# get mean coordinates by location
+coord_site <- 
+  data_sites %>% 
+  group_by(site) %>% 
+  summarise(longitude=mean(Longitude_approx),
+            latitude=mean(Latitude_approx)) %>% 
+  arrange(factor(site, levels(data_samples$site))) %>%
+  column_to_rownames("site")
+
+
 dist_mat$leastcost <- 
   gdistance::costDistance(tr2, as.matrix(shift.lon(coord_site)))
 
@@ -292,6 +322,6 @@ mantel.randtest(mat_IBR, gd_beta$Fst)
 ## ---- export ----
 
 dist_mat %>% 
-  saveRDS("intermediate/3_distance_metrics/dist_geo_envt_res.RDS")
+  saveRDS("intermediate/3_distance_metrics/dist_geo_envt_res17-4.RDS")
 
 

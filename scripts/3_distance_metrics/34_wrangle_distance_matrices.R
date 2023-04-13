@@ -5,7 +5,7 @@ level = "site"
 comm_delin = "taxonomic_scale_datasp2"
 
 # read
-dist_mat <- readRDS("intermediate/3_distance_metrics/dist_geo_envt_res.RDS")
+dist_mat <- readRDS("intermediate/3_distance_metrics/dist_geo_envt_res17-4.RDS")
 gd_mat <- readRDS(paste0("results/1_genetic_diversity/gd_list_pairwise_", level, ".RDS"))
 sd_mat <- readRDS(paste0("results/2_species_diversity/sd_list_pairwise_", level, "_", comm_delin, ".RDS"))
 
@@ -52,11 +52,11 @@ dist_merge <-
 
 ## ---- save ----
 dist_merge %>% 
-  write.csv("results/3_distance_metrics/dist_geo_envt_res_gd_sd.csv", 
+  write.csv("results/3_distance_metrics/dist_geo_envt_res17-4_gd_sd.csv", 
             row.names = F, quote = F)
 
 dist_mat %>% 
-  saveRDS("intermediate/3_distance_metrics/dist_geo_envt_res_gd_sd.RDS")
+  saveRDS("intermediate/3_distance_metrics/dist_geo_envt_res17-4_gd_sd.RDS")
 
 
 ## ---- SD and GD ----

@@ -1,9 +1,9 @@
 ## ---- load ----
 dist_merge <-
-  read_csv("results/3_distance_metrics/dist_geo_envt_res_gd_sd.csv")
+  read_csv("results/3_distance_metrics/dist_geo_envt_res17-4_gd_sd.csv")
 
 dist_mat <-
-  readRDS("intermediate/3_distance_metrics/dist_geo_envt_res_gd_sd.RDS")
+  readRDS("intermediate/3_distance_metrics/dist_geo_envt_res17-4_gd_sd.RDS")
 
 
 ## ---- parameters ----
@@ -17,7 +17,7 @@ names(dist_mat)
 comm = names(list_communities)[1]
 metricSD = paste(comm, "beta.jtu", sep = ".")
 metricGD = "Fst"
-metricDIST = "environment"
+metricDIST = "leastcost"
 
 
 ## ---- quick correlations ----
