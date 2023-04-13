@@ -57,6 +57,7 @@ gl <-
 # gl.report.heterozygosity(gl)
 # gl.report.rdepth(gl)
 
+# get callrate by individual
 options(max.print=2000)
 t1 <- capture.output(gl.report.callrate(gl, method = "ind"))
 t2 <- t1[38:length(t1)-1]
@@ -65,7 +66,13 @@ t4 <- read.table(text=sub("^(\\S+)\\s+.*\\s+(\\S+)$", "\\1 \\2", t3$t2),
                  header=FALSE, stringsAsFactors= FALSE)
 colnames(t4) <- t4[1,]
 t4 <- t4[-1,]
+t4 %>%
+  rename(id = ind_name)
+
 options(max.print=1000)
+
+write.csv(t4, "results/1_genetic_diversity/gl_report_callrate_ind_Etelis_coruscans.csv",
+          quote = F, row.names = F)
 
 
 ## ---- Filtering ----
