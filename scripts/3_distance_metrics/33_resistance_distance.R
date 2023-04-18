@@ -9,14 +9,14 @@ dist_mat <-
 #------------------------------------------------------------------------------#
 
 ## ---- empty raster ----
-raster_empty <- raster(res = 0.6)
+raster_empty <- raster::raster(res = 0.6)
 
 
 ## ---- coord of reefs: convert in a raster ----
 # reefs coordinates provided by ReefBase (http://www.reefbase.org)
 coord_reefs <- read.csv("data/Lesturgie_2023/raster/Reefs/ReefLocations.csv")
 coord_reefs <- cbind(coord_reefs$LON, coord_reefs$LAT)
-raster_corals <- rasterize(coord_reefs, raster_empty, field=1)
+raster_corals <- raster::rasterize(coord_reefs, raster_empty, field=1)
 
 # area_corals <- area(raster_corals)
 # area_cells_c <- sqrt(mean(area_corals[]))
@@ -24,19 +24,19 @@ raster_corals <- rasterize(coord_reefs, raster_empty, field=1)
 # attribute reefs value to 2000
 A2 <- raster_corals@data@values
 A2[which(is.na(A2)==F)] <- 2000
-raster_corals <- setValues(raster_corals, A2)
+raster_corals <- raster::setValues(raster_corals, A2)
 
 
 ## ---- coord of seamounts: convert in a raster ----
 # downloaded from https://data.unep-wcmc.org/datasets/41
 shp_seamounts <- shapefile("data/Lesturgie_2023/raster/Seamounts/Seamounts.shp") 
 coord_seamounts <- cbind(shp_seamounts$LONG, shp_seamounts$LAT)
-raster_seamounts <- rasterize(coord_seamounts, raster_empty, field=1)
+raster_seamounts <- raster::rasterize(coord_seamounts, raster_empty, field=1)
 
 # attribute seamounts value to 1000
 A1 <- raster_seamounts@data@values
 A1[which(is.na(A1)==F)] <- 1000
-raster_seamounts <- setValues(raster_seamounts, A1)
+raster_seamounts <- raster::setValues(raster_seamounts, A1)
 
 
 ## ---- raster of the world ----
@@ -47,16 +47,16 @@ raster_world <- raster("data/Lesturgie_2023/raster/NE1_50M_SR_W/NE1_50M_SR_W.tif
 # area_cells_w <- sqrt(mean(area_world[]))
 # fa <- area_world/area_cells_w
 
-raster_world <- aggregate(raster_world, fact=18, fun=mean)
+raster_world <- raster::aggregate(raster_world, fact=18, fun=mean)
 
 
 ## ---- merge 3 rasters + pacific centering ----
-raster_merge_0 <- merge(raster_corals, raster_seamounts, raster_world)
-raster_merge_W <- crop(raster_merge_0, extent(-180, 0, -90, 90))
-raster_merge_E <- crop(raster_merge_0, extent(0, 180, -90, 90))   
+raster_merge_0 <- raster::merge(raster_corals, raster_seamounts, raster_world)
+raster_merge_W <- raster::crop(raster_merge_0, extent(-180, 0, -90, 90))
+raster_merge_E <- raster::crop(raster_merge_0, extent(0, 180, -90, 90))   
 extent(raster_merge_W) <- c(180, 360, -90, 90)
 
-raster_merge_PA <- merge(raster_merge_W, raster_merge_E)
+raster_merge_PA <- raster::merge(raster_merge_W, raster_merge_E)
 
 
 
@@ -70,7 +70,7 @@ for (i in 1:length(v)){
   }
 }
 
-raster_final <- setValues(raster_merge_PA, w)
+raster_final <- raster::setValues(raster_merge_PA, w)
 
 
 
@@ -90,12 +90,12 @@ ggplot() +
   geom_point(data = shift.lon(coord_site), aes(longitude, latitude), color = "darkgreen") +
   theme_void() +
   coord_fixed()
-ggsave("results/3_distance_metrics/map_seamounts_corals_ocean.pdf",
-       height = 8, width = 16)
+# ggsave("results/3_distance_metrics/map_seamounts_corals_ocean.pdf",
+#        height = 8, width = 16)
 
 
 ## ---- crop to have only IndoP ----
-raster_final_crop <- crop(raster_final, extent(35, 280, -35, 35))
+raster_final_crop <- raster::crop(raster_final, extent(35, 280, -35, 35))
 
 cat("Construction raster complete \n")
 
@@ -291,7 +291,10 @@ plot(perm$sss2[,2], perm$sss2[,3])
 
 
 
-## ---- 3. LEAST COST DISTANCE ----
+#------------------------------------------------------------------------------#
+#---------------------- 3. LEAST COST DISTANCE ----------------------------
+#------------------------------------------------------------------------------#
+
 v <- as.numeric(raster_final_crop$layer@data@values)
 q <- as.numeric(v)
 q[which(v==500)] <- 1 # ocean
@@ -323,5 +326,88 @@ mantel.randtest(mat_IBR, gd_beta$Fst)
 
 dist_mat %>% 
   saveRDS("intermediate/3_distance_metrics/dist_geo_envt_res17-4.RDS")
+
+
+
+
+
+
+#------------------------------------------------------------------------------#
+#--------------------------- 4. RANGE EXPANSION --------------------------------
+#------------------------------------------------------------------------------#
+
+## ---- permeability ---- 
+value_ocean <- 1
+value_coral <- 17
+value_seamount <- 4
+
+## ---- create raster ---- 
+coord_cells <- coordinates(raster_final_crop)
+
+# ATTRIBUTING PERMEABILITY VALUES
+
+#500 (ocean)
+#2000 (coraux)
+#1000 (Seamounts)
+
+mappa <- raster_final_crop
+
+x <- mappa$layer@data@values
+y <- x
+for (i in 1:length(x)){
+  if (x[i]==0.000001){}
+  if (x[i]==500){y[i] <- value_ocean}
+  if (x[i]==1000){y[i] <- value_seamount}
+  if (x[i]==2000){y[i] <- value_coral}
+}
+
+mappaLC1 <- raster::setValues(mappa, y)
+
+
+## ---- create transition matrix ---- 
+##### !!!!!!!!!!!! ERROR HERE !!!!!!!!!!!!!!!! ##############
+translay <- gdistance::transition(mappaLC1, mean, directions = 8)  
+translay <- geoCorrection(translay, type = "r") 
+
+
+## ---- least cost correlation with Hs ---- 
+mappa_corr_least_cost <- mappaLC1
+
+n_pop <- length(coord_sites[,1])
+cell_tot <- length(mappaLC1@data@values)
+for (cell in 1:cell_tot) {
+  if (mappaLC1@data@values[cell]==0.000001 ) {mappa_corr_least_cost@data@values[cell] <- NA}
+  else {
+    vett_dist <- matrix(rep(NA,n_pop), ncol=1, nrow=n_pop)
+    for (j in 1:n_pop) {
+      vett_dist[j,1]  <-  costDistance(translay, as.matrix(rbind(coord_cells[cell,], coord_sites[j,1:2])))
+    }
+    mappa_corr_least_cost@data@values[cell] <- cor(coord_sites[,3],vett_dist)
+  }
+  if (cell %% 100 == 0) {
+    print(paste0("Computing Least Cost Distance correlations: ",cell,"/",cell_tot," ...cells"))
+  }
+}
+
+saveRDS(mappa_corr_least_cost, "intermediate/05_re_Lesturgie/mappa_corr_least_cost.RDS")
+
+pdf(paste0("results/05_re_Lesturgie/RE_map_LC_IP_S3_", value_coral, "_", value_seamount, ".pdf"))
+plot(mappa_corr_least_cost)
+points(coord_sites[,1],coord_sites[,2], pch=20, cex=.7)
+dev.off()
+
+
+
+mappa_corr_least_cost2 <- disaggregate(mappa_corr_least_cost, 18)
+
+pdf(paste0("results/05_re_Lesturgie/RE_map_LC_IP_S3_qx18", value_coral, "_", value_seamount, ".pdf"))
+plot(mappa_corr_least_cost2)
+points(coord_sites[,1],coord_sites[,2], pch=20, cex=.7)
+dev.off()
+
+
+
+save.image(paste0("intermediate/05_re_Lesturgie/RE", value_coral, "_", value_seamount, ".RData"))
+
 
 

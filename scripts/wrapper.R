@@ -113,6 +113,7 @@ coord_site <-
 
 
 ## ---- personalised plot ----
+level = "site"
 color_perso <- c(viridis(length(levels(data_samples[[level]]))))
 names(color_perso) <- levels(data_samples[[level]])
 
