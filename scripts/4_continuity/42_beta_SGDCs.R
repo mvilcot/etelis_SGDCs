@@ -206,10 +206,14 @@ metricSD = paste(comm, "beta.jtu", sep = ".")
 metricGD = "Fst"
 
 
+png("results/4_continuity/variance_decomposition_beta_SGDCs.png",
+    width = 10, height = 5, units = 'in', res = 300)
+par(oma = c(2,12,2,2),
+    mar = c(1,1,1,1))
 SGDC.decomp(SD = dist_merge[[metricSD]],
             GD = dist_merge[[metricGD]],
             FACTOR = dist_merge[,c("environment","seadist")])
-
+dev.off()
 
 
 
