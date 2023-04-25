@@ -1,18 +1,18 @@
 
 ## ---- parameters ----
 # communities delineation
-comm_delin = "taxonomic_scale_datasp2"
-# comm_delin = "taxonomic_scale_Fishbase"
+# comm_delin = "taxonomic_scale_datasp2"
+comm_delin = "taxonomic_scale_Fishbase"
 # comm_delin = "depth_category"
 # comm_delin = "phylogenetic_distance"
 
 list_communities <- readRDS(paste0("intermediate/2_species_diversity/List_community_", comm_delin, ".RDS"))
 
 # parameters
-comm = names(list_communities)[1]
+comm = "Lutjanidae"
 metricSD = paste(comm, "beta.jtu", sep = ".")
 metricGD = "Fst"
-metricDIST = "leastcost"
+metricDIST = "seadist"
 
 
 ## ---- load ----
@@ -22,6 +22,7 @@ dist_merge <-
 dist_mat <-
   readRDS(paste0("intermediate/3_distance_metrics/dist_geo_envt_res17-4_gd_sd_", comm_delin, ".RDS"))
 
+names(dist_mat)
 
 
 ## ---- subset sites ----
@@ -38,15 +39,15 @@ dist_merge <- dist_merge[!grepl(loc, dist_merge$site),]
 
 
 
-## ---- 0. check assumptions ----
-model <- cor(dist_merge[-c(1:3)])
-corrplot::corrplot(model)
-
-hist(dist_mat[[metricSD]])
-hist(dist_mat[[metricGD]]) # GD not normal
-
-shapiro.test(dist_mat[[metricSD]])
-shapiro.test(dist_mat[[metricGD]]) # GD not normal
+# ## ---- 0. check assumptions ----
+# model <- cor(dist_merge[-c(1:3)])
+# corrplot::corrplot(model)
+# 
+# hist(dist_mat[[metricSD]])
+# hist(dist_mat[[metricGD]]) # GD not normal
+# 
+# shapiro.test(dist_mat[[metricSD]])
+# shapiro.test(dist_mat[[metricGD]]) # GD not normal
 
 
 
@@ -120,8 +121,8 @@ ggSGDCs <-
 
 # merge plots
 ggSD + ggGD + ggSGDCs + plot_annotation(title = comm)
-# ggsave(width = 20, height = 6, 
-#        filename = paste0("results/4_continuity/beta_SGDC_IBD_allsites_", metricSD, "_", metricGD, "_", metricDIST, ".png"))
+ggsave(width = 20, height = 6,
+       filename = paste0("results/4_continuity/IBD_beta_SGDC_noSeychelles_", metricSD, "_", metricGD, "_", metricDIST, "_", comm_delin, ".png"))
 
 
 
@@ -131,10 +132,10 @@ ggSD + ggGD + ggSGDCs + plot_annotation(title = comm)
 
 gg_list <- list()
 stat_list <- list()
-
+metricSD = "beta.jtu"
 comm = names(list_communities)[1]
 for (comm in names(list_communities)){
-  metricSDcomm = paste(comm, "beta.jtu", sep = ".")
+  metricSDcomm = paste(comm, metricSD, sep = ".")
   print(metricSDcomm)
   
   
@@ -171,7 +172,7 @@ for (comm in names(list_communities)){
 
 gg_grob <- arrangeGrob(grobs = gg_list, ncol=4)
 plot(gg_grob)
-ggsave(gg_grob, width = 20, height = 10, 
+ggsave(gg_grob, width = 20, height = 5, 
        filename = paste0("results/4_continuity/beta_SGDCs_noSeychelles_", level, "_", metricGD, "_", metricSD, "_",  comm_delin, ".png"))
 
 
@@ -180,7 +181,7 @@ ggsave(gg_grob, width = 20, height = 10,
 ## ---- 3. MRM decomposition ----
 
 names(dist_merge)
-comm = names(list_communities)[1]
+comm = "Lutjanidae"
 
 metricSD = paste(comm, "beta.jtu", sep = ".")
 metricGD = "Fst"

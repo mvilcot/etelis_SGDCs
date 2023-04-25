@@ -21,9 +21,9 @@ variables <-
     "BO_salinity",
     "BO_sstmean",
     "BO_sstmax",
-    "BO_sstmin",
-    "BO21_tempmean_bdmean",
-    "BO22_curvelltmax_bdmean")
+    "BO_sstmin")
+    # "BO21_tempmean_bdmean",
+    # "BO22_curvelltmax_bdmean")
 
 envt_layers <-
   sdmpredictors::load_layers(variables)
@@ -52,20 +52,83 @@ envt_site <-
   cbind(coord_site) 
 
 
-
 ## ---- export ----
 envt_site %>% 
   write.csv("intermediate/3_distance_metrics/bio_oracle_variables.csv",
             row.names = T, quote = F)
 
 
+## ---- plot ----
+# scale
+envt_site_scaled <- 
+  envt_site %>%
+  dplyr::select(variables) %>% 
+  scale() %>% 
+  as.data.frame() %>% 
+  rownames_to_column("site")
 
-# ## ---- plot ----
-# # Generate a nice color ramp and plot the map
-# my.colors = colorRampPalette(c("#5E85B8","#EDF0C0","#C13127"))
-# plot(envt_layers$BO_salinity, col=my.colors(1000))
-# title(cex.sub = 1.25, sub = "Maximum temperature at the sea bottom (ºC)")
-# 
+# pivot longer
+envt_site2 <-
+  envt_site %>% 
+  dplyr::select(variables) %>% 
+  rownames_to_column("site") %>% 
+  pivot_longer(cols = variables, names_to = "variable", values_to = "value")
+
+envt_site2_scaled <-
+  envt_site_scaled %>% 
+  pivot_longer(cols = variables, names_to = "variable", values_to = "value")
+
+# relevel
+envt_site2$site <- 
+  envt_site2$site %>%  
+  ordered(levels = unique(data_sites[order(data_sites$order),][["site"]]))
+
+envt_site2_scaled$site <- 
+  envt_site2_scaled$site %>%  
+  ordered(levels = unique(data_sites[order(data_sites$order),][["site"]]))
+
+# plot
+ggplot(envt_site2, aes(site, value, fill = site, color = site)) +
+  geom_boxplot() +
+  facet_wrap( ~ variable, ncol=1, scales = "free_y") +
+  scale_color_manual(values = color_perso) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+ggsave(width = 5, height = 10, 
+       filename = paste0("results/3_distance_metrics/environmental_variables_absolute.png"))
+
+ggplot(envt_site2_scaled, aes(site, value, fill = site, color = site)) +
+  geom_boxplot() +
+  facet_wrap( ~ variable, ncol=1, scales = "free_y") +
+  scale_color_manual(values = color_perso) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+ggsave(width = 5, height = 10, 
+       filename = paste0("results/3_distance_metrics/environmental_variables_scaled.png"))
+
+## ---- plot map ----
+my.colors = colorRampPalette(c("#5E85B8","#EDF0C0","#C13127"))
+
+coord_vect <- vect(shift.lon(coord_site), geom=c("longitude", "latitude"), crs = "EPSG:4326")
+
+envt_layers_360 <- 
+  terra::rotate(envt_layers, left = FALSE)
+
+envt_layers_crop <- 
+  terra::crop(envt_layers_360, extent(30, 220, -35, 35))
+
+pdf("results/3_distance_metrics/environmental_variables_plot.pdf", width = 12, height = 5)
+for(var in variables){
+  plot(envt_layers_crop[[var]], col=my.colors(1000))
+  plot(coord_vect, add = T, col = "grey20")
+  title(cex.sub = 1.25, main = var)
+}
+dev.off()
+
+
+# library(tidyterra)
+# ggplot() +
+#   geom_spatraster(data = envt_layers_crop[[variables[1]]]) +
+#   scale_fill_whitebox_c(palette = "muted") +
+#   theme_light()
 
 
 
@@ -96,6 +159,14 @@ pca_coord <-
 # fviz_eig(pca_env, addlabels = TRUE, ylim = c(0, 50))
 # fviz_pca_var(pca_env, col.var = "black")
 
+ggplot(pca_coord, aes(x=Axis1, y=Axis2, color = site)) +
+  geom_point() +
+  # labs(x=labels[1], y=labels[2]) +
+  geom_text(aes(label = site)) +
+  scale_color_manual(values = color_perso) +
+  theme(legend.position="none")
+ggsave("results/3_distance_metrics/environmental_variables_pca.png", 
+       height = 7, width = 7, units = "in", dpi = 300)
 
 
 ## ---- export ----

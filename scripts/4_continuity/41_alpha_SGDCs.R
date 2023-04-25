@@ -5,13 +5,13 @@ level = "site"
 
 # communities delineation
 # comm_delin = "taxonomic_scale_datasp2"
-# comm_delin = "taxonomic_scale_Fishbase"
+comm_delin = "taxonomic_scale_Fishbase"
 # comm_delin = "depth_category"
-comm_delin = "phylogenetic_distance"
+# comm_delin = "phylogenetic_distance"
 list_communities <- readRDS(paste0("intermediate/2_species_diversity/List_community_", comm_delin, ".RDS"))
 
 # parameters
-comm = names(list_communities)[1]
+comm = names(list_communities)[2]
 metricSD = "richness_site"
 metricGD = "Hs"
 
@@ -44,7 +44,7 @@ for (comm in names(list_communities)){
   # filter Seychelles
   table_alpha <-
     filter(table_alpha, site != "Seychelles")
-  
+
   # LM
   sgdc_alpha <- summary(lm(table_alpha[[metricGD]] ~ table_alpha[[metricSD]]))
   
@@ -69,7 +69,7 @@ for (comm in names(list_communities)){
 
 gg_grob <- arrangeGrob(grobs = gg_list, ncol=4)
 plot(gg_grob)
-ggsave(gg_grob, width = 20, height = 10, 
+ggsave(gg_grob, width = 20, height = 5, 
        filename = paste0("results/4_continuity/alpha_SGDCs_noSeychelles_", level, "_", metricGD, "_", metricSD, "_",  comm_delin, ".png"))
 
 

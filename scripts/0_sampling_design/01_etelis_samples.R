@@ -76,3 +76,24 @@ ggplot() +
 
 
 
+
+## ---- map sampling sites ----
+
+# get bathymetry data
+Bathy <- 
+  getNOAA.bathy(lon1 = -180, lon2 = 180,
+                lat1 = -30, lat2 = 30,
+                resolution = 10,
+                antimeridian = TRUE, # to be centered around pacific
+                keep = TRUE)
+
+temp <- as.data.frame(table(data_samples$site))
+colnames(temp) <- c("site", "N")
+
+coord_site2 <-
+  coord_site %>% 
+  rownames_to_column("site") %>% 
+  left_join(temp)
+# write_csv(coord_site2, "coord_sites_N.csv")
+
+

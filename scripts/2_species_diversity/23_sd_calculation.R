@@ -9,12 +9,12 @@ PAsite <- readRDS("intermediate/2_species_diversity/PA_Mat_GaspObis_site.RDS")
 PAall <- readRDS("intermediate/2_species_diversity/PA_Mat_GaspObis_allstations.RDS")
 
 # comm_delin = "depth_category"
-comm_delin = "taxonomic_scale_datasp2"
-# comm_delin = "taxonomic_scale_Fishbase"
+# comm_delin = "taxonomic_scale_datasp2"
+comm_delin = "taxonomic_scale_Fishbase"
 # comm_delin = "phylogenetic_distance"
 
 list_communities <- readRDS(paste0("intermediate/2_species_diversity/List_community_", comm_delin, ".RDS"))
-
+names(list_communities)
 
 ## ---- initiate ----
 list_sd_gamma <- list()
@@ -25,7 +25,10 @@ list_sd_beta_site_multi <- list()
 list_sd_beta_station_pair <- list()
 list_sd_beta_station_multi <- list()
 
+# lutjanidae_PA <- list()
 
+
+comm = "Lutjanidae"
 for (comm in names(list_communities)){
   
   print(comm)
@@ -87,8 +90,10 @@ for (comm in names(list_communities)){
   
   list_sd_beta_site_pair[[comm]] <- 
     beta.pair(PAsite_comm, index.family="jaccard")
-  
+
 }
+
+
 
 
 
@@ -156,4 +161,72 @@ list_sd_beta_site_pair %>% saveRDS(paste0("results/2_species_diversity/sd_list_p
 list_sd_beta_station_pair %>% saveRDS(paste0("results/2_species_diversity/sd_list_pairwise_station_", comm_delin, ".RDS"))
 
 
+
+
+
+
+
+
+## ---- :: Compare Lutjanidae dataset ----
+
+lutjanidae_list <- list()
+comm = "Lutjanidae"
+for (comm_delin in c("depth_category", "taxonomic_scale_datasp2", "taxonomic_scale_Fishbase")){
+  
+  list_communities <- readRDS(paste0("intermediate/2_species_diversity/List_community_", comm_delin, ".RDS"))
+  
+  ## subset to community
+  lutjanidae_list[[comm_delin]] <-
+    list_communities[[comm]]
+  
+}
+
+tree_lutj  <- fishtree_phylogeny(rank = "Lutjanidae")
+lutjanidae_list[["Rabosky"]] <- tree_lutj$tip.label
+
+
+library(qdapTools)
+lutjanidae_df <- t(as.matrix(mtabulate(lutjanidae_list)))
+write.csv(lutjanidae_df, "intermediate/2_species_diversity/Lutjanidae_datasets_comparison.csv", quote = F, row.names = T)
+
+
+
+
+
+
+
+## ---- :: Compare Lutjanidae dataset in PA ----
+
+lutjanidae_PA <- list()
+comm = "Lutjanidae"
+for (comm_delin in c("depth_category", "taxonomic_scale_datasp2", "taxonomic_scale_Fishbase")){
+  
+  list_communities <- readRDS(paste0("intermediate/2_species_diversity/List_community_", comm_delin, ".RDS"))
+  
+  ## subset to community
+  PAall_comm <-
+    PAall %>% 
+    dplyr::select(all_of(list_communities[[comm]]))
+  
+  ## gamma diversity
+  data.frame(community = comm) %>% 
+    cbind(richness_allstations = rowSums(PAall_comm))
+  
+  ## compare Lutjanidae database
+  if (comm == "Lutjanidae"){
+    lutjanidae_PA[[comm_delin]] <- colnames(PAall_comm[, colSums(PAall_comm) != 0])
+  }
+}
+
+
+
+tree_lutj  <- fishtree_phylogeny(rank = "Lutjanidae")
+
+# temp <- data.frame(colnames(PAall_comm[, colSums(PAall_comm) != 0]))
+# lutjanidae_df <- as.data.frame(do.call(cbind, lutjanidae_PA))
+# write.csv(lutjanidae_df, "Lutjanidae_presence_all_sites_datasets_comparison.csv", quote = F, row.names = F)
+
+library(qdapTools)
+lutjanidae_df <- t(as.matrix(mtabulate(lutjanidae_PA)))
+write.csv(lutjanidae_df, "intermediate/2_species_diversity/Lutjanidae_datasets_comparison_presence_all_sites_PA.csv", quote = F, row.names = T)
 
