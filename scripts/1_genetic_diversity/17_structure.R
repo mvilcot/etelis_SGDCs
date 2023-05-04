@@ -9,12 +9,13 @@
 # parameters
 filters = "missind1_callrate0.70_maf0.05"
 level = "site"
-sites = "noCocos"
+sites = "noSeychelles"
+nrun = 9
 
 # read genlight
 genlight <- 
   read.genlight(filters, level,
-                site2drop = NULL,
+                site2drop = "Seychelles",
                 site2keep = NULL,
                 station2drop = NULL,
                 station2keep = NULL)
@@ -23,9 +24,9 @@ genlight <-
 ## ---- convert to LEA data format ----
 
 # SNP presence/absence lfmm (package LEA, SilicoDArT)
-gl2geno(genlight, 
+dartR::gl2geno(genlight, 
         outfile = paste0("GenoLEA_Etelis_coruscans_ordered_", sites),
-        outpath='./intermediate/1_genetic_diversity')
+        outpath='intermediate/1_genetic_diversity')
 
 
 ## ---- snmf ----
@@ -34,29 +35,95 @@ library(LEA)
 # run snmf
 obj.snmf <-
   LEA::snmf(paste0("intermediate/1_genetic_diversity/GenoLEA_Etelis_coruscans_ordered_", sites, ".geno"), 
-       K = 1:10, alpha = 100, project = "new", repetitions = 1, entropy = TRUE)
+       K = 1:nrun, alpha = 100, project = "new", repetitions = 10, entropy = TRUE)
 
 # plot 
-pdf(paste0("results/1_genetic_diversity/snmf_", sites, ".pdf"),
+pdf(paste0("results/1_genetic_diversity/snmf_Etelis_coruscans_K1-", nrun, "_", sites, "_ggplot.pdf"),
     height = 8, width = 11)
 plot(obj.snmf, cex = 1.2, col = "lightblue", pch = 19)
-
-for (K in 2:10){
+K=2
+for (K in 2:nrun){
   # get the cross-entropy of the 10 runs
-  ce = cross.entropy(obj.snmf, K = K)
+  ce = LEA::cross.entropy(obj.snmf, K = K)
   # select the run with the lowest cross-entropy for K = 4
   bestrun = which.min(ce)
   # get best qmatrix
-  qmatrix <- Q(obj.snmf, K = K, run = bestrun)
-  # barplot
-  barplot(t(qmatrix), col=RColorBrewer::brewer.pal(9,"Paired"), 
-          border=NA, space=0, xlab="Individuals", 
-          ylab="Admixture coefficients")
-  # add legend
-  for (i in 1:length(levels(genlight@pop))){
-    axis(1, at=median(which(genlight@pop==levels(genlight@pop)[i])), labels=levels(genlight@pop)[i])}
+  qmatrix <- LEA::Q(obj.snmf, K = K, run = bestrun)
+  
+  # # barplot
+  # barplot(t(qmatrix), col=RColorBrewer::brewer.pal(9,"Paired"), 
+  #         border=NA, space=0, xlab="Individuals", 
+  #         ylab="Admixture coefficients")
+  # # add legend
+  # for (i in 1:length(levels(genlight@pop))){
+  #   axis(side = 1, hadj = 0, 
+  #        at = min(which(genlight@pop==levels(genlight@pop)[i])), 
+  #        labels = levels(genlight@pop)[i],
+  #   )}
+  # 
+  
+  ## ---- TEST personalized plot ----
+  
+  # create an object with membership probabilities
+  probs <- as.data.frame(qmatrix)
+  
+  # put probabilities in a tibble with IDS and labels for sites
+  probs <- 
+    as.data.frame(qmatrix) %>% 
+    cbind(id = genlight@ind.names) %>% 
+    dplyr::as_tibble() %>% 
+    dplyr::left_join(data_samples[,c("id", "site", "station", "order")], by = "id")
+  
+  # melt into long format
+  probs_long <- 
+    probs %>% 
+    tidyr::pivot_longer(colnames(qmatrix), names_to = "cluster", values_to = "prob")
+  
+  # manual relevel of the sampling sites (to avoid alphabetical ordering)
+  probs_long$station <- factor(probs_long$station, 
+                               levels = unique(probs_long[order(probs_long$order),][["station"]]), 
+                               ordered=TRUE)
+  
+  probs_long$site <- factor(probs_long$site, 
+                            levels = unique(probs_long[order(probs_long$order),][["site"]]), 
+                            ordered=TRUE)
+  
+  # set up custom facet strips
+  facetstrips <- 
+    ggh4x::strip_nested(
+      text_x = elem_list_text(size = c(8, 4)),
+      by_layer_x = TRUE,
+      clip = "off"
+    )
+  
+  gg <- ggplot(probs_long, aes(factor(id), prob, fill = factor(cluster))) +
+    geom_col() +
+    ggh4x::facet_nested(~ site,
+                 switch = "x",
+                 nest_line = element_line(size = 1, lineend = "round"),
+                 scales = "free", space = "free", strip = facetstrips) +
+    labs(x = "Individuals", y = "membership probability") +
+    scale_y_continuous(expand = c(0, 0)) +
+    scale_x_discrete(expand = expansion(add = 0.5)) +
+    scale_fill_viridis_d() +
+    # scale_fill_manual(values = color_perso) +
+    theme(
+      panel.spacing.x = unit(0.15, "lines"),
+      axis.text.x = element_blank(),
+      axis.ticks.x=element_blank(),
+      panel.grid = element_blank(),
+      panel.background = element_rect(fill = 'white', color = 'white'),
+      strip.background =element_rect(fill = "white")) +
+    labs(fill = "cluster")
+  
+  print(gg)
+  
 }
 dev.off()
+
+
+
+
 
 
 ## TESTS!!
@@ -99,7 +166,7 @@ coord <-
   as.matrix
 
 # run tess3
-obj.tess3 <- tess3(X = genotype, 
+obj.tess3 <- tess3r::tess3(X = genotype, 
                    coord = coord, K = 1:3,
                    method = "projected.ls",
                    ploidy = 2)
@@ -110,7 +177,7 @@ plot(obj.tess3, pch = 19, col = "blue",
      ylab = "Cross-validation score")
 
 # retrieve tess3 Q matrix 
-q.matrix <- qmatrix(obj.tess3, K = 2)
+q.matrix <- tess3r::qmatrix(obj.tess3, K = 2)
 
 # STRUCTURE-like barplot for the Q-matrix 
 my.colors <- c("tomato", "orange", "lightblue", "wheat","olivedrab")
@@ -125,7 +192,7 @@ axis(1, at = 1:nrow(q.matrix), labels = bp$order, las = 3, cex.axis = .4)
 library(rworldmap)
 map.polygon <- getMap(resolution = "low")
 
-pl <- ggtess3Q(q.matrix, coord, map.polygon = map.polygon)
+pl <- tess3r::ggtess3Q(q.matrix, coord, map.polygon = map.polygon)
 pl +
   geom_path(data = map.polygon, aes(x = long, y = lat, group = group)) +
   xlim(-180, 180) +
@@ -138,7 +205,7 @@ pl +
 
 ## ---- STRUCTURE ----
 library(strataG)
-structure <- gl.run.structure(
+structure <- dartR::gl.run.structure(
   genlight,
   k.range = 2:5,
   num.k.rep = 3,

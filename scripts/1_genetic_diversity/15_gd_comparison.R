@@ -19,8 +19,8 @@ BS <- readRDS(paste0("intermediate/1_genetic_diversity/basic_stats_", level, ".R
 
 # get Hs by loci by site
 gd_alpha_loci <- 
-  as_tibble(BS[["Hs"]]) %>% 
-  pivot_longer(cols = everything(), 
+  dplyr::as_tibble(BS[["Hs"]]) %>% 
+  tidyr::pivot_longer(cols = everything(), 
                names_to = level, 
                values_to = "Hs")
 

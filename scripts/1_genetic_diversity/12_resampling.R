@@ -29,7 +29,7 @@ genlight_list <- lapply(1:100, function(i){
       data_samples %>% 
       dplyr::filter(id %in% genlight$ind.names) %>% 
       dplyr::filter(.[[level]] == pop) %>% 
-      pull(id)
+      dplyr::pull(id)
     
     # if more than N individuals in a population, sample N individuals names
     if(length(samples_all) > N) { 
@@ -46,7 +46,7 @@ genlight_list <- lapply(1:100, function(i){
   
   # resample genlight
   genlight_resampled <- 
-    gl.keep.ind(x = genlight, 
+    dartR::gl.keep.ind(x = genlight, 
                 ind.list = samples_to_keep,
                 mono.rm = TRUE)
   

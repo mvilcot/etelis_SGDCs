@@ -3,7 +3,7 @@ dist_mat <-
   readRDS("intermediate/3_distance_metrics/dist_geo.RDS")
 
 
-# ## ---- current velocity ----
+# current velocity ----
 # layers_velocity <- 
 #   list_layers() %>%
 #   filter(dataset_code == "Bio-ORACLE") %>% 
@@ -12,7 +12,7 @@ dist_mat <-
 #           quote = F, row.names = F)
 
 
-## ---- load environmental predictors ----
+# load environmental predictors ----
 variables <-
   c("BO_chlomean",
     "BO_dissox",
@@ -29,7 +29,7 @@ envt_layers <-
   sdmpredictors::load_layers(variables)
 
 
-## ---- wrangle data ----
+# wrangle data ----
 # convert rasters to spatRaster
 envt_layers <- 
   rast(envt_layers)
@@ -39,7 +39,8 @@ vect_coord <-
   coord_site %>% 
   vect(geom = c("longitude", "latitude"), crs = "WGS84")
 
-## ---- extract variables by site ----
+
+# extract variables by site ----
 envt_site <- 
   terra::extract(envt_layers,
                  vect_coord,
@@ -52,17 +53,17 @@ envt_site <-
   cbind(coord_site) 
 
 
-## ---- export ----
+# export ----
 envt_site %>% 
   write.csv("intermediate/3_distance_metrics/bio_oracle_variables.csv",
             row.names = T, quote = F)
 
 
-## ---- plot ----
-# scale
-envt_site_scaled <- 
+# scale variables ----
+envt_site_scaledLOG <- 
   envt_site %>%
   dplyr::select(variables) %>% 
+  log() %>% ################# CHECK IF LOG NEEDED (cf DiBattista et al. 2020)
   scale() %>% 
   as.data.frame() %>% 
   rownames_to_column("site")
@@ -87,7 +88,9 @@ envt_site2_scaled$site <-
   envt_site2_scaled$site %>%  
   ordered(levels = unique(data_sites[order(data_sites$order),][["site"]]))
 
-# plot
+
+
+# boxplot ----
 ggplot(envt_site2, aes(site, value, fill = site, color = site)) +
   geom_boxplot() +
   facet_wrap( ~ variable, ncol=1, scales = "free_y") +
@@ -104,7 +107,9 @@ ggplot(envt_site2_scaled, aes(site, value, fill = site, color = site)) +
 ggsave(width = 5, height = 10, 
        filename = paste0("results/3_distance_metrics/environmental_variables_scaled.png"))
 
-## ---- plot map ----
+
+
+# map plot----
 my.colors = colorRampPalette(c("#5E85B8","#EDF0C0","#C13127"))
 
 coord_vect <- vect(shift.lon(coord_site), geom=c("longitude", "latitude"), crs = "EPSG:4326")
@@ -133,13 +138,17 @@ dev.off()
 
 
 
-## ---- Matrix environmental variables ----
+# PCA ----
 # read variables 
 
 # keep environmental variables
+# envt_var <- 
+#   envt_site %>% 
+#   dplyr::select(-c(x, y, longitude, latitude))
+
 envt_var <- 
-  envt_site %>% 
-  dplyr::select(-c(x, y, longitude, latitude))
+  envt_site_scaled %>% 
+  column_to_rownames("site")
 
 # run pca
 pca_env <- dudi.pca(df = envt_var, scannf = FALSE, nf = 5) 
@@ -165,13 +174,12 @@ ggplot(pca_coord, aes(x=Axis1, y=Axis2, color = site)) +
   geom_text(aes(label = site)) +
   scale_color_manual(values = color_perso) +
   theme(legend.position="none")
-ggsave("results/3_distance_metrics/environmental_variables_pca.png", 
+ggsave("results/3_distance_metrics/environmental_variables_scaled_pca.png", 
        height = 7, width = 7, units = "in", dpi = 300)
 
 
-## ---- export ----
+# export ----
 dist_mat %>% 
   saveRDS("intermediate/3_distance_metrics/dist_geo_envt.RDS")
-
 
 

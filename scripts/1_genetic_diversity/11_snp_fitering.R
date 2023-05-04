@@ -62,17 +62,22 @@ options(max.print=2000)
 t1 <- capture.output(gl.report.callrate(gl, method = "ind"))
 t2 <- t1[38:length(t1)-1]
 t3 <- as.data.frame(t2)
-t4 <- read.table(text=sub("^(\\S+)\\s+.*\\s+(\\S+)$", "\\1 \\2", t3$t2),
-                 header=FALSE, stringsAsFactors= FALSE)
+t4 <- 
+  read.table(text=sub("^(\\S+)\\s+.*\\s+(\\S+)$", "\\1 \\2", t3$t2),
+                 header=FALSE, stringsAsFactors= FALSE) %>% 
+  as_tibble()
 colnames(t4) <- t4[1,]
 t4 <- t4[-1,]
-t4 %>%
-  rename(id = ind_name)
+t5 <- 
+  t4 %>%
+  dplyr::rename(id = "ind_name") %>% 
+  dplyr::rename(site = "pop") %>% 
+  dplyr::rename(callrate = "missing_data")
 
 options(max.print=1000)
 
-write.csv(t4, "results/1_genetic_diversity/gl_report_callrate_ind_Etelis_coruscans.csv",
-          quote = F, row.names = F)
+t5 %>% 
+  write_csv("results/1_genetic_diversity/gl_report_callrate_ind_Etelis_coruscans.csv")
 
 
 ## ---- Filtering ----
@@ -82,9 +87,15 @@ write.csv(t4, "results/1_genetic_diversity/gl_report_callrate_ind_Etelis_corusca
 # Filter individuals called below 50%, identified with vcftools
 # 84913 SNPs, 364 individuals
 # Delete monomorphic loci here, that's why we have a different number of SNPs from vcftools pipeline
+ind_to_remove <-
+  t5 %>% 
+  dplyr::filter(callrate < 0.5) %>% 
+  dplyr::pull(id)
+  
+# remove c("ECO0934", "ECO0910", "ECO0912", "ECO0534", "ECO0535")
 gl1 <- 
   gl %>% 
-  gl.drop.ind(c("ECO0934", "ECO0910", "ECO0912", "ECO0534", "ECO0535"), recalc = T, mono.rm = T) 
+  gl.drop.ind(ind_to_remove, recalc = T, mono.rm = T) 
 gl1
 
 # 2 - Sites with only 1 indiviual left

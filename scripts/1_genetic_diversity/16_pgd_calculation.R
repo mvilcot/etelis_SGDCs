@@ -21,17 +21,17 @@ genind
 
 # convert to loci format
 data_loci <- 
-  genind2loci(genind)
+  pegas::genind2loci(genind)
 
 # generate individual-individual distance matrices
 dist_loci <-
-  dist.gene(data_loci,
+  ape::dist.gene(data_loci,
             method = "percentage",
             pairwise.deletion = TRUE, # remove missing loci
             variance = FALSE)
 
 # calculate "phylogenetic" tree using ape neighbour-joining method
-tree_gd <- nj(dist_loci)
+tree_gd <- ape::nj(dist_loci)
 
 # export
 tree_gd %>% 
@@ -46,7 +46,7 @@ tree_gd <- readRDS("intermediate/1_genetic_diversity/gd_phylo_global.RDS")
 # add metadata
 tree_meta <-
   data.frame(id = tree_gd$tip.label) %>%  # get samples in tree
-  left_join(data_samples, by = "id")      # join metadata
+  dplyr::left_join(data_samples, by = "id")      # join metadata
 
 # order sites
 tree_meta[[level]] <- factor(tree_meta[[level]],
@@ -102,11 +102,11 @@ colnames(com_mat) <- tree_gd$tip.label
 rownames(com_mat) <- c("global")
 
 # midpoint root the tree
-tree_gd <- midpoint.root(tree_gd)
+tree_gd <- phytools::midpoint.root(tree_gd)
 
 # pd, mpd, vpd
 phylo_metrics <-
-  data.frame(gd_pd   = as.numeric(pd(com_mat,tree_gd)[1]),
+  data.frame(gd_pd   = as.numeric(picante::pd(com_mat,tree_gd)[1]),
              gd_mpd  = mean(dist_loci),
              gd_vpd  = var(dist_loci))
 

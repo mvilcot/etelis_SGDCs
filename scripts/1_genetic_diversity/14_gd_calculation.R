@@ -64,13 +64,13 @@ Jt = 1/(1-Ht)
 Jst = Jt/Js # or 1/(1-Hst)
 
 # Hedrick Gst" (Meirmans and Hedrick 2011)
-GstPP.hed <- Gst_Hedrick(genind)
+GstPP.hed <- mmod::Gst_Hedrick(genind)
 
 # Jost D (Jost 2008)
-JostD <- D_Jost(genind)
+JostD <- mmod::D_Jost(genind)
 
 # Fst population-specific (Weir and Goudet 2017)
-popFst <- betas(ghierfstat, nboot=1000)
+popFst <- hierfstat::betas(ghierfstat, nboot=1000)
 
 # # Confidence interval
 # bs <- chao_bootstrap(genind)
@@ -88,7 +88,7 @@ popFst <- betas(ghierfstat, nboot=1000)
 #                            plot_it = FALSE)
 
 ### or PA by site first, then pairwise jaccard
-jac_multi <- beta.multi(gmatrixPAloc, index.family="jaccard")
+jac_multi <- betapart::beta.multi(gmatrixPAloc, index.family="jaccard")
 
 # create global table
 gd_global <-
@@ -104,7 +104,7 @@ gd_global <-
         jtu = jac_multi$beta.JTU,
         jac = jac_multi$beta.JAC,
         jne = jac_multi$beta.JNE) %>%
-  as_tibble()
+  dplyr::as_tibble()
 
 
 
@@ -113,11 +113,11 @@ gd_global <-
 gd_alpha <-
   data.frame(Hs = colMeans(BS$Hs, na.rm = T),
              Ho = colMeans(BS$Ho, na.rm = T)) %>% 
-  rownames_to_column(level) %>% 
-  left_join(
+  tibble::rownames_to_column(level) %>% 
+  dplyr::left_join(
     data.frame(popFst.WG = popFst$betaiovl) %>% 
-              rownames_to_column(level), 
-            by = level)
+      tibble::rownames_to_column(level), 
+    by = level)
 
 
 
@@ -125,20 +125,20 @@ gd_alpha <-
 ## ---- beta gd pairwise ----
 
 # Fst
-Fst_pair <- genet.dist(genind, method = "WC84")
+Fst_pair <- hierfstat::genet.dist(genind, method = "WC84")
 
 # Hedrick G"st
-GstPP.hed_pair <- pairwise_Gst_Hedrick(genind)
+GstPP.hed_pair <- mmod::pairwise_Gst_Hedrick(genind)
 
 # Jost D
-JostD_pair <- pairwise_D(genind)
+JostD_pair <- mmod::pairwise_D(genind)
 
 # Jaccard
 ### either PA by site first, then pairwise jaccard
-jac_pair <- beta.pair(gmatrixPAloc, index.family="jaccard")
+jac_pair <- betapart::beta.pair(gmatrixPAloc, index.family="jaccard")
 
 ### or pairwise by individual, then average
-jac_pair <- beta.pair(gmatrixPA, index.family="jaccard")
+jac_pair <- betapart::beta.pair(gmatrixPA, index.family="jaccard")
 
 
 

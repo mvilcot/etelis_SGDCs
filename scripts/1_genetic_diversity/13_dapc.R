@@ -37,7 +37,7 @@ dapc <- readRDS(paste0("intermediate/1_genetic_diversity/DAPC_popprior_output_",
 dapc_geo <- data.frame(id = rownames(dapc$tab), dapc$ind.coord)
 dapc_geo <- 
   data_samples %>% 
-  right_join(dapc_geo, by = "id") %>% 
+  dplyr::right_join(dapc_geo, by = "id") %>% 
   cbind(grp = dapc$grp)
 
 # reorder labels by longitude
@@ -72,12 +72,12 @@ probs <- as.data.frame(round(dapc$posterior, 4))
 # put probabilities in a tibble with IDS and labels for sites
 probs <- 
   tibble::rownames_to_column(probs, var = "id") %>%
-  left_join(data_samples[,c("id", "site", "station", "order")], by = "id")
+  dplyr::left_join(data_samples[,c("id", "site", "station", "order")], by = "id")
 
 # melt into long format
 probs_long <- 
   probs %>% 
-  pivot_longer(2:(nlevels(dapc$grp)+1), names_to = "cluster", values_to = "prob")
+  tidyr::pivot_longer(2:(nlevels(dapc$grp)+1), names_to = "cluster", values_to = "prob")
 
 # manual relevel of the sampling sites (to avoid alphabetical ordering)
 probs_long$cluster <- factor(probs_long$cluster, 
@@ -95,7 +95,7 @@ probs_long$site <- factor(probs_long$site,
 
 # set up custom facet strips
 facetstrips <- 
-  strip_nested(
+  ggh4x::strip_nested(
     text_x = elem_list_text(size = c(8, 4)),
     by_layer_x = TRUE,
     clip = "off"
@@ -104,7 +104,7 @@ facetstrips <-
 # plot
 gg2 <- ggplot(probs_long, aes(factor(id), prob, fill = factor(cluster))) +
   geom_col(color = "gray", size = 0.01) +
-  facet_nested(~ site + station,
+  ggh4x::facet_nested(~ site + station,
                switch = "x",
                nest_line = element_line(size = 1, lineend = "round"),
                scales = "free", space = "free", strip = facetstrips) +
@@ -127,7 +127,8 @@ gg2
 
 
 # save
-gg1 / gg2 + plot_layout(heights = c(3, 1))
+gg1 / gg2 + 
+  patchwork::plot_layout(heights = c(3, 1))
 ggsave(paste0("results/1_genetic_diversity/DAPC_popprior_perso_", filters, "_", sites, "_", level, ".png"),
               height = 12, width = 12)
 

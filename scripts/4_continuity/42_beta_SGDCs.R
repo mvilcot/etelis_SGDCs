@@ -54,7 +54,7 @@ dist_merge <- dist_merge[!grepl(loc, dist_merge$site),]
 ## ---- 1. IBD + SGDCs ----
 
 # MRM
-sMRM_IBDsd <- MRM(dist_mat[[metricSD]] ~ dist_mat[[metricDIST]], nperm = 9999)
+sMRM_IBDsd <- MRM(dist_merge[[metricSD]] ~ dist_merge[[metricDIST]], nperm = 9999)
 sMRM_IBDgd <- MRM(dist_mat[[metricGD]] ~ dist_mat[[metricDIST]], nperm = 9999)
 sMRM_SGDC <- MRM(dist_mat[[metricSD]] ~ dist_mat[[metricGD]], nperm = 9999)
 # MRM(dist_merge[[metricSD]] ~ dist_merge[[metricDIST]], nperm = 9999) # same with distance matrix on long df
@@ -90,7 +90,7 @@ ggSD <-
            x=min(dist_merge[[metricDIST]]), y=max(dist_merge[[metricSD]]),
            hjust = 0, vjust = 1,
            label=paste0("r Mantel = ", round(sMantel_IBDsd$statistic, 4), ", p = ", round(sMantel_IBDsd$signif, 5),
-                        "\nr MRM = ", round(sMRM_IBDsd$r.squared[["R2"]], 4), ", p = ", round(sMRM_IBDsd$r.squared[["pval"]], 5))) +
+                        "\nR² MRM = ", round(sMRM_IBDsd$r.squared[["R2"]], 4), ", p = ", round(sMRM_IBDsd$r.squared[["pval"]], 5))) +
   labs(title = "Species IBD")
 
 # genetic IBD
@@ -123,8 +123,6 @@ ggSGDCs <-
 ggSD + ggGD + ggSGDCs + plot_annotation(title = comm)
 ggsave(width = 20, height = 6,
        filename = paste0("results/4_continuity/IBD_beta_SGDC_noSeychelles_", metricSD, "_", metricGD, "_", metricDIST, "_", comm_delin, ".png"))
-
-
 
 
 
