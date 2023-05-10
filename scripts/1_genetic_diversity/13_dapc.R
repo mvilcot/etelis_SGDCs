@@ -4,7 +4,7 @@
 # parameters
 filters = "missind1_callrate0.70_maf0.05"
 level = "site"
-sites = "noCocos_noSeychelles"
+sites = "noCocos"
 
 # read genlight
 genlight <- 
@@ -17,7 +17,6 @@ genlight <-
 genlight
 
 
-
 ## ---- DAPC pop as prior ----
 # set.seed(999) # Setting a seed for a consistent result
 # dapc <- dapc(genlight)
@@ -28,6 +27,26 @@ dapc <- readRDS(paste0("intermediate/1_genetic_diversity/DAPC_popprior_output_",
 # print.dapc(dapc)
 # summary.dapc(dapc)
 # predict.dapc(dapc)
+
+
+
+## --- DAPC cross validation ----
+mat <- as.data.frame(genlight)
+
+# replace NA by mean
+for (i in 1:ncol(mat)){
+  mat[,i][is.na(mat[,i])] <- mean(mat[,i], na.rm = TRUE)
+
+}
+# mat2 <-
+# mat %>% 
+#   mutate_if(is.numeric, ~replace_na(., mean(., na.rm = TRUE)))
+
+xval <- adegenet::xvalDapc(x = mat,
+                           grp = genlight@pop, 
+                           n.pca.max = 10, 
+                           n.rep = 1)
+
 
 
 ## ---- scatter plot ----

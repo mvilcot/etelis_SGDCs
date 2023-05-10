@@ -60,7 +60,7 @@ envt_site %>%
 
 
 # scale variables ----
-envt_site_scaledLOG <- 
+envt_site_scaled <- 
   envt_site %>%
   dplyr::select(variables) %>% 
   log() %>% ################# CHECK IF LOG NEEDED (cf DiBattista et al. 2020)
@@ -71,7 +71,7 @@ envt_site_scaledLOG <-
 # pivot longer
 envt_site2 <-
   envt_site %>% 
-  dplyr::select(variables) %>% 
+  dplyr::select(all_of(variables)) %>% 
   rownames_to_column("site") %>% 
   pivot_longer(cols = variables, names_to = "variable", values_to = "value")
 

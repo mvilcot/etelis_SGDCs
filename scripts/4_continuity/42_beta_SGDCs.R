@@ -54,7 +54,7 @@ dist_merge <- dist_merge[!grepl(loc, dist_merge$site),]
 ## ---- 1. IBD + SGDCs ----
 
 # MRM
-sMRM_IBDsd <- MRM(dist_merge[[metricSD]] ~ dist_merge[[metricDIST]], nperm = 9999)
+sMRM_IBDsd <- MRM(dist_mat[[metricSD]] ~ dist_mat[[metricDIST]], nperm = 9999)
 sMRM_IBDgd <- MRM(dist_mat[[metricGD]] ~ dist_mat[[metricDIST]], nperm = 9999)
 sMRM_SGDC <- MRM(dist_mat[[metricSD]] ~ dist_mat[[metricGD]], nperm = 9999)
 # MRM(dist_merge[[metricSD]] ~ dist_merge[[metricDIST]], nperm = 9999) # same with distance matrix on long df
@@ -178,14 +178,64 @@ ggsave(gg_grob, width = 20, height = 5,
 
 ## ---- 3. MRM decomposition ----
 
-names(dist_merge)
-comm = "Lutjanidae"
+MRMgd <- tibble::tibble()
+for (metricGD in c("Fst", "GstPP.hed", "D.Jost")){
+  stats <- MRM(scale(dist_merge[[metricGD]]) ~ 
+                 scale(dist_merge$environment) + 
+                 scale(dist_merge$seadist), 
+               nperm = 9999)
+  
+  temp <- 
+    as.data.frame(stats$coef[-1,]) %>% 
+    rownames_to_column("response_variable") %>% 
+    dplyr::rename(coefficients = "scale(dist_merge[[metricGD]])") %>% 
+    rbind(tibble(response_variable = "R²",
+                 coefficients = stats$r.squared[1],
+                 pval = stats$r.squared[2])) %>% 
+    cbind(explanatory_variable = metricGD, .) %>% 
+    as_tibble()
+  
+  MRMgd <- 
+    MRMgd %>% 
+    rbind(temp)
+}
 
-metricSD = paste(comm, "beta.jtu", sep = ".")
-metricGD = "Fst"
 
-MRM(dist_mat[[metricGD]] ~ dist_mat$environment + dist_mat$seadist, nperm = 9999)
-MRM(dist_mat[[metricSD]] ~ dist_mat$environment + dist_mat$seadist, nperm = 9999)
+
+MRMsd <- tibble::tibble()
+for (comm in names(list_communities)){
+  for (metric in c("beta.jac", "beta.jtu", "beta.jne")){
+    metricSD <- paste(comm, metric, sep = ".")
+    stats <- MRM(scale(dist_merge[[metricSD]]) ~ 
+                   scale(dist_merge$environment) + 
+                   scale(dist_merge$seadist), 
+                 nperm = 9999)
+    
+    temp <- 
+      as.data.frame(stats$coef[-1,]) %>% 
+      rownames_to_column("response_variable") %>% 
+      dplyr::rename(coefficients = "scale(dist_merge[[metricSD]])") %>% 
+      rbind(tibble(response_variable = "R²",
+                   coefficients = stats$r.squared[1],
+                   pval = stats$r.squared[2])) %>% 
+      cbind(explanatory_variable = metricSD, .) %>% 
+      as_tibble()
+    
+    MRMsd <- 
+      MRMsd %>% 
+      rbind(temp)
+  }
+} 
+
+
+
+MRMgd %>% 
+  write_csv("results/4_continuity/MRM_beta_gd_noSeychelles.csv")
+
+MRMsd %>% 
+  write_csv("results/4_continuity/MRM_beta_sd_noSeychelles.csv")
+
+
 
 model <- cor(dist_merge[c("geodist",
                "seadist",

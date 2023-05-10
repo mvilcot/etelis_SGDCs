@@ -71,7 +71,7 @@ ggsave(paste0("results/1_genetic_diversity/plot_Hs_Fst_pop_specific_", level, ".
 
 
 
-## ---- beta GD metrics ----
+## ---- comparison beta GD metrics ----
 list_GDbeta <- list()
 
 for (metricGD in names(gd_beta)){
