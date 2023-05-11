@@ -9,7 +9,9 @@ comm_delin = "taxonomic_scale_Fishbase"
 list_communities <- readRDS(paste0("intermediate/2_species_diversity/List_community_", comm_delin, ".RDS"))
 
 # parameters
-comm = "Lutjanidae"
+names(list_communities)
+
+comm = "Actinopteri"
 metricSD = paste(comm, "beta.jtu", sep = ".")
 metricGD = "Fst"
 metricDIST = "seadist"
@@ -236,12 +238,47 @@ MRMsd %>%
   write_csv("results/4_continuity/MRM_beta_sd_noSeychelles.csv")
 
 
-
+## ---- cor between explanatory variables ---- #
 model <- cor(dist_merge[c("geodist",
                "seadist",
                "leastcost",
                "environment")])
 corrplot::corrplot(model)
+
+
+
+## --- plot TEST ----
+library(dotwhisker)
+
+models_gd <- list()
+for (metricGD in c("Fst", "GstPP.hed", "D.Jost")){
+  models_gd[[metricGD]] <- lm(scale(dist_merge[[metricGD]]) ~ 
+                 scale(dist_merge$environment) + 
+                 scale(dist_merge$seadist))
+}
+dwplot(models_gd)
+ggsave("results/4_continuity/LM_beta_gd_noSeychelles.png",
+        height = 5, width = 8, units = 'in', dpi = 300)
+
+
+
+models_sd <- list()
+for (metric in c("beta.jac", "beta.jtu", "beta.jne")){
+  for (comm in names(list_communities)){
+    
+    metricSD <- paste(comm, metric, sep = ".")
+    
+    models_sd[[metricSD]] <- lm(scale(dist_merge[[metricSD]]) ~ 
+                                  scale(dist_merge$environment) + 
+                                  scale(dist_merge$seadist))
+  }
+} 
+dwplot(models_sd)
+ggsave("results/4_continuity/LM_beta_sd_noSeychelles.png",
+       height = 5, width = 8, units = 'in', dpi = 300)
+
+
+
 
 
 
