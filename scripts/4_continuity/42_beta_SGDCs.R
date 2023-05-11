@@ -252,14 +252,14 @@ library(dotwhisker)
 
 models_gd <- list()
 for (metricGD in c("Fst", "GstPP.hed", "D.Jost")){
-  models_gd[[metricGD]] <- lm(scale(dist_merge[[metricGD]]) ~ 
-                 scale(dist_merge$environment) + 
-                 scale(dist_merge$seadist))
+  models_gd[[metricGD]] <- lm((dist_merge[[metricGD]]) ~ 
+                 (dist_merge$environment) + 
+                 (dist_merge$seadist))
+
 }
 dwplot(models_gd)
 ggsave("results/4_continuity/LM_beta_gd_noSeychelles.png",
         height = 5, width = 8, units = 'in', dpi = 300)
-
 
 
 models_sd <- list()
@@ -277,6 +277,21 @@ dwplot(models_sd)
 ggsave("results/4_continuity/LM_beta_sd_noSeychelles.png",
        height = 5, width = 8, units = 'in', dpi = 300)
 
+
+modelGD <-
+  phytools::multi.mantel((dist_mat$Fst), 
+                         list(dist_mat$environment, 
+                              dist_mat$seadist), 
+                         nperm = 1000)
+
+modelSD <-
+  phytools::multi.mantel((dist_mat$Lutjanidae.beta.jtu), 
+                         list(dist_mat$environment, 
+                              dist_mat$seadist), 
+                         nperm = 1000)
+
+mantel(dist_mat$Fst, dist_mat$Lutjanidae.beta.jtu)
+mantel(modelGD$residuals, modelSD$residuals)
 
 
 
