@@ -247,17 +247,21 @@ corrplot::corrplot(model)
 
 
 
-## --- plot TEST ----
+## --- dw plot ----
 library(dotwhisker)
 
 models_gd <- list()
 for (metricGD in c("Fst", "GstPP.hed", "D.Jost")){
-  models_gd[[metricGD]] <- lm((dist_merge[[metricGD]]) ~ 
-                 (dist_merge$environment) + 
-                 (dist_merge$seadist))
+  models_gd[[metricGD]] <- lm(scale(dist_merge[[metricGD]]) ~ 
+                                scale(dist_merge$environment) + 
+                                scale(dist_merge$seadist))
 
 }
-dwplot(models_gd)
+dwplot(models_gd,
+       vline = geom_vline(xintercept = 0,
+                          colour = "grey60",
+                          linetype = 2))
+       
 ggsave("results/4_continuity/LM_beta_gd_noSeychelles.png",
         height = 5, width = 8, units = 'in', dpi = 300)
 
@@ -273,7 +277,10 @@ for (metric in c("beta.jac", "beta.jtu", "beta.jne")){
                                   scale(dist_merge$seadist))
   }
 } 
-dwplot(models_sd)
+dwplot(models_sd,
+       vline = geom_vline(xintercept = 0,
+                          colour = "grey60",
+                          linetype = 2))
 ggsave("results/4_continuity/LM_beta_sd_noSeychelles.png",
        height = 5, width = 8, units = 'in', dpi = 300)
 
@@ -283,7 +290,7 @@ modelGD <-
                          list(dist_mat$environment, 
                               dist_mat$seadist), 
                          nperm = 1000)
-
+mantel()
 modelSD <-
   phytools::multi.mantel((dist_mat$Lutjanidae.beta.jtu), 
                          list(dist_mat$environment, 

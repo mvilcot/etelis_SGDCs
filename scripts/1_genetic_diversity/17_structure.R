@@ -37,11 +37,13 @@ obj.snmf <-
   LEA::snmf(paste0("intermediate/1_genetic_diversity/GenoLEA_Etelis_coruscans_ordered_", sites, ".geno"), 
        K = 1:nrun, alpha = 100, project = "new", repetitions = 10, entropy = TRUE)
 
+obj.snmf %>% 
+  saveRDS(paste0("intermediate/1_genetic_diversity/snmf_Etelis_coruscans_K1-", nrun, "_", sites, ".RDS"))
+
 # plot 
-pdf(paste0("results/1_genetic_diversity/snmf_Etelis_coruscans_K1-", nrun, "_", sites, "_ggplot.pdf"),
-    height = 8, width = 11)
-plot(obj.snmf, cex = 1.2, col = "lightblue", pch = 19)
-K=2
+pdf(paste0("results/1_genetic_diversity/snmf_Etelis_coruscans_K1-", nrun, "_", sites, "_ggplot2.pdf"),
+    height = 4, width = 10)
+plot(obj.snmf, cex = 1.2, pch = 19)
 for (K in 2:nrun){
   # get the cross-entropy of the 10 runs
   ce = LEA::cross.entropy(obj.snmf, K = K)
@@ -49,21 +51,9 @@ for (K in 2:nrun){
   bestrun = which.min(ce)
   # get best qmatrix
   qmatrix <- LEA::Q(obj.snmf, K = K, run = bestrun)
+
   
-  # # barplot
-  # barplot(t(qmatrix), col=RColorBrewer::brewer.pal(9,"Paired"), 
-  #         border=NA, space=0, xlab="Individuals", 
-  #         ylab="Admixture coefficients")
-  # # add legend
-  # for (i in 1:length(levels(genlight@pop))){
-  #   axis(side = 1, hadj = 0, 
-  #        at = min(which(genlight@pop==levels(genlight@pop)[i])), 
-  #        labels = levels(genlight@pop)[i],
-  #   )}
-  # 
-  
-  ## ---- TEST personalized plot ----
-  
+  ## ---- personalized plot ----
   # create an object with membership probabilities
   probs <- as.data.frame(qmatrix)
   
@@ -110,10 +100,10 @@ for (K in 2:nrun){
     theme(
       panel.spacing.x = unit(0.15, "lines"),
       axis.text.x = element_blank(),
-      axis.ticks.x=element_blank(),
+      axis.ticks.x = element_blank(),
       panel.grid = element_blank(),
       panel.background = element_rect(fill = 'white', color = 'white'),
-      strip.background =element_rect(fill = "white")) +
+      strip.background = element_rect(fill = "white")) +
     labs(fill = "cluster")
   
   print(gg)
