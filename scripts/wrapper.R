@@ -32,8 +32,8 @@ library(ape)
 library(adegenet)
 library(dartR)          # SNPs filtering
 library(pcadapt)
-library(qvalue)
-library(OutFLANK)
+# library(qvalue)
+# library(OutFLANK)
 library(hierfstat)
 library(mmod)
 library(pegas)          # genind2loci
@@ -41,7 +41,7 @@ library(jacpop)         # generate_pw_jaccard
 
 # phylogenetics
 library(picante)        # pd, mpd
-library(ggtree)         # beautiful tree plot
+# library(ggtree)         # beautiful tree plot
 library(phytools)       # midpoint.root
 library(ape)
 
