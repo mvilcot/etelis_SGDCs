@@ -1,5 +1,5 @@
 
-## ---- parameters ----
+# ---- parameters ----
 level = "site"
 
 comm_delin = "taxonomic_scale_Fishbase"
@@ -10,7 +10,7 @@ metricSD = "richness_site"
 metricGD = "Hs"
 
 
-## ---- load ----
+# ---- load ----
 gd_alpha <- read_csv(paste0("results/1_genetic_diversity/gd_table_", level, ".csv"))
 sd_alpha <- read_csv(paste0("results/2_species_diversity/sd_table_", level, "_", comm_delin, ".csv"))
 
@@ -23,6 +23,6 @@ alpha_merge <-
   full_join(gd_alpha, sd_alpha, by = level)
 
 
-## ---- save ----
+# ---- save ----
 alpha_merge %>% 
   write_csv(paste0("results/3_distance_metrics/alpha_diversity_", comm_delin, ".csv"))

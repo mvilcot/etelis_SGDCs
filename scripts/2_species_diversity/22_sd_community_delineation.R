@@ -1,12 +1,11 @@
 
-
-## ---- load ----
+# ---- load ----
 data_PA <- readRDS("data/PA_Mat_GaspObis.RDS")
 
 
 
 
-## ---- subset PA by phylogenetic scale ----
+# ---- subset PA by phylogenetic scale ----
 
 # compute distance from Etelis_coruscans
 tree_all <- fishtree_phylogeny()
@@ -39,7 +38,7 @@ saveRDS(list_communities, "intermediate/2_species_diversity/List_community_phylo
 
 
 
-## ---- subset PA by taxonomic scales from Zurich data ----
+# ---- subset PA by taxonomic scales from Zurich data ----
 list_communities <- list()
 
 # subset to family of interest
@@ -79,7 +78,7 @@ saveRDS(list_communities, "intermediate/2_species_diversity/List_community_taxon
 
 
 
-## ---- subset PA by taxonomic scales from Fishbase ----
+# ---- subset PA by taxonomic scales from Fishbase ----
 list_communitiesFB <- list()
 data_fishbase$Species <- sub(" ", "_", data_fishbase$Species)
 
@@ -130,7 +129,7 @@ saveRDS(list_communitiesFB, "intermediate/2_species_diversity/List_community_tax
 
 
 
-## ---- subset PA by depth range ----
+# ---- subset PA by depth range ----
 
 # -- subset PA to family --
 list_communities <- list()

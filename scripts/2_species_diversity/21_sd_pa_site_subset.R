@@ -2,11 +2,11 @@
 # This script creates a PA matrix for each community subset for each station
 # The output is a list of PA matrices per community delineation across stations
 
-## ---- load ----
+# ---- load ----
 data_PA <- readRDS("data/PA_Mat_GaspObis.RDS")
 
 
-## ---- define stations ----
+# ---- define stations ----
 # extract sample sites from meta data
 sites_vect <- 
   data_sites %>% 
@@ -31,8 +31,8 @@ PA_sub <-
 
 
 
-## ---- PA by station ----
-
+# ---- PA by station ----
+## ---- Method 1 ----
 # # reduce PA data to species of interest (too heavy otherwise)
 # list_commFULL <-
 #   list_communities %>%
@@ -91,7 +91,7 @@ saveRDS(PAstation, "intermediate/2_species_diversity/PA_Mat_GaspObis_station.RDS
 
 
 
-# ## ---- Method 2: Loop on each species (too long) ----
+## ---- Method 2: Loop on each species (too long) ----
 # list_species <- colnames(data_PA)[!colnames(data_PA) %in% c("Longitude", "Latitude")]
 # 
 # PAstation <- 
@@ -147,7 +147,7 @@ saveRDS(PAstation, "intermediate/2_species_diversity/PA_Mat_GaspObis_station.RDS
 
 
 
-# ## ---- Method 3: subset by station (error GASCOYE) ----
+## ---- Method 3: subset by station (error GASCOYE) ----
 # 
 # library(sf)
 # data_PAsf <- st_as_sf(data_PA, coords = c("Longitude", "Latitude"), crs=4326, remove=FALSE)
@@ -180,7 +180,7 @@ saveRDS(PAstation, "intermediate/2_species_diversity/PA_Mat_GaspObis_station.RDS
 # 
 
 
-## ---- PA by site ----
+# ---- PA by site ----
 
 sites_sub <-
   data_sites %>% 
@@ -206,7 +206,7 @@ saveRDS(PAsite, "intermediate/2_species_diversity/PA_Mat_GaspObis_site.RDS")
 
 
 
-## ---- PA all stations ----
+# ---- PA all stations ----
 
 PAall <-
   PAsite %>% 

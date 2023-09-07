@@ -1,8 +1,8 @@
-## ---- setup ----
+# ---- setup ----
 dist_mat <- list()
 
 
-## ---- geographic distance ----
+# ---- geographic distance ----
 # compute distance between locations (in meters)
 dist_mat$geodist <- 
   geodist(coord_site, measure = "geodesic") 
@@ -15,7 +15,7 @@ dist_mat$geodist <-
   dist_mat$geodist %>% 
   as.dist()
 
-## ---- distance by sea----
+# ---- distance by sea----
 
 # get bathymetry data
 Bathy <- 
@@ -53,7 +53,7 @@ dist_mat$seadist <-
 
 
 
-## ---- export ----
+# ---- export ----
 dist_mat %>% 
   saveRDS("intermediate/3_distance_metrics/dist_geo.RDS")
 

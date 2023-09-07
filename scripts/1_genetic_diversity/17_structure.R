@@ -4,7 +4,7 @@
 
 
 
-## ---- read SNPs dataset ----
+# ---- read SNPs dataset ----
 
 # parameters
 filters = "missind1_callrate0.70_maf0.05"
@@ -21,7 +21,7 @@ genlight <-
                 station2keep = NULL)
 
 
-## ---- convert to LEA data format ----
+# ---- convert to LEA data format ----
 
 # SNP presence/absence lfmm (package LEA, SilicoDArT)
 dartR::gl2geno(genlight, 
@@ -29,7 +29,7 @@ dartR::gl2geno(genlight,
         outpath='intermediate/1_genetic_diversity')
 
 
-## ---- snmf ----
+# ---- snmf ----
 library(LEA)
 
 # run snmf
@@ -142,7 +142,7 @@ dev.off()
 
 
 
-## ---- tess3 ----
+# ---- tess3 ----
 library(tess3r)
 
 genotype <- 
@@ -193,7 +193,7 @@ pl +
   ylab("Latitude") +
   theme_bw()
 
-## ---- STRUCTURE ----
+# ---- STRUCTURE ----
 library(strataG)
 structure <- dartR::gl.run.structure(
   genlight,

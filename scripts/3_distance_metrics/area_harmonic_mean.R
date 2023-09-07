@@ -1,32 +1,32 @@
 library(tidyterra)
 
 
-## ---- load ----
+# ---- load ----
 coord_vect <- vect(coord_site, geom=c("longitude", "latitude"), crs = "EPSG:4326")
 MEOW <- vect("data/seascape/MEOW/Marine_Ecoregions_Of_the_World__MEOW_.shp", crs = "EPSG:3857")
 # from https://geospatial.tnc.org/datasets/ed2be4cf8b7a451f84fd093c2e7660e3_0/explore
 reefs <- vect("data/seascape/14_001_WCMC008_CoralReefs2021_v4_1/01_Data/WCMC008_CoralReef2021_Py_v4_1.shp")
 # from https://data.unep-wcmc.org/datasets/1
 
-## ---- transform ----
+# ---- transform ----
 MEOW <- 
   MEOW %>% 
   project("EPSG:4326")
 
-## ---- plot MEOW ----
+# ---- plot MEOW ----
 ggplot() +
   geom_spatvector(data = MEOW) +
   geom_spatvector(data = coord_vect, color = "red") +
   theme_light() +
   crs
 
-## ---- extract region ----
+# ---- extract region ----
 temp <- terra::extract(MEOW, coord_vect)
 coord_site <- cbind(coord_site, temp)
 coord_site
 
 
-## ---- compute reef area by region ----
+# ---- compute reef area by region ----
 coord_site$area <- NA
 gg_list <- list()
 reef_list <- list()
@@ -63,7 +63,7 @@ ggsave(gg_grob, width = 20, height = 10,
 
 
 
-## ---- area from Robuchon et al 2019 ----
+# ---- area from Robuchon et al 2019 ----
 area <- data.frame(area = env$Surf_area_km) 
 rownames(area) <- env$BASIN
 areadhm <- matrix(nrow = nrow(area), ncol = nrow(area), dimnames = list(rownames(area), rownames(area)))

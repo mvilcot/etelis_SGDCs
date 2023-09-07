@@ -1,5 +1,5 @@
 
-## ---- parameters ----
+# ---- parameters ----
 level = "site"
 
 # communities delineation
@@ -14,7 +14,7 @@ comm = names(list_communities)[2]
 metricSD = "richness_site"
 
 
-## ---- load ----
+# ---- load ----
 level = "site"
 
 sd_alpha <- read.csv(paste0("results/2_species_diversity/sd_table_", level, "_", comm_delin, ".csv"))
@@ -28,7 +28,7 @@ dist_mat <-
   readRDS(paste0("intermediate/3_distance_metrics/dist_geo_envt_res17-4_gd_sd_", comm_delin, ".RDS"))
 
 
-# analyse ----
+# ---- analyse ----
 temp <-
   dist_merge %>% 
   dplyr::select(contains(c("beta.jtu", "beta.jac", "beta.jne")))

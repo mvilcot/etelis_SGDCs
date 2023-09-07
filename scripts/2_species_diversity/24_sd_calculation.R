@@ -3,7 +3,7 @@
 
 
 
-## ---- load ----
+# ---- load ----
 PAstation <- readRDS("intermediate/2_species_diversity/PA_Mat_GaspObis_station.RDS")
 PAsite <- readRDS("intermediate/2_species_diversity/PA_Mat_GaspObis_site.RDS")
 PAall <- readRDS("intermediate/2_species_diversity/PA_Mat_GaspObis_allstations.RDS")
@@ -16,7 +16,7 @@ comm_delin = "taxonomic_scale_Fishbase"
 list_communities <- readRDS(paste0("intermediate/2_species_diversity/List_community_", comm_delin, ".RDS"))
 names(list_communities)
 
-## ---- initiate ----
+# ---- initiate ----
 list_sd_gamma <- list()
 list_sd_alpha_site <- list()
 list_sd_alpha_station <- list()
@@ -33,7 +33,7 @@ for (comm in names(list_communities)){
   
   print(comm)
 
-  ## ---- subset to community ----
+  # ---- subset to community ----
   PAstation_comm <-
     PAstation %>% 
     dplyr::select(all_of(c("station", list_communities[[comm]])))
@@ -46,7 +46,7 @@ for (comm in names(list_communities)){
     PAall %>% 
     dplyr::select(all_of(list_communities[[comm]]))
   
-  ## ---- alpha diversity ----
+  # ---- alpha diversity ----
   # Species richness at each station
   list_sd_alpha_station[[comm]] <-
     PAstation_comm %>%
@@ -63,13 +63,13 @@ for (comm in names(list_communities)){
     summarise(community = comm, 
               richness_site = sum(value), .groups = "keep")
   
-  ## ---- gamma diversity ----
+  # ---- gamma diversity ----
   list_sd_gamma[[comm]] <-
     data.frame(community = comm) %>% 
     cbind(richness_allstations = rowSums(PAall_comm))
     
 
-  ## ---- beta diversity ----
+  # ---- beta diversity ----
 
   # beta diversity station level
   PAstation_comm <- 
@@ -97,7 +97,7 @@ for (comm in names(list_communities)){
 
 
 
-## ---- collate ----
+# ---- collate ----
 # alpha station
 sd_alpha_station <- 
   do.call(rbind.data.frame, list_sd_alpha_station)
@@ -143,7 +143,7 @@ sd_beta_site <-
 
 
 
-## ---- merge ----
+# ---- merge ----
 sd_global <-
   sd_gamma %>% 
   merge(sd_alpha_mean_site) %>% 
@@ -153,7 +153,7 @@ sd_global <-
 
 
 
-## ---- export ----
+# ---- export ----
 sd_global %>% write.csv(paste0("results/2_species_diversity/sd_table_global_", comm_delin, ".csv"), row.names = FALSE)
 sd_alpha_site %>%  write.csv(paste0("results/2_species_diversity/sd_table_site_", comm_delin, ".csv"), row.names = FALSE)
 sd_alpha_station %>% write.csv(paste0("results/2_species_diversity/sd_table_station_", comm_delin, ".csv"), row.names = FALSE)
@@ -167,7 +167,7 @@ list_sd_beta_station_pair %>% saveRDS(paste0("results/2_species_diversity/sd_lis
 
 
 
-## ---- :: Compare Lutjanidae dataset ----
+# ---- :: Compare Lutjanidae dataset ----
 
 lutjanidae_list <- list()
 comm = "Lutjanidae"
@@ -195,7 +195,7 @@ write.csv(lutjanidae_df, "intermediate/2_species_diversity/Lutjanidae_datasets_c
 
 
 
-## ---- :: Compare Lutjanidae dataset in PA ----
+# ---- :: Compare Lutjanidae dataset in PA ----
 
 lutjanidae_PA <- list()
 comm = "Lutjanidae"

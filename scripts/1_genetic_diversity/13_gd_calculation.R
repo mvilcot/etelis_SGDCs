@@ -1,16 +1,24 @@
 
-## ---- parameters ----
-# filters
-filters = "missind_callrate0.70_maf0.05"
+# ---- read SNPs dataset ----
+
+# parameters
+filters = "missind1_callrate0.70_maf0.05"
 level = "site"
+sites = "noCocos"
 
-# read genlight  
+# read genlight
 genlight <- 
-  read.genlight(filters, level)
+  read.genlight(filters, level,
+                site2drop = NULL,
+                site2keep = NULL,
+                station2drop = NULL,
+                station2keep = NULL)
+
+genlight
 
 
 
-## ---- convert to other formats ----
+# ---- convert to other formats ----
 
 # genind 
 genind <- dartR::gl2gi(genlight)
@@ -37,7 +45,7 @@ gmatrixPAloc <-
 
 
 
-## ---- tess3r ----
+# ---- tess3r ----
 # https://bcm-uga.github.io/TESS3_encho_sen/articles/main-vignette.html
 
 library(tess3r)
@@ -46,7 +54,7 @@ library(tess3r)
 
 
 
-## ---- mean genetic diversity ----
+# ---- mean genetic diversity ----
 
 # basic stats
 BS <- hierfstat::basic.stats(genind)
@@ -109,7 +117,8 @@ gd_global <-
 
 
 
-## ---- alpha gd by location ----
+# ---- alpha gd by location ----
+## ---- by hand ----
 gd_alpha <-
   data.frame(Hs = colMeans(BS$Hs, na.rm = T),
              Ho = colMeans(BS$Ho, na.rm = T)) %>% 
@@ -119,11 +128,21 @@ gd_alpha <-
       tibble::rownames_to_column(level), 
     by = level)
 
+## ---- with dartR ----
+### !!!Similar values, except for Christmas Island... issue of sampling size ####
+alpha_test <-
+  gl.report.heterozygosity(genlight) %>% 
+  dplyr::rename(site = pop) %>% 
+  dplyr::left_join(
+    data.frame(popFst.WG = popFst$betaiovl) %>% 
+      tibble::rownames_to_column(level), 
+    by = level)
+
+write.csv(alpha_test, paste0("results/1_genetic_diversity/gd_table_", level, "_dartR.csv"), row.names = F, quote = F)
 
 
 
-## ---- beta gd pairwise ----
-
+# ---- beta gd pairwise ----
 # Fst
 Fst_pair <- hierfstat::genet.dist(genind, method = "WC84")
 
@@ -141,7 +160,6 @@ jac_pair <- betapart::beta.pair(gmatrixPAloc, index.family="jaccard")
 jac_pair <- betapart::beta.pair(gmatrixPA, index.family="jaccard")
 
 
-
 # put into list
 list_gd_beta_pair <-
   list(Fst = Fst_pair, 
@@ -152,17 +170,17 @@ list_gd_beta_pair <-
        jne = jac_pair$beta.jne)
 
 
-## ---- export ----
-saveRDS(BS, paste0("intermediate/1_genetic_diversity/basic_stats_", level, ".RDS"))
-write.csv(gd_global, paste0("results/1_genetic_diversity/gd_table_global_", level, ".csv"), row.names = F, quote = F)
-write.csv(gd_alpha, paste0("results/1_genetic_diversity/gd_table_", level, ".csv"), row.names = F, quote = F)
-saveRDS(list_gd_beta_pair, paste0("results/1_genetic_diversity/gd_list_pairwise_", level, ".RDS"))
+# ---- export ----
+BS %>% saveRDS(paste0("intermediate/1_genetic_diversity/basic_stats_", level, ".RDS"))
+gd_global %>% write.csv(paste0("results/1_genetic_diversity/gd_table_global_", level, ".csv"), row.names = F, quote = F)
+gd_alpha %>% write.csv(paste0("results/1_genetic_diversity/gd_table_", level, ".csv"), row.names = F, quote = F)
+list_gd_beta_pair %>% saveRDS(paste0("results/1_genetic_diversity/gd_list_pairwise_", level, ".RDS"))
 
 
 
-## ---- DRAFTS ----
+# ---- DRAFTS ----
 
-## ---- Pairwise (diveRsity) ---- #
+## ---- Pairwise (diveRsity) ----
 # test <- diffCalc(infile = "Intermediate/GenepopRadiator_DartSeq_Etelis_coruscans_grouped_missind_callrate0.70_maf0.05_sites_noCocos.gen", 
 #          outfile = "test", fst = T, pairwise = T)
 # 
@@ -174,7 +192,7 @@ saveRDS(list_gd_beta_pair, paste0("results/1_genetic_diversity/gd_list_pairwise_
 
 
 
-## ---- Jaccard ---- #
+## ---- Jaccard ---- 
 # ## HierJd 
 # GDbetaJAC <- HierJd("Intermediate/test.gen", ncode = 3, r = 1, nreg = 1)
 # saveRDS(GDbetaJAC, "Results/test_HierJd_betaGD_stations_noinf2.RDS")
@@ -205,7 +223,7 @@ saveRDS(list_gd_beta_pair, paste0("results/1_genetic_diversity/gd_list_pairwise_
 
 
 
-## ---- Compute mean alpha by site ---- #
+## ---- Compute mean alpha by site ---- 
 # gd_alpha_site2 <-
 #   as.data.frame(BS$Hs) %>%
 #   rownames_to_column("loci") %>%
@@ -219,7 +237,7 @@ saveRDS(list_gd_beta_pair, paste0("results/1_genetic_diversity/gd_list_pairwise_
 # 
 # 
 # 
-## ---- convert to other formats ---- #
+## ---- convert to other formats ---- 
 # # Genpop class
 # genpop <- adegenet::genind2genpop(genind)
 # genpop

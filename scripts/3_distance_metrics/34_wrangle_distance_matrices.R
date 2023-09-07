@@ -1,5 +1,5 @@
 
-## ---- load ----
+# ---- load ----
 # parameters
 level = "site"
 # comm_delin = "taxonomic_scale_datasp2"
@@ -15,7 +15,7 @@ sd_mat <- readRDS(paste0("results/2_species_diversity/sd_list_pairwise_", level,
 sd_mat <- unlist(sd_mat, recursive = FALSE)
 
 
-## ---- list of distance matrix ----
+# ---- list of distance matrix ----
 # add to one list
 dist_mat <- 
   dist_mat %>% 
@@ -27,13 +27,13 @@ dist_mat <-
 
 
 
-## ---- melt ----
+# ---- melt ----
 dist_melt <- list()
 for (i in 1:length(dist_mat)){
   dist_melt[[i]] <- melt.dist(distmat = dist_mat[[i]], metric = names(dist_mat)[[i]])
 }
 
-## ---- merge into a table ----
+# ---- merge into a table ----
 # full join
 dist_merge <- 
   dist_melt %>%
@@ -52,7 +52,7 @@ dist_merge <-
 
 
 
-## ---- save ----
+# ---- save ----
 dist_merge %>% 
   write.csv(paste0("results/3_distance_metrics/dist_geo_envt_res17-4_gd_sd_", comm_delin, ".csv"), 
             row.names = F, quote = F)
@@ -61,7 +61,7 @@ dist_mat %>%
   saveRDS(paste0("intermediate/3_distance_metrics/dist_geo_envt_res17-4_gd_sd_", comm_delin, ".RDS"))
 
 
-## ---- SD and GD ----
+# ---- SD and GD ----
 # # melt
 # gd_melt <- list()
 # for (i in 1:length(gd_mat)){

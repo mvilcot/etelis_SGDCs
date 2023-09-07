@@ -1,5 +1,5 @@
 
-# read SNPs dataset ----
+# ---- read SNPs dataset ----
 
 # parameters
 filters = "missind1_callrate0.70_maf0.05"
@@ -18,9 +18,9 @@ genlight
 
 
 
-# PCA ----
+# ---- PCA ----
 
-## run ----
+## ---- run ----
 # PCA <- adegenet::glPca(genlight, center = TRUE, scale = FALSE, nf = 10, loadings = TRUE,
 #                        alleleAsUnit = FALSE, useC = TRUE, parallel = require("parallel"),
 #                        n.cores = NULL, returnDotProd=FALSE, matDotProd=NULL)
@@ -31,14 +31,14 @@ PCA <- readRDS(paste0("intermediate/1_genetic_diversity/PCA_output_", filters, "
 
 
 
-## plot auto ----
+## ---- plot auto ----
 png(paste0("results/1_genetic_diversity/PCA_auto_", filters, "_", sites, "_", level, ".png"),
     height = 6, width = 7, units = "in", res = 300)
 dartR::gl.pcoa.plot(PCA, genlight)
 dev.off()
 
 
-## plot perso ----
+## ---- plot perso ----
 # get dapc values and metadata
 pca_scores <- 
   as.data.frame(PCA$scores) %>% 
@@ -51,7 +51,7 @@ pretty_pe <- format(round(percent_explained, digits =1), nsmall=1, trim=TRUE)
 labels <- c(glue("PCA Axis 1 ({pretty_pe[1]}%)"),
             glue("PCA Axis 2 ({pretty_pe[2]}%)"))
 
-# Plot
+# save  
 gg_pca <- 
   ggplot(pca_scores, aes(x=PC1, y=PC2, color=.data[[level]])) +
   geom_point(size = 2, alpha = 0.6) +

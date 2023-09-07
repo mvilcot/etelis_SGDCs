@@ -1,5 +1,5 @@
 
-## ---- parameters ----
+# ---- parameters ----
 # communities delineation
 # comm_delin = "taxonomic_scale_datasp2"
 comm_delin = "taxonomic_scale_Fishbase"
@@ -17,7 +17,7 @@ metricGD = "Fst"
 metricDIST = "seadist"
 
 
-## ---- load ----
+# ---- load ----
 dist_merge <-
   read_csv(paste0("results/3_distance_metrics/dist_geo_envt_res17-4_gd_sd_", comm_delin, ".csv"))
 
@@ -27,7 +27,7 @@ dist_mat <-
 names(dist_mat)
 
 
-## ---- subset sites ----
+# ---- subset sites ----
 loc = "Seychelles"
 
 for(i in 1:length(dist_mat)){
@@ -41,7 +41,7 @@ dist_merge <- dist_merge[!grepl(loc, dist_merge$site),]
 
 
 
-# ## ---- 0. check assumptions ----
+# # ---- 0. check assumptions ----
 # model <- cor(dist_merge[-c(1:3)])
 # corrplot::corrplot(model)
 # 
@@ -53,7 +53,7 @@ dist_merge <- dist_merge[!grepl(loc, dist_merge$site),]
 
 
 
-## ---- 1. IBD + SGDCs ----
+# ---- 1. IBD + SGDCs ----
 
 # MRM
 sMRM_IBDsd <- MRM(dist_mat[[metricSD]] ~ dist_mat[[metricDIST]], nperm = 9999)
@@ -78,7 +78,7 @@ plot.decay(sDecay_IBDgd, col="green", remove.dots=T, add=T, lwd=2)
 
 
 
-## ---- plot ---- #
+# ---- plot ---- #
 # add Seychelles color
 dist_merge$Seychelles <- "No"
 dist_merge[grep("Seychelles", dist_merge$site),]$Seychelles <- "Yes"
@@ -128,7 +128,7 @@ ggsave(width = 20, height = 6,
 
 
 
-## ---- 2. SGDCs by community ----
+# ---- 2. SGDCs by community ----
 
 gg_list <- list()
 stat_list <- list()
@@ -178,7 +178,7 @@ ggsave(gg_grob, width = 20, height = 5,
 
 
 
-## ---- 3. MRM decomposition ----
+# ---- 3. MRM decomposition ----
 
 MRMgd <- tibble::tibble()
 for (metricGD in c("Fst", "GstPP.hed", "D.Jost")){
@@ -238,7 +238,7 @@ MRMsd %>%
   write_csv("results/4_continuity/MRM_beta_sd_noSeychelles.csv")
 
 
-## ---- cor between explanatory variables ---- #
+# ---- cor between explanatory variables ---- #
 model <- cor(dist_merge[c("geodist",
                "seadist",
                "leastcost",
@@ -305,7 +305,7 @@ mantel(modelGD$residuals, modelSD$residuals)
 
 
 
-## ---- 4. decomposition variance ----
+# ---- 4. decomposition variance ----
 
 source("scripts/4_continuity/sgdcs_decomposition_Lamy.R")
 
@@ -328,7 +328,7 @@ dev.off()
 
 
 
-## ---- 5. SGDCs by distance phylo ----
+# ---- 5. SGDCs by distance phylo ----
 
 SGDCs <- data.frame(community = names(list_communities))
 

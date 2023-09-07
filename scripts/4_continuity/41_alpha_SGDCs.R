@@ -1,6 +1,6 @@
 library(ggrepel)
 
-## ---- parameters ----
+# ---- parameters ----
 level = "site"
 
 # communities delineation
@@ -16,7 +16,7 @@ metricSD = "richness_site"
 metricGD = "Hs"
 
 
-## ---- load ----
+# ---- load ----
 gd_alpha <- read.csv(paste0("results/1_genetic_diversity/gd_table_", level, ".csv"))
 sd_alpha <- read.csv(paste0("results/2_species_diversity/sd_table_", level, "_", comm_delin, ".csv"))
 
@@ -24,7 +24,7 @@ sd_alpha <- read.csv(paste0("results/2_species_diversity/sd_table_", level, "_",
 
 
 
-## ---- SGDCs ----
+# ---- SGDCs ----
 
 gg_list <- list()
 

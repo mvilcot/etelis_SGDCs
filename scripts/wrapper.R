@@ -1,6 +1,6 @@
 # Wrapper script for the Etelis coruscans analyses
 
-## ---- libraries ----
+# ---- libraries ----
 # scripts
 library(tidyverse)      # the beautiful beautiful tidyverse
 library(pracma)         # findintervals
@@ -48,7 +48,7 @@ library(ape)
 
 
 
-## ---- data ----
+# ---- data ----
 
 ## genetic data
 # data_samples <- read.csv("data/metadata_samples.csv")
@@ -114,14 +114,14 @@ coord_site <-
 
 
 
-## ---- personalised plot ----
+# ---- personalised plot ----
 level = "site"
 color_perso <- c(viridis(length(levels(data_samples[[level]]))))
 names(color_perso) <- levels(data_samples[[level]])
 
 
 
-## ---- functions ----
+# ---- functions ----
 
 ## Melt distance matrix
 melt.dist <- function(distmat, metric) {
@@ -231,7 +231,7 @@ shift.lon = function(df) {
 
 
 
-## ---- arborescence ----
+# ---- arborescence ----
 dir.create("intermediate/", showWarnings = F)
 dir.create("intermediate/0_sampling_design/", showWarnings = F)
 dir.create("intermediate/1_genetic_diversity/", showWarnings = F)
@@ -248,7 +248,7 @@ dir.create("results/4_continuity/", showWarnings = F)
 
 
 
-## ---- scripts ----
+# ---- scripts ----
 # 1. ...
 # source("scripts/1_genetic_diversity/11_snp_fitering.R")
 

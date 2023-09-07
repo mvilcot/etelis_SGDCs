@@ -1,5 +1,5 @@
 
-# read SNPs dataset ----
+# ---- read SNPs dataset ----
 
 # parameters
 filters = "missind1_callrate0.70_maf0.05"
@@ -18,7 +18,7 @@ genlight
 
 
 
-# DAPC pop as prior ----
+# ---- DAPC pop as prior ----
 ## run ----
 # set.seed(999) # Setting a seed for a consistent result
 # dapc <- dapc(genlight)
@@ -165,7 +165,8 @@ ggsave(paste0("results/1_genetic_diversity/DAPC_popprior_perso_", filters, "_", 
 
 
 
-# TO DO!! - DAPC with clustering ---------------------------------
+# ---- !!!!DAPC with clustering ----
+### TO DO!!!!
 grp <- find.clusters(genlight, max.n.clust=20)
 table(pop(genlight), grp$grp)
 dapc1 <- dapc(genlight, grp$grp)

@@ -3,7 +3,7 @@ dist_mat <-
   readRDS("intermediate/3_distance_metrics/dist_geo.RDS")
 
 
-# current velocity ----
+# ---- current velocity ----
 # layers_velocity <- 
 #   list_layers() %>%
 #   filter(dataset_code == "Bio-ORACLE") %>% 
@@ -12,7 +12,7 @@ dist_mat <-
 #           quote = F, row.names = F)
 
 
-# load environmental predictors ----
+# ---- load environmental predictors ----
 variables <-
   c("BO_chlomean",
     "BO_dissox",
@@ -29,7 +29,7 @@ envt_layers <-
   sdmpredictors::load_layers(variables)
 
 
-# wrangle data ----
+# ---- wrangle data ----
 # convert rasters to spatRaster
 envt_layers <- 
   rast(envt_layers)
@@ -40,7 +40,7 @@ vect_coord <-
   vect(geom = c("longitude", "latitude"), crs = "WGS84")
 
 
-# extract variables by site ----
+# ---- extract variables by site ----
 envt_site <- 
   terra::extract(envt_layers,
                  vect_coord,
@@ -53,13 +53,13 @@ envt_site <-
   cbind(coord_site) 
 
 
-# export ----
+## export
 envt_site %>% 
   write.csv("intermediate/3_distance_metrics/bio_oracle_variables.csv",
             row.names = T, quote = F)
 
 
-# scale variables ----
+# ---- scale variables ----
 envt_site_scaled <- 
   envt_site %>%
   dplyr::select(variables) %>% 
@@ -90,7 +90,7 @@ envt_site2_scaled$site <-
 
 
 
-# boxplot ----
+# ---- boxplot ----
 ggplot(envt_site2, aes(site, value, fill = site, color = site)) +
   geom_boxplot() +
   facet_wrap( ~ variable, ncol=1, scales = "free_y") +
@@ -109,7 +109,7 @@ ggsave(width = 5, height = 10,
 
 
 
-# map plot----
+# ---- map plot----
 my.colors = colorRampPalette(c("#5E85B8","#EDF0C0","#C13127"))
 
 coord_vect <- vect(shift.lon(coord_site), geom=c("longitude", "latitude"), crs = "EPSG:4326")
@@ -138,7 +138,7 @@ dev.off()
 
 
 
-# PCA ----
+# ---- PCA ----
 # read variables 
 
 # keep environmental variables
@@ -178,7 +178,7 @@ ggsave("results/3_distance_metrics/environmental_variables_scaled_pca.png",
        height = 7, width = 7, units = "in", dpi = 300)
 
 
-# export ----
+## export
 dist_mat %>% 
   saveRDS("intermediate/3_distance_metrics/dist_geo_envt.RDS")
 

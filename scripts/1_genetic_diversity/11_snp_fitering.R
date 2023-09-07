@@ -1,11 +1,11 @@
 
-## ---- read Dart file into genlight ----
+# ---- read Dart file into genlight ----
 # read DART output file
 DART <- 
   read.csv("data/Report_DEtel22-6705_SNP_2.csv", header = F)
 
 
-## ---- reorder individuals ----
+# ---- reorder individuals ----
 # reorder Dart columns (individuals) according to metadata order 
 
 
@@ -25,7 +25,7 @@ DART %>%
               sep = ",", row.names = F, col.names = F)
 
 
-## ---- setup genlight ----
+# ---- setup genlight ----
 
 # read sorted DART file as genlight
 gl <- 
@@ -45,7 +45,7 @@ gl
 
 
 
-## ---- Graphic visualisation ----
+# ---- Graphic visualisation ----
 gl <- 
   readRDS(file = "intermediate/1_genetic_diversity/Genlight_Etelis_coruscans_ordered.RDS")
 
@@ -80,7 +80,7 @@ t5 %>%
   write_csv("results/1_genetic_diversity/gl_report_callrate_ind_Etelis_coruscans.csv")
 
 
-## ---- Filtering ----
+# ---- Filtering ----
 
 # 1 - Individual callrate
 # !!!! ALSO REMOVE POPULATIONS IN WHICH LESS THAN TWO INDIVIDUALS
@@ -121,7 +121,7 @@ gl4 <-
 gl4
 
 
-## ---- relevel location factors ----
+# ---- relevel location factors ----
 
 # relevel metadata
 for (level in c("site", "station")){
@@ -136,7 +136,7 @@ gl4@pop <-
   gl4@other$ind.metrics[["site"]]
 
 
-# ## ---- subset metadata ----
+# # ---- subset metadata ----
 # data_samples <-
 #   data_samples %>%
 #   dplyr::filter(id %in% gl4$ind.names)
@@ -151,14 +151,14 @@ gl4@pop <-
 
 
 
-## ---- Save ----
+# ---- Save ----
 filters <- "missind1_callrate0.70_maf0.05"
 
 gl4 %>% 
   writeRDS(paste0("intermediate/1_genetic_diversity/Genlight_Etelis_coruscans_ordered_", filters, ".RDS"))
 
 
-## ---- Smearplot ----
+# ---- Smearplot ----
 gl4 %>% 
   gl.smearplot(plot_colors = c("blue", "red", "green", "white"))
 

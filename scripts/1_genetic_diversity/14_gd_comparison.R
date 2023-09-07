@@ -1,5 +1,5 @@
 
-## ---- load ----
+# ---- load ----
 level = "site"
 
 gd_alpha <- read.csv(paste0("results/1_genetic_diversity/gd_table_", level, ".csv"))
@@ -15,7 +15,7 @@ BS <- readRDS(paste0("intermediate/1_genetic_diversity/basic_stats_", level, ".R
 
 
 
-## ---- alpha GD by location ----
+# ---- alpha GD by location ----
 
 # get Hs by loci by site
 gd_alpha_loci <- 
@@ -40,7 +40,7 @@ ggsave(paste0("results/1_genetic_diversity/plot_alpha_Hs_by_", level, ".png"),
 
 
 
-## ---- Hs ~ Fst pop specific ----
+# ---- Hs ~ Fst pop specific ----
 
 library(ggrepel)
 
@@ -71,7 +71,7 @@ ggsave(paste0("results/1_genetic_diversity/plot_Hs_Fst_pop_specific_", level, ".
 
 
 
-## ---- comparison beta GD metrics ----
+# ---- comparison beta GD metrics ----
 list_GDbeta <- list()
 
 for (metricGD in names(gd_beta)){
