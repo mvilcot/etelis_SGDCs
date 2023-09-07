@@ -13,20 +13,20 @@ write.csv(samples_sent, "Samples_sequenced.csv", row.names = F)
 
 library("ggplot2")
 library("rnaturalearth")
-library("rnaturalearthdata")
+# library("rnaturalearthdata")
 library("mapdata")
 library("sf")
 library("mapview")
 
 ## Read presence data from Fishbase
-presence <- readRDS("data/Presence_data_Fishbase_Etelis_coruscans.RDS")
+data_Etelis <- readRDS("data/Presence_data_Fishbase_Etelis_coruscans.RDS")
 
 ## Keep only presence data
-presence <- presence[presence$Etelis_coruscans == 1, ]
-write.csv(presence, "data/Presence_data_Fishbase_Etelis_coruscans.csv", row.names = F, quote = F)
+data_Etelis <- data_Etelis[data_Etelis$Etelis_coruscans == 1, ]
+write.csv(data_Etelis, "data/Presence_data_Fishbase_Etelis_coruscans.csv", row.names = F, quote = F)
 
 ## Transform as sf object
-presence_sf <- st_as_sf(presence, 
+presence_sf <- st_as_sf(data_Etelis, 
                        coords = c("Longitude", "Latitude"), 
                        crs = "WGS84", remove = FALSE)
 

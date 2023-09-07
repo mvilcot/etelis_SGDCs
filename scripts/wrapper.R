@@ -4,17 +4,18 @@
 # scripts
 library(tidyverse)      # the beautiful beautiful tidyverse
 library(pracma)         # findintervals
-library(reshape)        # melt
+library(glue)           # use braces for PXA axis
+# library(reshape)        # melt
 library(ecodist)        # MRM
 
 # plot
 library(ggplot2)        # plots
-library(wesanderson)    # palette
+# library(wesanderson)    # palette
 library(ggh4x)
-library(paletteer)      # palette
 library(patchwork)      # easy multiple plot
 library(gridExtra)      # easy multiple plot
-library(viridis)
+# library(paletteer)      # palette
+library(viridis)        # palette
 
 # spatial
 library(terra)          # raster-type package
@@ -49,7 +50,7 @@ library(ape)
 
 ## ---- data ----
 
-# # genetic data
+## genetic data
 # data_samples <- read.csv("data/metadata_samples.csv")
 # data_sites <- read.csv("data/metadata_sites.csv")
 # 
@@ -59,7 +60,8 @@ library(ape)
 #   arrange(order)
 
 data_samples <- read.csv("intermediate/0_sampling_design/metadata_samples_subset.csv")
-for (level in c("site", "station")){
+
+for (level in c("site", "station")){ # order levels
   data_samples[[level]] <- 
     data_samples[[level]] %>% 
     ordered(levels = unique(data_samples[order(data_samples$order),][[level]])) %>% 

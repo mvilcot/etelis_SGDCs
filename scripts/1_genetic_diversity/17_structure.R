@@ -9,13 +9,13 @@
 # parameters
 filters = "missind1_callrate0.70_maf0.05"
 level = "site"
-sites = "noSeychelles"
+sites = "all"
 nrun = 9
 
 # read genlight
 genlight <- 
   read.genlight(filters, level,
-                site2drop = "Seychelles",
+                site2drop = NULL,
                 site2keep = NULL,
                 station2drop = NULL,
                 station2keep = NULL)

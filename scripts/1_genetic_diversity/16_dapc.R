@@ -1,5 +1,5 @@
 
-## ---- read SNPs dataset ----
+# read SNPs dataset ----
 
 # parameters
 filters = "missind1_callrate0.70_maf0.05"
@@ -17,7 +17,9 @@ genlight <-
 genlight
 
 
-## ---- DAPC pop as prior ----
+
+# DAPC pop as prior ----
+## run ----
 # set.seed(999) # Setting a seed for a consistent result
 # dapc <- dapc(genlight)
 # saveRDS(dapc, paste0("intermediate/1_genetic_diversity/DAPC_popprior_output_", filters, "_", sites, "_", level, ".RDS"))
@@ -29,10 +31,17 @@ dapc <- readRDS(paste0("intermediate/1_genetic_diversity/DAPC_popprior_output_",
 # predict.dapc(dapc)
 
 
+## alpha score ----
+temp <- optim.a.score(dapc)
 
-## --- DAPC cross validation ----
+dapc2 <- dapc(genlight, n.da=50, n.pca=17)
+
+
+
+## !!!!!!!!! cross validation ----
+#HERE this part doesn't work
+
 mat <- as.data.frame(genlight)
-
 # replace NA by mean
 for (i in 1:ncol(mat)){
   mat[,i][is.na(mat[,i])] <- mean(mat[,i], na.rm = TRUE)
@@ -42,14 +51,16 @@ for (i in 1:ncol(mat)){
 # mat %>% 
 #   mutate_if(is.numeric, ~replace_na(., mean(., na.rm = TRUE)))
 
-xval <- adegenet::xvalDapc(x = mat,
-                           grp = genlight@pop, 
-                           n.pca.max = 10, 
-                           n.rep = 1)
+mat <- tab(genlight, NA.method = "mean")
+
+xval <- adegenet::xvalDapc(x = genlight,
+                           grp = pop(genlight), 
+                           n.pca.max = 100, 
+                           n.rep = 3)
 
 
 
-## ---- scatter plot ----
+## scatter plot ----
 # Plot ggplot - adapted from https://github.com/laurabenestan/TD_science_conservation
 
 # get dapc values and metadata
@@ -66,7 +77,7 @@ dapc_geo$grp <- factor(dapc_geo$grp,
 
 
 # Plot
-gg1 <- ggplot(dapc_geo, aes(x=LD1, y=LD2, color=grp)) +
+gg_dapc1 <- ggplot(dapc_geo, aes(x=LD1, y=LD2, color=grp)) +
   geom_point(size = 3, alpha = 0.4) +
   stat_ellipse(level = 0.67) +
   # scale_color_viridis_d() +
@@ -78,11 +89,11 @@ gg1 <- ggplot(dapc_geo, aes(x=LD1, y=LD2, color=grp)) +
   theme_classic() +
   labs(color = level) +
   labs(tag = "A")
-gg1
+gg_dapc1
 
 
 
-## ---- compolot plot ----
+## compolot plot ----
 # personalized plot from https://luisdva.github.io/rstats/dapc-plot/
 
 # create an object with membership probabilities
@@ -121,7 +132,7 @@ facetstrips <-
   )
 
 # plot
-gg2 <- ggplot(probs_long, aes(factor(id), prob, fill = factor(cluster))) +
+gg_dapc2 <- ggplot(probs_long, aes(factor(id), prob, fill = factor(cluster))) +
   geom_col(color = "gray", size = 0.01) +
   ggh4x::facet_nested(~ site + station,
                switch = "x",
@@ -141,12 +152,12 @@ gg2 <- ggplot(probs_long, aes(factor(id), prob, fill = factor(cluster))) +
     strip.background =element_rect(fill = "white")) +
   labs(fill = level) +
   labs(tag = "B")
-gg2
+gg_dapc2
 
 
 
 # save
-gg1 / gg2 + 
+gg_dapc1 / gg_dapc2 + 
   patchwork::plot_layout(heights = c(3, 1))
 ggsave(paste0("results/1_genetic_diversity/DAPC_popprior_perso_", filters, "_", sites, "_", level, ".png"),
               height = 12, width = 12)
@@ -154,31 +165,19 @@ ggsave(paste0("results/1_genetic_diversity/DAPC_popprior_perso_", filters, "_", 
 
 
 
-# ## ----------- TO DO!! - DAPC with clustering ---------------------------------
-# grp <- find.clusters(genlight, max.n.clust=20)
-# table(pop(genlight), grp$grp)
-# dapc1 <- dapc(genlight, grp$grp)
-# scatter(dapc1, scree.pca = F, legend = T, clabel = F, cleg = 0.8)
-# compoplot(dapc1, legend = T, show.lab = F, cleg=0.6)
-# 
-# saveRDS(dapc, paste0("intermediate/DAPC_clustering_", filters, "_allsites_5groups.RDS"))
-# 
-# 
-# 
-# 
-# ## ----------- TO DO!! - PCA --------------------------------------------------
-# 
-# PCA <- glPca(genlight, center = TRUE, scale = FALSE, nf = 10, loadings = TRUE, 
-#              alleleAsUnit = FALSE, useC = TRUE, parallel = require("parallel"),
-#              n.cores = NULL, returnDotProd=FALSE, matDotProd=NULL)
-# 
-# DataPlot <- as.data.frame(PCA$scores)
-# DataPlot$pop <- genlight$pop
-# ggplot(DataPlot) +
-#   geom_point(aes(PC1, PC2, color=pop)) +
-#   theme_classic()
-# 
-# 
+# TO DO!! - DAPC with clustering ---------------------------------
+grp <- find.clusters(genlight, max.n.clust=20)
+table(pop(genlight), grp$grp)
+dapc1 <- dapc(genlight, grp$grp)
+scatter(dapc1, scree.pca = F, legend = T, clabel = F, cleg = 0.8)
+compoplot(dapc1, legend = T, show.lab = F, cleg=0.6)
+
+saveRDS(dapc, paste0("intermediate/DAPC_clustering_", filters, "_allsites_5groups.RDS"))
+
+
+
+
+
 
 
 

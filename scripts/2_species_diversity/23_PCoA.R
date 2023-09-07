@@ -1,9 +1,5 @@
 
-library(glue)
-
-## ---- setup beta data ----
-# get distance matrix
-
+# read distance matrix ----
 level = "site"
 comm_delin = "taxonomic_scale_Fishbase"
 
@@ -11,7 +7,7 @@ sd_mat <- readRDS(paste0("results/2_species_diversity/sd_list_pairwise_", level,
 
 
 
-## ---- pcoa analysis ----
+# PCoA ----
 
 gg_list <- list()
 i=1
@@ -58,4 +54,29 @@ plot(gg_grob)
 ggsave(gg_grob, width = 10, height = 10, 
        filename = paste0("results/2_species_diversity/PCoA_beta_species_diversity_", comm_delin, ".png"))
 
+
+
+# NMDS ----
+
+gg_list <- list()
+i=1
+for (metricSD in c("beta.jac", "beta.jtu")){
+  # for (comm in names(sd_mat)){
+  for (comm in names(sd_mat)[c(2,4)]){
+    # read distance matrix
+    mat_SDbeta <- sd_mat[[comm]][[metricSD]]
+    
+    # run pcoa
+    NMDS1 <- ecodist::nmds(mat_SDbeta, mindim = 1, maxdim = 2)
+    NMDS2 <- vegan::metaMDS(mat_SDbeta)
+    
+    # plot
+    ecodist::plot.nmds(NMDS1)
+    temp <- nmds.min(NMDS1)
+    ordiplot (NMDS2)
+    stressplot (NMDS2)
+    
+  }
+  
+}
 
