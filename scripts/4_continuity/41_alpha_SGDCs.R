@@ -3,11 +3,13 @@ library(ggrepel)
 # ---- parameters ----
 level = "site"
 
-# communities delineation
-# comm_delin = "taxonomic_scale_datasp2"
-comm_delin = "taxonomic_scale_Fishbase"
-# comm_delin = "depth_category"
-# comm_delin = "phylogenetic_distance"
+# communtity delineation
+# comm_delin = "taxonomy"
+# comm_delin = "taxonomy_depth1_crosses45-400m"
+# comm_delin = "taxonomy_depth2_contains45-400m"
+# comm_delin = "taxonomy_depth3_within45-400m"
+comm_delin = "taxonomy_env_reef-associated"
+
 list_communities <- readRDS(paste0("intermediate/2_species_diversity/List_community_", comm_delin, ".RDS"))
 
 # parameters
@@ -17,8 +19,8 @@ metricGD = "Hs"
 
 
 # ---- load ----
-gd_alpha <- read.csv(paste0("results/1_genetic_diversity/gd_table_", level, ".csv"))
-sd_alpha <- read.csv(paste0("results/2_species_diversity/sd_table_", level, "_", comm_delin, ".csv"))
+gd_alpha <- read_csv(paste0("results/1_genetic_diversity/gd_table_", level, ".csv"))
+sd_alpha <- read_csv(paste0("results/2_species_diversity/sd_table_", level, "_", comm_delin, ".csv"))
 
 
 
@@ -44,7 +46,7 @@ for (comm in names(list_communities)){
   # filter Seychelles
   table_alpha <-
     filter(table_alpha, site != "Seychelles")
-
+  
   # LM
   sgdc_alpha <- summary(lm(table_alpha[[metricGD]] ~ table_alpha[[metricSD]]))
   
@@ -64,8 +66,8 @@ for (comm in names(list_communities)){
     labs(title = comm) +
     theme(legend.position = "none")
   
-
-  }
+  
+}
 
 gg_grob <- arrangeGrob(grobs = gg_list, ncol=4)
 plot(gg_grob)

@@ -1,11 +1,16 @@
 
-# ---- load ----
+# ---- load data ----
 # parameters
 level = "site"
-# comm_delin = "taxonomic_scale_datasp2"
-# comm_delin = "taxonomic_scale_Fishbase"
-# comm_delin = "depth_category"
-comm_delin = "phylogenetic_distance"
+
+# communtity delineation
+# comm_delin = "taxonomy"
+# comm_delin = "taxonomy_depth1_crosses45-400m"
+# comm_delin = "taxonomy_depth2_contains45-400m"
+# comm_delin = "taxonomy_depth3_within45-400m"
+comm_delin = "taxonomy_env_reef-associated"
+
+
 # read
 dist_mat <- readRDS("intermediate/3_distance_metrics/dist_geo_envt_res17-4.RDS")
 gd_mat <- readRDS(paste0("results/1_genetic_diversity/gd_list_pairwise_", level, ".RDS"))
@@ -21,10 +26,6 @@ dist_mat <-
   dist_mat %>% 
   append(gd_mat) %>% 
   append(sd_mat)
-
-# check order
-
-
 
 
 # ---- melt ----
@@ -60,8 +61,8 @@ dist_merge %>%
 dist_mat %>% 
   saveRDS(paste0("intermediate/3_distance_metrics/dist_geo_envt_res17-4_gd_sd_", comm_delin, ".RDS"))
 
-
-# ---- SD and GD ----
+# ---- *** DRAFTS ----
+## ---- *** SD and GD ----
 # # melt
 # gd_melt <- list()
 # for (i in 1:length(gd_mat)){

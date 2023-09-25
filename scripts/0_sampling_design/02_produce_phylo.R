@@ -1,5 +1,4 @@
-## ---- wrangle phylogenies ----
-# sample phylogeny
+# ---- setup phylogeny ----
 
 # list_species <- 
 #   data_species %>% 
@@ -11,7 +10,7 @@ tree_lutj  <- fishtree_phylogeny(rank = "Lutjanidae")
 tree_lutj$tip.label
 
 
-## ---- plot parameters ----
+# ---- plot parameters ----
 # find edges
 edge <- which.edge(tree_lutj, "Etelis_coruscans") # target edge
 tip <- grep("Etelis_coruscans", tree_lutj$tip.label)
@@ -34,7 +33,7 @@ tipfont[tip] <- 2
 
 
 
-## ---- save plot ----
+# ---- save plot ----
 
 png(paste0("results/0_sampling_design/Phylogeny_lutjanidae_", type, "_raboskytaxo.png"),
     height = 10, width = 10, 
@@ -54,7 +53,7 @@ dev.off()
 
 
 
-## ---- comparative taxonomy !!NOT FINISHED!! ----
+# ---- comparative taxonomy !!NOT FINISHED!! ----
 
 data_species2 <- read.csv("data/data_species.csv")
 data_fishtree <- read.csv("data/PFC_taxonomy.csv")

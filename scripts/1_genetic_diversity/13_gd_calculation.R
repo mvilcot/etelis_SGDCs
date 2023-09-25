@@ -45,15 +45,6 @@ gmatrixPAloc <-
 
 
 
-# ---- tess3r ----
-# https://bcm-uga.github.io/TESS3_encho_sen/articles/main-vignette.html
-
-library(tess3r)
-
-
-
-
-
 # ---- mean genetic diversity ----
 
 # basic stats

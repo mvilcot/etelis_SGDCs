@@ -142,7 +142,9 @@ dev.off()
 
 
 
+
 # ---- tess3 ----
+# https://bcm-uga.github.io/TESS3_encho_sen/articles/main-vignette.html
 library(tess3r)
 
 genotype <- 

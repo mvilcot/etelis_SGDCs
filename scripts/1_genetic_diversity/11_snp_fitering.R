@@ -49,13 +49,13 @@ gl
 gl <- 
   readRDS(file = "intermediate/1_genetic_diversity/Genlight_Etelis_coruscans_ordered.RDS")
 
-# gl.report.bases(gl)
-# gl.report.callrate(gl, method = 'loc')
-# gl.report.callrate(gl, method = 'ind') # missing data by individuals
-# gl.report.maf(gl) # mininum allele frequency
-# gl.report.reproducibility(gl)
-# gl.report.heterozygosity(gl)
-# gl.report.rdepth(gl)
+gl.report.bases(gl)
+gl.report.callrate(gl, method = 'loc')
+gl.report.callrate(gl, method = 'ind') # missing data by individuals
+gl.report.maf(gl) # mininum allele frequency
+gl.report.reproducibility(gl)
+gl.report.heterozygosity(gl)
+gl.report.rdepth(gl)
 
 # get callrate by individual
 options(max.print=2000)
@@ -82,7 +82,7 @@ t5 %>%
 
 # ---- Filtering ----
 
-# 1 - Individual callrate
+## 1 - Individual callrate ----
 # !!!! ALSO REMOVE POPULATIONS IN WHICH LESS THAN TWO INDIVIDUALS
 # Filter individuals called below 50%, identified with vcftools
 # 84913 SNPs, 364 individuals
@@ -98,7 +98,7 @@ gl1 <-
   gl.drop.ind(ind_to_remove, recalc = T, mono.rm = T) 
 gl1
 
-# 2 - Sites with only 1 indiviual left
+## 2 - Populations with only 1 indiviual left ----
 # 84875 SNPs, 363 individuals
 gl2 <- 
   gl1 %>% 
@@ -106,14 +106,14 @@ gl2 <-
 gl2
 
 
-# 3 - Callrate by site - 69304 SNPs
+## 3 - Callrate by site - 69304 SNPs ----
 # Filter genotypes called below 70%
 gl3 <- 
   gl2 %>% 
   gl.filter.callrate(threshold = 0.70)
 gl3
 
-# 4 - MAF - 21948 SNPs
+## 4 - MAF - 21948 SNPs ----
 # Filter genotypes with a allele frequency below 5%
 gl4 <- 
   gl3 %>% 

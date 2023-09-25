@@ -7,6 +7,7 @@ library(pracma)         # findintervals
 library(glue)           # use braces for PXA axis
 # library(reshape)        # melt
 library(ecodist)        # MRM
+library(dotwhisker)     # dotwhisket plot
 
 # plot
 library(ggplot2)        # plots
@@ -73,25 +74,37 @@ for (level in c("site", "station")){ # order levels
 
 
 
-## presence data
+## ---- presence data ----
 data_Etelis <- readRDS("data/Presence_data_Fishbase_Etelis_coruscans.RDS")
 
 
 
-## taxonomy data
-data_species <- read.csv("data/data_species_depth_range_teleo.csv")
+## ---- taxonomy data ----
+data_fishbase <- rfishbase::load_taxa()
 # data_species2 <- read.csv("data/data_species.csv")
 # data_fishtree <- read.csv("data/PFC_taxonomy.csv")
-# data_fishbase <- rfishbase::load_taxa()
 
-# colnames(data_fishbase) <- 
-#   tolower(colnames(data_fishbase))
-# data_fishbase$species <- gsub(" ", "_", data_fishbase$species)
+data_fishbase$Species <- gsub(" ", "_", data_fishbase$Species)
+# colnames(data_fishbase) <- tolower(colnames(data_fishbase))
 
 
+# species_list <- 
+#   data_fishbase %>% 
+#   dplyr::filter(Family == "Lutjanidae") %>% 
+#   pull(Species)
+# 
+# temp <- 
+#   rfishbase::ecology(species_list)
 
-## spatial data
-data_sites <- read.csv("intermediate/0_sampling_design/metadata_sites_subset.csv")
+
+
+## ---- depth data ----
+data_depth <- read_csv("data/data_species_depth_range_teleo.csv")
+
+
+
+## ---- spatial data ----
+data_sites <- read_csv("intermediate/0_sampling_design/metadata_sites_subset.csv")
 
 # relevel
 for (level in c("site", "station")){
@@ -100,7 +113,6 @@ for (level in c("site", "station")){
     ordered(levels = unique(data_sites[order(data_sites$order),][[level]])) %>% 
     droplevels()
 }
-
 
 # get mean coordinates by location
 coord_site <- 
@@ -166,12 +178,10 @@ read.genlight <- function(filters = "missind_callrate0.70_maf0.05",
   }
   
   # set population to station
-  if (level == "station"){
-    genlight@pop <- 
-      genlight@other[["ind.metrics"]][["site"]] %>%
-      droplevels()
-  }
-
+  genlight@pop <- 
+    genlight@other[["ind.metrics"]][["station"]] %>%
+    droplevels()
+  
   # drop sites
   if (!is.null(station2drop)){
     genlight <- gl.drop.pop(genlight, pop.list = station2drop, recalc = T, mono.rm = T)
