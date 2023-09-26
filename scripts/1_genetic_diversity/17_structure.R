@@ -1,15 +1,10 @@
-# library(fields)
-# library(RColorBrewer)
-# library(mapplots)
-
-
 
 # ---- read SNPs dataset ----
 
 # parameters
 filters = "missind1_callrate0.70_maf0.05"
 level = "site"
-sites = "all"
+sites = "allsites"
 nrun = 9
 
 # read genlight
@@ -194,6 +189,10 @@ pl +
   xlab("Longitute") +
   ylab("Latitude") +
   theme_bw()
+
+
+
+
 
 # ---- STRUCTURE ----
 library(strataG)

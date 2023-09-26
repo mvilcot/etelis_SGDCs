@@ -17,7 +17,7 @@ BS <- readRDS(paste0("intermediate/1_genetic_diversity/basic_stats_", level, ".R
 
 # ---- alpha GD by location ----
 
-# get Hs by loci by site
+## Hs by loci ----
 gd_alpha_loci <- 
   dplyr::as_tibble(BS[["Hs"]]) %>% 
   tidyr::pivot_longer(cols = everything(), 
@@ -31,13 +31,35 @@ gd_alpha_loci[[level]] <- factor(gd_alpha_loci[[level]], levels = levels(data_sa
 ggplot(gd_alpha_loci, aes(x=.data[[level]], y=.data[["Hs"]], fill = .data[[level]])) + 
   geom_boxplot() +
   scale_fill_manual(values = color_perso) +
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+  theme_light() +
+  theme(legend.position = "none",
+    axis.text.x = element_text(angle = 30, vjust = 1, hjust=1))
 
 # save
-ggsave(paste0("results/1_genetic_diversity/plot_alpha_Hs_by_", level, ".png"),
-       width = 10, height = 8)
+ggsave(paste0("results/1_genetic_diversity/boxplot_alpha_Hs_", level, "_loci_hierfstat.png"),
+       width = 8, height = 6)
 
 
+
+## Hs by ind dartR ----
+alpha_ind <- read_csv(paste0("results/1_genetic_diversity/gd_table_ind_dartR.csv"))
+
+# add metadata
+alpha_ind <-
+  alpha_ind %>% 
+  dplyr::rename(id = ind.name) %>% 
+  full_join(data_samples)
+
+# plot
+ggplot(alpha_ind, aes(x=.data[[level]], y=.data[["Ho"]], fill = .data[[level]])) + 
+  geom_boxplot() +
+  scale_fill_manual(values = color_perso) +
+  theme_light() +
+  theme(legend.position = "none",
+    axis.text.x = element_text(angle = 30, vjust = 1, hjust=1))
+
+ggsave(paste0("results/1_genetic_diversity/boxplot_alpha_Ho_", level, "_ind_dartR.png"),
+       width = 8, height = 6)
 
 
 # ---- Hs ~ Fst pop specific ----
@@ -45,14 +67,14 @@ ggsave(paste0("results/1_genetic_diversity/plot_alpha_Hs_by_", level, ".png"),
 library(ggrepel)
 
 # Pearson, lm
-corP <- cor(gd_alpha$Hs, gd_alpha$popFst.WG)
-model <- summary(lm(Hs ~ popFst.WG, data = gd_alpha))
+corP <- cor(gd_alpha$Ho, gd_alpha$popFst.WG)
+model <- summary(lm(Ho ~ popFst.WG, data = gd_alpha))
 
 # relevel sites
 gd_alpha[[level]] <- factor(gd_alpha[[level]], levels = levels(data_samples[[level]]))
 
 # plot
-ggplot(gd_alpha, aes(x=popFst.WG, y=Hs, color = .data[[level]])) + 
+ggplot(gd_alpha, aes(x=popFst.WG, y=Ho, color = .data[[level]])) + 
   geom_smooth(method='lm', formula=y~x, colour = "grey35") +
   geom_point() +
   scale_color_manual(values = color_perso) +

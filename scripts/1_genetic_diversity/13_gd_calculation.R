@@ -16,6 +16,10 @@ genlight <-
 
 genlight
 
+# 
+# genlight <- 
+#   genlight %>% 
+#   gl.drop.ind("ECO0919")
 
 
 # ---- convert to other formats ----
@@ -120,16 +124,20 @@ gd_alpha <-
     by = level)
 
 ## ---- with dartR ----
-### !!!Similar values, except for Christmas Island... issue of sampling size ####
-alpha_test <-
-  gl.report.heterozygosity(genlight) %>% 
+## !!!!!! Similar values, except for Christmas Island... issue ECO019 Ho very high ####
+alpha_pop <-
+  gl.report.heterozygosity(genlight, method = "pop") %>% 
   dplyr::rename(site = pop) %>% 
   dplyr::left_join(
     data.frame(popFst.WG = popFst$betaiovl) %>% 
       tibble::rownames_to_column(level), 
     by = level)
 
-write.csv(alpha_test, paste0("results/1_genetic_diversity/gd_table_", level, "_dartR.csv"), row.names = F, quote = F)
+alpha_ind <-
+  gl.report.heterozygosity(genlight, method = "ind") 
+
+alpha_pop %>% write_csv(paste0("results/1_genetic_diversity/gd_table_", level, "_dartR_pop.csv"))
+alpha_ind %>% write_csv(paste0("results/1_genetic_diversity/gd_table_ind_dartR.csv"))
 
 
 
@@ -169,9 +177,9 @@ list_gd_beta_pair %>% saveRDS(paste0("results/1_genetic_diversity/gd_list_pairwi
 
 
 
-# ---- DRAFTS ----
+# ---- *** DRAFTS ----
 
-## ---- Pairwise (diveRsity) ----
+## *** Pairwise (diveRsity) ----
 # test <- diffCalc(infile = "Intermediate/GenepopRadiator_DartSeq_Etelis_coruscans_grouped_missind_callrate0.70_maf0.05_sites_noCocos.gen", 
 #          outfile = "test", fst = T, pairwise = T)
 # 
@@ -183,7 +191,7 @@ list_gd_beta_pair %>% saveRDS(paste0("results/1_genetic_diversity/gd_list_pairwi
 
 
 
-## ---- Jaccard ---- 
+## *** Jaccard ---- 
 # ## HierJd 
 # GDbetaJAC <- HierJd("Intermediate/test.gen", ncode = 3, r = 1, nreg = 1)
 # saveRDS(GDbetaJAC, "Results/test_HierJd_betaGD_stations_noinf2.RDS")
@@ -210,11 +218,11 @@ list_gd_beta_pair %>% saveRDS(paste0("results/1_genetic_diversity/gd_list_pairwi
 #                   ncode=3, nreg=1, r=1)
 # print(JacHier)
 # 
-
-
-
-
-## ---- Compute mean alpha by site ---- 
+# 
+# 
+# 
+# 
+## *** Compute mean alpha by site ---- 
 # gd_alpha_site2 <-
 #   as.data.frame(BS$Hs) %>%
 #   rownames_to_column("loci") %>%
@@ -228,7 +236,7 @@ list_gd_beta_pair %>% saveRDS(paste0("results/1_genetic_diversity/gd_list_pairwi
 # 
 # 
 # 
-## ---- convert to other formats ---- 
+## *** convert to other formats ---- 
 # # Genpop class
 # genpop <- adegenet::genind2genpop(genind)
 # genpop

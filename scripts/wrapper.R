@@ -24,6 +24,8 @@ library(sdmpredictors)  # bio-oracle portal
 library(geodist)        # geographic distance
 library(marmap)         # bathymetry data
 library(gdistance)
+library(sf)
+library(mapview)
 
 # taxonomy
 library(fishtree)       # fish tree of life 
@@ -204,22 +206,50 @@ read.genlight <- function(filters = "missind_callrate0.70_maf0.05",
 
 
 ## Shift longitude [-180,180] to [0, 360]
-# shift.lonst = function(x) {
-#   geom = st_geometry(x)
-#   st_geometry(x) = st_sfc(
-#     lapply(seq_along(geom), function(i) {
-#       geom[[i]][1] = ifelse(geom[[i]][1] < 0, geom[[i]][1] + 360, geom[[i]][1])
-#       return(geom[[i]])
-#     })
-#     , crs = st_crs(geom)
-#   )
-#   return(x)
-# }
+shift.lonst = function(x) {
+  geom = st_geometry(x)
+  st_geometry(x) = st_sfc(
+    lapply(seq_along(geom), function(i) {
+      geom[[i]][1] = ifelse(geom[[i]][1] < 0, geom[[i]][1] + 360, geom[[i]][1])
+      return(geom[[i]])
+    })
+    , crs = st_crs(geom)
+  )
 
-shift.lon = function(df) {
-  df$longitude <- sapply(df$longitude, function(i){ifelse(i < 0, i + 360, i)})
+  longitudecolumn <- grep("Longitude|longitude", colnames(x))
+  x[[longitudecolumn]] <- sapply(x[[longitudecolumn]], function(i){ifelse(i < 0, i + 360, i)})
+  return(x)
+}
+
+shift.lon <- function(df) {
+  longitudecolumn <- grep("Longitude|longitude", colnames(df))
+  df[[longitudecolumn]] <- sapply(df[[longitudecolumn]], function(i){ifelse(i < 0, i + 360, i)})
   return(df)
 }
+
+
+
+## remove location from distance matrix
+loc = "Seychelles"
+
+mat.subset <- function(distmat, location){
+  if("dist" %in% class(distmat)){
+    distmat <- as.matrix(distmat)
+    distmat <- distmat[!grepl(location, rownames(distmat)),
+                       !grepl(location, colnames(distmat))]
+    distmat <- as.dist(distmat)
+  }
+  if("data.frame" %in% class(distmat)){
+    distmat <- distmat[!grepl(location, distmat$site),]
+  }
+  distmat
+}
+
+mat.subset(dist_mat[[1]], "Seychelles")
+
+
+
+
 
 
 

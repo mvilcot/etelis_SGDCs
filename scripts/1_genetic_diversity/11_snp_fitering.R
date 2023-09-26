@@ -56,6 +56,7 @@ gl.report.maf(gl) # mininum allele frequency
 gl.report.reproducibility(gl)
 gl.report.heterozygosity(gl)
 gl.report.rdepth(gl)
+gl.report.secondaries(gl)
 
 # get callrate by individual
 options(max.print=2000)
@@ -159,6 +160,6 @@ gl4 %>%
 
 
 # ---- Smearplot ----
-gl4 %>% 
+gl4 %>%
   gl.smearplot(plot_colors = c("blue", "red", "green", "white"))
 

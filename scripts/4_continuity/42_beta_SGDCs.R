@@ -155,7 +155,7 @@ for (comm in names(list_communities)){
   stat_LM[[comm]] <- lm(dist_merge[[metricSDcomm]] ~ dist_merge[[metricGD]])
   
   
-  ## plot -----
+  ## plot ----
   gg_list[[comm]] <-
     ggplot(dist_merge, aes(.data[[metricSDcomm]], .data[[metricGD]])) +
     geom_point() +
