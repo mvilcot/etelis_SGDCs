@@ -1,7 +1,7 @@
 
 # ---- read distance matrix ----
 level = "site"
-comm_delin = "taxonomic_scale_Fishbase"
+comm_delin = "taxonomy"
 
 sd_mat <- readRDS(paste0("results/2_species_diversity/sd_list_pairwise_", level, "_", comm_delin, ".RDS"))
 
@@ -36,6 +36,7 @@ for (metricSD in c("beta.jac", "beta.jtu")){
       geom_text(label = rownames(pcoa$li)) +
       scale_color_manual(values = color_perso) +
       ggtitle(comm, subtitle = metricSD) +
+      theme_light() +
       theme(legend.position="none")
     
     i=i+1
@@ -44,8 +45,7 @@ for (metricSD in c("beta.jac", "beta.jtu")){
 }
 
 gg_grob <- arrangeGrob(grobs = gg_list, 
-                       ncol = length(names(sd_mat))/2, 
-                       # ncol = length(names(sd_mat)), 
+                       ncol = length(names(sd_mat))/2, # ncol = length(names(sd_mat)), 
                        nrow = 2 # nrow = length(names(sd_mat[[1]])),
           )
 

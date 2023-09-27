@@ -91,6 +91,38 @@ ggsave(paste0("results/1_genetic_diversity/plot_Hs_Fst_pop_specific_", level, ".
 
 
 
+# Hs ~ longitude ----
+## load
+df <-
+  coord_site %>% 
+  rownames_to_column("site") %>% 
+  left_join(gd_alpha)
+
+## relevel
+df$site <- factor(df$site, levels = unique(df$site))
+df <- shift.lon(df)# Pearson, lm
+
+## correlation
+corP <- cor.test(df$longitude, df$Ho)
+
+## plot
+ggplot(df, aes(x=longitude, y=Ho, color = .data[[level]])) + 
+  # geom_smooth(method='lm', formula=y~x, colour = "grey35") +
+  geom_point() +
+  scale_color_manual(values = color_perso) +
+  theme_light()+
+  # geom_text_repel(aes(label=.data[[level]]), ) +
+  annotate('text', x=max(df$longitude), y=max(df$Ho), 
+           hjust=1, vjust=1, size=4.5,
+           label=paste0("Pearson = ", round(corP$estimate, 4),
+                        "\n p = ", round(corP$p.value, 4)))
+
+
+# save
+ggsave(paste0("results/1_genetic_diversity/alpha_gd_Ho_longitude_site.png"),
+       width = 8, height = 6)
+
+
 
 
 # ---- comparison beta GD metrics ----
@@ -146,3 +178,10 @@ ggplot(merge_gd_beta, aes(Fst, D.Jost, color = Christmas)) +
 # temp <- cor(merge_gd_beta[, names(gd_beta)])
 # corrplot(temp)
 # 
+
+
+# Hs ~ dist to CT ----
+## !!!!!!!! TO DO !!!!!!!!!!!!!!!! ----
+
+
+

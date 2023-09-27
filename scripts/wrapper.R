@@ -245,8 +245,6 @@ mat.subset <- function(distmat, location){
   distmat
 }
 
-mat.subset(dist_mat[[1]], "Seychelles")
-
 
 
 
