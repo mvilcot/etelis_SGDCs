@@ -206,26 +206,24 @@ read.genlight <- function(filters = "missind_callrate0.70_maf0.05",
 
 
 ## Shift longitude [-180,180] to [0, 360]
-shift.lonst = function(x) {
-  geom = st_geometry(x)
-  st_geometry(x) = st_sfc(
-    lapply(seq_along(geom), function(i) {
-      geom[[i]][1] = ifelse(geom[[i]][1] < 0, geom[[i]][1] + 360, geom[[i]][1])
-      return(geom[[i]])
-    })
-    , crs = st_crs(geom)
-  )
-
+# for both df or sf
+shift.lon = function(x) {
   longitudecolumn <- grep("Longitude|longitude", colnames(x))
   x[[longitudecolumn]] <- sapply(x[[longitudecolumn]], function(i){ifelse(i < 0, i + 360, i)})
+
+  if("sf" %in% class(x)){
+    geom = st_geometry(x)
+    st_geometry(x) = st_sfc(
+      lapply(seq_along(geom), function(i) {
+        geom[[i]][1] = ifelse(geom[[i]][1] < 0, geom[[i]][1] + 360, geom[[i]][1])
+        return(geom[[i]])
+      }),
+      crs = st_crs(geom)
+    )
+  }
   return(x)
 }
 
-shift.lon <- function(df) {
-  longitudecolumn <- grep("Longitude|longitude", colnames(df))
-  df[[longitudecolumn]] <- sapply(df[[longitudecolumn]], function(i){ifelse(i < 0, i + 360, i)})
-  return(df)
-}
 
 
 

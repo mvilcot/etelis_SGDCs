@@ -3,33 +3,23 @@ dist_mat <-
   readRDS("intermediate/3_distance_metrics/dist_geo.RDS")
 
 
-# ---- current velocity ----
-# layers_velocity <- 
-#   list_layers() %>%
-#   filter(dataset_code == "Bio-ORACLE") %>% 
-#   filter(grepl("Current velocity", name))
-# write.csv(layers_velocity, "intermediate/0_sampling_design/layers_bio-oracle_velocity.csv",
-#           quote = F, row.names = F)
-
-
 # ---- load environmental predictors ----
 variables <-
-  c("BO_chlomean",
-    "BO_dissox",
-    "BO_nitrate",
-    "BO_ph",
-    "BO_salinity",
-    "BO_sstmean",
-    "BO_sstmax",
-    "BO_sstmin")
-    # "BO21_tempmean_bdmean",
-    # "BO22_curvelltmax_bdmean")
+  c("BO2_chlomean_bdmean",
+    "BO2_dissoxmean_bdmean",
+    "BO2_nitratemean_bdmean",
+    # "BO2_ph", # does not exist for bottom depth
+    "BO2_salinitymean_bdmean",
+    "BO2_tempmean_bdmean",
+    "BO2_tempmax_bdmean",
+    "BO2_tempmin_bdmean"
+  )
 
 envt_layers <-
   sdmpredictors::load_layers(variables)
 
 
-# ---- wrangle data ----
+# ---- setup data ----
 # convert rasters to spatRaster
 envt_layers <- 
   rast(envt_layers)
@@ -55,14 +45,14 @@ envt_site <-
 
 ## export
 envt_site %>% 
-  write.csv("intermediate/3_distance_metrics/bio_oracle_variables.csv",
+  write.csv("intermediate/3_distance_metrics/bio_oracle_variables_bdmean.csv",
             row.names = T, quote = F)
 
 
 # ---- scale variables ----
 envt_site_scaled <- 
   envt_site %>%
-  dplyr::select(variables) %>% 
+  dplyr::select(all_of(variables)) %>% 
   log() %>% ################# CHECK IF LOG NEEDED (cf DiBattista et al. 2020)
   scale() %>% 
   as.data.frame() %>% 
@@ -182,4 +172,15 @@ ggsave("results/3_distance_metrics/environmental_variables_scaled_pca.png",
 dist_mat %>% 
   saveRDS("intermediate/3_distance_metrics/dist_geo_envt.RDS")
 
+
+
+
+# ---- *** DRAFTs ----
+## *** current velocity ----
+# layers_velocity <- 
+#   list_layers() %>%
+#   filter(dataset_code == "Bio-ORACLE") %>% 
+#   filter(grepl("Current velocity", name))
+# write.csv(layers_velocity, "intermediate/0_sampling_design/layers_bio-oracle_velocity.csv",
+#           quote = F, row.names = F)
 
