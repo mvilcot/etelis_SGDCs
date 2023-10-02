@@ -4,15 +4,15 @@
 level = "site"
 
 # communtity delineation
-# comm_delin = "taxonomy"
+comm_delin = "taxonomy"
 # comm_delin = "taxonomy_depth1_crosses45-400m"
 # comm_delin = "taxonomy_depth2_contains45-400m"
 # comm_delin = "taxonomy_depth3_within45-400m"
-comm_delin = "taxonomy_env_reef-associated"
+# comm_delin = "taxonomy_env_reef-associated"
 
 
 # read
-dist_mat <- readRDS("intermediate/3_distance_metrics/dist_geo_envt_res17-4.RDS")
+dist_mat <- readRDS("intermediate/3_distance_metrics/dist_geo_envtbdmean.RDS")
 gd_mat <- readRDS(paste0("results/1_genetic_diversity/gd_list_pairwise_", level, ".RDS"))
 sd_mat <- readRDS(paste0("results/2_species_diversity/sd_list_pairwise_", level, "_", comm_delin, ".RDS"))
 
@@ -55,11 +55,11 @@ dist_merge <-
 
 # ---- save ----
 dist_merge %>% 
-  write.csv(paste0("results/3_distance_metrics/dist_geo_envt_res17-4_gd_sd_", comm_delin, ".csv"), 
+  write.csv(paste0("results/3_distance_metrics/dist_geo_envtbdmean_gd_sd_", comm_delin, ".csv"), 
             row.names = F, quote = F)
 
 dist_mat %>% 
-  saveRDS(paste0("intermediate/3_distance_metrics/dist_geo_envt_res17-4_gd_sd_", comm_delin, ".RDS"))
+  saveRDS(paste0("intermediate/3_distance_metrics/dist_geo_envtbdmean_gd_sd_", comm_delin, ".RDS"))
 
 # ---- *** DRAFTS ----
 ## ---- *** SD and GD ----

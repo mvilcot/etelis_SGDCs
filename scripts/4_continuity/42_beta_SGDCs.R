@@ -20,10 +20,10 @@ metricDIST = "seadist"
 
 # ---- load ----
 dist_merge <-
-  read_csv(paste0("results/3_distance_metrics/dist_geo_envt_res17-4_gd_sd_", comm_delin, ".csv"))
+  read_csv(paste0("results/3_distance_metrics/dist_geo_envtbdmean_gd_sd_", comm_delin, ".csv"))
 
 dist_mat <-
-  readRDS(paste0("intermediate/3_distance_metrics/dist_geo_envt_res17-4_gd_sd_", comm_delin, ".RDS"))
+  readRDS(paste0("intermediate/3_distance_metrics/dist_geo_envtbdmean_gd_sd_", comm_delin, ".RDS"))
 
 names(dist_mat)
 
@@ -272,7 +272,7 @@ metricSD = paste(comm, "beta.jtu", sep = ".")
 metricGD = "Fst"
 
 
-png(paste0("results/4_continuity/variance_decomposition_beta_SGDCs_noSeychelles_", comm, "_", comm_delin, ".png"),
+png(paste0("results/4_continuity/variance_decomposition_beta_SGDCs_noSeychelles_", comm, "_", comm_delin, "_bdmean.png"),
     width = 10, height = 5, units = 'in', res = 300)
 par(oma = c(2,12,2,2),
     mar = c(1,1,1,1))

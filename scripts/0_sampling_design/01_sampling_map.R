@@ -1,11 +1,10 @@
-
-# ---- setup sites data ----
-
-## get number of Etelis coruscans sample by site
+# ---- Load ----
+## setup sites data ----
+# get number of Etelis coruscans sample by site
 temp <- as.data.frame(table(data_samples$site))
 colnames(temp) <- c("site", "N")
 
-## merge to coordinates
+# merge to coordinates
 coord_siteN <-
   coord_site %>% 
   rownames_to_column("site") %>% 
@@ -13,18 +12,17 @@ coord_siteN <-
   as_tibble()
 write_csv(coord_siteN, "intermediate/0_sampling_design/coord_sites_N.csv")
 
-## relevel sites
+# relevel sites
 coord_siteN$site <- factor(coord_siteN$site, levels = coord_siteN$site)
 
 
-# ---- data range Etelis coruscans ----
-
-## Keep only presence data
+##  data range Etelis coruscans ----
+# Keep only presence data
 data_EtelisP <- data_Etelis[data_Etelis$Etelis_coruscans == 1, ]
 
 
 
-# ---- mapview sampling sites ----
+# ---- Mapview sampling sites ----
 
 ## transform to sf ----
 coord_site_sf <- st_as_sf(coord_siteN, 
@@ -45,7 +43,7 @@ mapshot(mapsites, url = "results/0_sampling_design/Mapview_sampling_sites.html")
 
 
 
-# bathymetry map ----
+# ---- Map bathymetry ----
 #load
 Bathy <- 
   getNOAA.bathy(lon1 = -180, lon2 = 180,
@@ -80,7 +78,7 @@ dev.off()
 
 
 
-# ---- ggplot sampling sites ----
+# ---- Map sampling sites ----
 
 ## load maps ----
 # full map
@@ -241,13 +239,103 @@ ggsave("results/0_sampling_design/Map_seamounts_corals_ocean.pdf",
        height = 8, width = 16)
 
 
-## ---- crop to have only IndoP ----
+## crop to have only IndoP ----
 raster_final_crop <- raster::crop(raster_final, extent(35, 280, -35, 35))
 
 cat("Construction raster complete \n")
 
 
 
+# ---- Map reef shapes ----
+library(tidyterra)
+
+## load ----
+coord_vect <- vect(coord_site, geom=c("longitude", "latitude"), crs = "EPSG:4326")
+MEOW <- vect("data/seascape/MEOW/Marine_Ecoregions_Of_the_World__MEOW_.shp", crs = "EPSG:3857")
+# from https://geospatial.tnc.org/datasets/ed2be4cf8b7a451f84fd093c2e7660e3_0/explore
+reefs <- vect("data/seascape/14_001_WCMC008_CoralReefs2021_v4_1/01_Data/WCMC008_CoralReef2021_Py_v4_1.shp")
+# from https://data.unep-wcmc.org/datasets/1
+
+## project ----
+MEOW <- 
+  MEOW %>% 
+  terra::project("EPSG:4326")
+
+## extract region of each sampling site ----
+temp <- terra::extract(MEOW, coord_vect)
+coord_siteT <- cbind(coord_site, temp)
+coord_siteT
+
+## project to Pacific ----
+MEOW <-
+  MEOW %>%
+  terra::project("EPSG:3832")
+
+reefs <-
+  reefs %>%
+  terra::project("EPSG:3832")
+
+coord_vect <-
+  coord_vect %>%
+  terra::project("EPSG:3832")
+
+stations_vect <-
+  vect(data_sites, geom=c("Longitude_approx", "Latitude_approx"), crs = "EPSG:4326") %>% 
+  terra::project("EPSG:3832")
+
+
+
+
+## plot MEOW ----
+ggplot() +
+  geom_spatvector(data = MEOW) +
+  geom_spatvector(data = coord_vect, color = "orange") +
+  theme_light() 
+
+
+
+## plot by sampling site ----
+
+gg_list <- list()
+reef_list <- list()
+# coord_siteT$area <- NA
+
+for(i in 1:nrow(coord_siteT)){
+  focalsite <- rownames(coord_siteT)[i]
+  
+  MEOWsub <- 
+    terra::subset(MEOW, MEOW$ECO_CODE == coord_siteT$ECO_CODE[i])
+  
+  reef_list[[focalsite]] <- terra::crop(reefs, MEOWsub)
+  
+  stations_sub <- 
+    stations_vect %>% 
+    filter(site == focalsite)
+  
+  ## basic plot
+  # plot(reef_list[[i]])
+  # plot(coord_vect[i], add = T, col = "red", cex = 5)
+  
+  ## compute area
+  # coord_siteT$area[i] <- sum(terra::expanse(reef_list[[i]]))
+  
+  gg_list[[focalsite]] <-
+    ggplot() +
+    geom_spatvector(data = MEOWsub, fill = "grey95", color = "darkgrey") +
+    geom_spatvector(data = reef_list[[i]], color = "#EDAE49") +
+    geom_spatvector(data = stations_sub,
+                    color = "grey40", size = 2, alpha = 0.8) +
+    geom_spatvector(data = coord_vect[i,],
+                    color = "black", size = 5, alpha = 0.8) +
+    # ggrepel::geom_text_repel(data = shift.lon(coord_site)[i,], aes(x=longitude, y=latitude, label = focalsite), color = "orange") +
+    ggtitle(paste(rownames(coord_siteT)[i], coord_siteT$ECOREGION[i], sep = ", ")) + 
+    theme_bw()
+}
+
+gg_grob <- arrangeGrob(grobs = gg_list, ncol=5)
+# plot(gg_grob)
+ggsave(gg_grob, width = 25, height = 12.5, 
+       filename = paste0("results/0_sampling_design/MEOW_reef_shapes_shift_stations.png"))
 
 
 
