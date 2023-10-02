@@ -7,4 +7,4 @@ data/
 intermediate/
 results/
 scripts/unsorted/
-coord_sites_N.csv
+marmap_coord_*.csv
