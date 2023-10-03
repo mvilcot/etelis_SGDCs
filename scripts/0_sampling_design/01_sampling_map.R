@@ -1,46 +1,32 @@
-# ---- Load ----
-## setup sites data ----
-# get number of Etelis coruscans sample by site
-temp <- as.data.frame(table(data_samples$site))
-colnames(temp) <- c("site", "N")
 
-# merge to coordinates
-coord_siteN <-
-  coord_site %>% 
-  rownames_to_column("site") %>% 
-  left_join(temp) %>% 
-  as_tibble()
-write_csv(coord_siteN, "intermediate/0_sampling_design/coord_sites_N.csv")
-
-# relevel sites
-coord_siteN$site <- factor(coord_siteN$site, levels = coord_siteN$site)
-
-
-##  data range Etelis coruscans ----
+# data range Etelis coruscans ----
 # Keep only presence data
 data_EtelisP <- data_Etelis[data_Etelis$Etelis_coruscans == 1, ]
+
+
+# transform to sf ----
+vect_sites <- 
+  data_sites %>% 
+  vect(geom=c("longitude", "latitude"), crs = "WGS84") %>% 
+  terra::rotate(left = FALSE)
+
+vect_stations <- 
+  data_stations %>% 
+  vect(geom = c("Longitude_approx", "Latitude_approx"), crs = "WGS84") %>% 
+  terra::rotate(left = FALSE)
+
 
 
 
 # ---- Mapview sampling sites ----
 
-## transform to sf ----
-coord_site_sf <- st_as_sf(coord_siteN, 
-                        coords = c("longitude", "latitude"), 
-                        crs = "WGS84", remove = FALSE)
-
-data_sites_sf <- st_as_sf(data_sites, 
-                          coords = c("Longitude_approx", "Latitude_approx"), 
-                          crs = "WGS84", remove = FALSE)
-
 ## plot ----
 mapsites <-
-  mapview(shift.lon(data_sites_sf), col.regions=list("grey"), cex = 2, legend = F) +
-  mapview(shift.lon(coord_site_sf), zcol = "site", cex = "N", label = "N")
+  mapview(vect_stations, col.regions=list("grey"), cex = 2, legend = F) +
+  mapview(vect_sites, zcol = "site", cex = "number_samples", label = "N")
 mapsites
 
 mapshot(mapsites, url = "results/0_sampling_design/Mapview_sampling_sites.html")
-
 
 
 # ---- Map bathymetry ----
@@ -70,7 +56,7 @@ plot.bathy(Bathy,
 scaleBathy(Bathy, 
            deg = 20, x = "bottomleft", inset = 2)
 
-points(shift.lon(coord_site)$longitude, shift.lon(coord_site)$latitude,
+points(shift.lon(data_sites)$longitude, shift.lon(data_sites)$latitude,
        pch = 21, col = "black", bg = "red", cex = 1)
 
 dev.off()
@@ -87,6 +73,7 @@ map1 <-
   as_tibble()
 
 # add map +360
+## >>> SEE IF POSSIBLE TO DO WITH terra::rotate(left = FALSE) #########
 map2 <- 
   map1 %>% 
   mutate(long = long + 360,
@@ -102,31 +89,42 @@ bat_xyz <- as.xyz(Bathy)
 
 
 ## plot ----
-library(sf)
+# library(sf)
+# autoplot.bathy(Bathy, geom="tile")
 
 ## bathy
 gg <- 
   ggplot() +
-  # autoplot.bathy(Bathy, geom="tile")
+  
+  ## Bathymetry
   geom_tile(data = bat_xyz, aes(x = V1, y = V2, fill = V3),
             width = 2) +
   scale_fill_gradient2(low="dodgerblue4", high="white") +
+  
+  ## Etelis presence
   geom_point(data = shift.lon(data_EtelisP), aes(x = Longitude, y = Latitude),
-             color = "darkgreen", shape = 15, size = 1.8) +
+             color = "grey40", shape = 15, size = 1.8) +
+  
+  ## Countries
   geom_polygon(data = map, aes(x = long, y = lat, group = group), fill="grey20") +
-  geom_point(data = shift.lon(coord_site_sf),
-             aes(x = longitude, y = latitude, color = site, size = N),
-             fill = "white", shape = 21) +
-  scale_color_viridis(discrete = T) +
-  ggrepel::geom_text_repel(data = shift.lon(coord_site_sf),
+  
+  ## Sites
+  geom_spatvector(data = vect_sites, aes(color = site, size = number_samples),
+                  fill = "white", shape = 21, show.legend = T) +
+  # geom_spatvector_text(data = vect_sites, aes(label = site, color = site)) +
+  ggrepel::geom_text_repel(data = shift.lon(data_sites),
             aes(x = longitude, y = latitude, color = site, label = site),
             hjust=0, vjust=0, max.overlaps = 10) +
+  scale_color_viridis(discrete = T) +
+  
+  ## Theme
   theme_minimal() +
   theme(legend.position = "none") +
   labs(x = "Longitude", y = "Latitude") +
-  coord_map() +
-  coord_sf(xlim = c(30, 200), ylim = c(-45, 40))
+  coord_sf(xlim = c(30, 200), ylim = c(-45, 40),
+           crs = "EPSG:3832")
 
+gg
 
 ggsave("results/0_sampling_design/ggplot_Map_sampling_sites_bathy_10.png", 
        gg,
@@ -134,40 +132,95 @@ ggsave("results/0_sampling_design/ggplot_Map_sampling_sites_bathy_10.png",
 
 
 ## no bathy
+# gg <- 
+#   ggplot() +
+#  
+#   ## Etelis presence
+#   geom_point(data = shift.lon(data_EtelisP), aes(x = Longitude, y = Latitude),
+#              color = "grey40", shape = 15, size = 1.8) +
+#   
+#   ## Countries
+#   geom_polygon(data = map, aes(x = long, y = lat, group = group), fill="grey20") +
+#   
+#   ## Sites
+#   geom_spatvector(data = vect_sites, aes(color = site, size = number_samples),
+#                   fill = "white", shape = 21, show.legend = T) +
+#   # geom_spatvector_text(data = vect_sites, aes(label = site, color = site)) +
+#   ggrepel::geom_text_repel(data = shift.lon(data_sites),
+#                            aes(x = longitude, y = latitude, color = site, label = site),
+#                            hjust=0, vjust=0, max.overlaps = 10) +
+#   scale_color_viridis(discrete = T) +
+#   
+#   ## Theme
+#   theme_minimal() +
+#   theme(legend.position = "none") +
+#   labs(x = "Longitude", y = "Latitude")
+# gg
+
 gg <- 
   ggplot() +
+  
+  ## Etelis presence
   geom_point(data = shift.lon(data_EtelisP), aes(x = Longitude, y = Latitude),
              color = "darkgrey", shape = 15, size = 1.8) +
+  ## Countries
   geom_polygon(data = map, aes(x = long, y = lat, group = group), fill="grey20") +
-  geom_point(data = shift.lon(coord_site_sf),
-             aes(x = longitude, y = latitude, color = site, size = N),
+  ## Sites
+  geom_point(data = shift.lon(data_sites),
+             aes(x = longitude, y = latitude, color = site, size = number_samples),
              fill = "white", shape = 21) +
-  ggrepel::geom_text_repel(data = shift.lon(coord_site_sf),
+  ggrepel::geom_text_repel(data = shift.lon(data_sites),
                            aes(x = longitude, y = latitude, color = site, label = site),
-                           hjust=0, vjust=0, max.overlaps = 10) +
+                           hjust=0, vjust=0, max.overlaps = 5, nudge_x = -10) +
+  ## Theme
   scale_color_viridis(discrete = T) +
   theme_minimal() +
   theme(legend.position = "none") +
   labs(x = "Longitude", y = "Latitude") +
-  coord_map() 
-  # coord_sf(xlim = c(30, 200), ylim = c(-45, 40))
+  coord_map
 
+gg
 
 ggsave("results/0_sampling_design/ggplot_Map_sampling_sites.png", 
        gg,
-       height = 8, width = 12)
+       height = 7, width = 11)
 
+
+## no range
+gg <- 
+  ggplot() +
+  ## Countries
+  geom_polygon(data = map, aes(x = long, y = lat, group = group), fill="grey20") +
+  ## Sites
+  geom_point(data = shift.lon(data_sites),
+             aes(x = longitude, y = latitude, color = site, size = number_samples),
+             fill = "white", shape = 21) +
+  ggrepel::geom_text_repel(data = shift.lon(data_sites),
+                           aes(x = longitude, y = latitude, color = site, label = site),
+                           hjust=0, vjust=0, max.overlaps = 5, nudge_x = -10) +
+  ## Theme
+  scale_color_viridis(discrete = T) +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  labs(x = "Longitude", y = "Latitude") +
+  coord_map()
+
+gg
+
+ggsave("results/0_sampling_design/ggplot_Map_sampling_sites_norange.png", 
+       gg,
+       height = 7, width = 11)
 
 
 
 # ---- Map seamounts, reefs ----
 ## empty raster ----
-raster_empty <- raster::raster(res = 0.2)
+raster_empty <- raster::raster(res = 0.6)
 
 
 ## coord of reefs: convert in a raster ----
 # reefs coordinates provided by ReefBase (http://www.reefbase.org)
-coord_reefs <- read.csv("data/Lesturgie_2023/raster/Reefs/ReefLocations.csv")
+coord_reefs <- read_csv("data/Lesturgie_2023/raster/Reefs/ReefLocations.csv")
 coord_reefs <- cbind(coord_reefs$LON, coord_reefs$LAT)
 raster_corals <- raster::rasterize(coord_reefs, raster_empty, field=1)
 
@@ -191,7 +244,6 @@ raster_seamounts <- raster::setValues(raster_seamounts, A1)
 
 ## raster of the world ----
 # downloaded at https://www.naturalearthdata.com/downloads/50m-raster-data/50m-natural-earth-1/
-raster_world <- rnaturalearth::
 raster_world <- raster("data/Lesturgie_2023/raster/NE1_50M_SR_W/NE1_50M_SR_W.tif")
 raster_world <- raster::aggregate(raster_world, fact=18, fun=mean)
 
@@ -231,66 +283,61 @@ df_final$category[df_final$category==2000] <- "reef"
 
 ggplot() +
   geom_raster(data = df_final, aes(x = x, y = y, fill = category)) +
-  scale_fill_manual(values = c("white","#dae7ed","#EDAE49","#233143")) +
-  geom_point(data = shift.lon(coord_site), aes(longitude, latitude), color = "red") +
+  scale_fill_manual(values = c("white","#dae7ed","#EDAE49","#5e7d4a")) +
+  geom_point(data = shift.lon(data_sites), aes(longitude, latitude), size = 3, color = "red") +
   theme_void() +
-  coord_fixed()
-ggsave("results/0_sampling_design/Map_seamounts_corals_ocean.pdf",
-       height = 8, width = 16)
-
-
-## crop to have only IndoP ----
-raster_final_crop <- raster::crop(raster_final, extent(35, 280, -35, 35))
-
-cat("Construction raster complete \n")
-
+  coord_sf(xlim = c(30, 220),
+           ylim = c(-50, 50))
+ggsave("results/0_sampling_design/Map_seamounts_corals_ocean.png",
+       height = 8, width = 16, units = "in", dpi = 300)
 
 
 # ---- Map reef shapes ----
-library(tidyterra)
-
 ## load ----
-coord_vect <- vect(coord_site, geom=c("longitude", "latitude"), crs = "EPSG:4326")
 MEOW <- vect("data/seascape/MEOW/Marine_Ecoregions_Of_the_World__MEOW_.shp", crs = "EPSG:3857")
 # from https://geospatial.tnc.org/datasets/ed2be4cf8b7a451f84fd093c2e7660e3_0/explore
 reefs <- vect("data/seascape/14_001_WCMC008_CoralReefs2021_v4_1/01_Data/WCMC008_CoralReef2021_Py_v4_1.shp")
 # from https://data.unep-wcmc.org/datasets/1
 
-## project ----
-MEOW <- 
-  MEOW %>% 
-  terra::project("EPSG:4326")
 
 ## extract region of each sampling site ----
-temp <- terra::extract(MEOW, coord_vect)
-coord_siteT <- cbind(coord_site, temp)
-coord_siteT
+MEOW <- 
+  MEOW %>% 
+  terra::project("WGS84")
 
-## project to Pacific ----
-MEOW <-
-  MEOW %>%
-  terra::project("EPSG:3832")
+vect_sitesWGS <- 
+  data_sites %>% 
+  vect(geom=c("longitude", "latitude"), crs = "WGS84") # back to -180/180
 
-reefs <-
-  reefs %>%
-  terra::project("EPSG:3832")
-
-coord_vect <-
-  coord_vect %>%
-  terra::project("EPSG:3832")
-
-stations_vect <-
-  vect(data_sites, geom=c("Longitude_approx", "Latitude_approx"), crs = "EPSG:4326") %>% 
-  terra::project("EPSG:3832")
-
-
+data_regions <-
+  data_sites %>% 
+  cbind(terra::extract(MEOW, vect_sitesWGS))
 
 
 ## plot MEOW ----
 ggplot() +
   geom_spatvector(data = MEOW) +
-  geom_spatvector(data = coord_vect, color = "orange") +
-  theme_light() 
+  geom_spatvector(data = vect_sitesWGS, color = "#EDAE19") +
+  theme_light()
+
+
+## project to Pacific ----
+MEOWP <-
+  MEOW %>%
+  terra::project("EPSG:3832") 
+
+reefsP <-
+  reefs %>%
+  terra::project("EPSG:3832")
+
+vect_sitesP <-
+  vect_sites %>%
+  terra::project("EPSG:3832")
+
+vect_stationsP <-
+  vect_stations %>% 
+  terra::project("EPSG:3832")
+
 
 
 
@@ -298,60 +345,70 @@ ggplot() +
 
 gg_list <- list()
 reef_list <- list()
-# coord_siteT$area <- NA
+# data_regions$area <- NA
 
-for(i in 1:nrow(coord_siteT)){
-  focalsite <- rownames(coord_siteT)[i]
+for(i in 1:nrow(data_regions)){
+  focalsite <- as.character(data_regions$site[i])
   
   MEOWsub <- 
-    terra::subset(MEOW, MEOW$ECO_CODE == coord_siteT$ECO_CODE[i])
+    terra::subset(MEOWP, MEOWP$ECO_CODE == data_regions$ECO_CODE[i])
   
-  reef_list[[focalsite]] <- terra::crop(reefs, MEOWsub)
+  reef_list[[focalsite]] <- terra::crop(reefsP, MEOWsub)
   
   stations_sub <- 
-    stations_vect %>% 
-    filter(site == focalsite)
+    vect_stationsP %>% 
+    dplyr::filter(site == focalsite)
   
-  ## basic plot
+  # ## basic plot
   # plot(reef_list[[i]])
-  # plot(coord_vect[i], add = T, col = "red", cex = 5)
+  # plot(vect_sitesP[i], add = T, col = "red", cex = 5)
   
   ## compute area
-  # coord_siteT$area[i] <- sum(terra::expanse(reef_list[[i]]))
+  # data_regions$area[i] <- sum(terra::expanse(reef_list[[i]]))
   
   gg_list[[focalsite]] <-
     ggplot() +
-    geom_spatvector(data = MEOWsub, fill = "grey95", color = "darkgrey") +
-    geom_spatvector(data = reef_list[[i]], color = "#EDAE49") +
-    geom_spatvector(data = stations_sub,
-                    color = "grey40", size = 2, alpha = 0.8) +
-    geom_spatvector(data = coord_vect[i,],
-                    color = "black", size = 5, alpha = 0.8) +
-    # ggrepel::geom_text_repel(data = shift.lon(coord_site)[i,], aes(x=longitude, y=latitude, label = focalsite), color = "orange") +
-    ggtitle(paste(rownames(coord_siteT)[i], coord_siteT$ECOREGION[i], sep = ", ")) + 
-    theme_bw()
+    geom_spatvector(data = MEOWsub, fill = "grey95", color = "grey40") +
+    geom_spatvector(data = reef_list[[i]], color = "grey10") +
+    # geom_spatvector(data = stations_sub, shape = 18,
+    #                 color = "#e6c897", size = 2, alpha = 0.8) +
+    geom_spatvector(data = vect_sitesP[i,], shape = 23,
+                    fill = "#EDAE49", color = "#EDAE19", size = 4, alpha = 0.8) +
+    # ggrepel::geom_text_repel(data = shift.lon(data_sites)[i,], aes(x=longitude, y=latitude, label = focalsite), color = "orange") +
+    ggtitle(paste(focalsite, data_regions$ECOREGION[i], sep = ", ")) + 
+    theme_light()
 }
 
+
 gg_grob <- arrangeGrob(grobs = gg_list, ncol=5)
-# plot(gg_grob)
-ggsave(gg_grob, width = 25, height = 12.5, 
-       filename = paste0("results/0_sampling_design/MEOW_reef_shapes_shift_stations.png"))
+plot(gg_grob)
+ggsave(gg_grob, width = 20, height = 10, 
+       filename = paste0("results/0_sampling_design/MEOW_reef_shapes.png"))
 
 
 
-# # ---- *** DRAFTS ----
-# ## *** ggplot rnaturalearth ----
+## ---- *** DRAFTS ----
+# 
+# sf_sites <- st_as_sf(data_sites, 
+#                           coords = c("longitude", "latitude"), 
+#                           crs = "WGS84", remove = FALSE)
+# 
+# sf_stations <- st_as_sf(data_stations, 
+#                           coords = c("Longitude_approx", "Latitude_approx"), 
+#                           crs = "WGS84", remove = FALSE)
+# 
+### *** ggplot rnaturalearth ----
 # world <- rnaturalearth::ne_countries(scale = "medium", returnclass = "sf")
 # worldshift <- st_shift_longitude(world)
 # ggplot(data = worldshift) +
 #   geom_sf() +
-#   geom_point(data = shift.lon(coord_site_sf), aes(x = longitude, y = latitude, color=site), size=1) +
+#   geom_point(data = shift.lon(sf_sites), aes(x = longitude, y = latitude, color=site), size=1) +
 #   scale_color_viridis(discrete = T) +
 #   coord_sf(xlim = c(50, 250),
 #            ylim = c(-75, 75)) 
 # 
 # 
-# ## *** ggplot bathy rnarutalearth not shifted ----
+### *** ggplot bathy rnarutalearth not shifted ----
 # library(rnaturalearth)
 # 
 # # Get bathymetric data
@@ -369,16 +426,16 @@ ggsave(gg_grob, width = 25, height = 12.5,
 #   #              aes(x = V1, y = V2, z = V3),
 #   #              breaks = -200, color = "grey85", linewidth = 0.5) +
 #   geom_sf(data = country) +
-#   geom_point(data = (coord_siteN), aes(x = longitude, y = latitude, colour = site)) +
+#   geom_point(data = (data_sites), aes(x = longitude, y = latitude, colour = site)) +
 #   scale_color_viridis(discrete = T) +
 #   labs(x = "Longitude", y = "Latitude", fill = "Depth (m)") +
 #   theme_minimal()
 # 
 # 
-# ## *** auto bathy shifted ----
+### *** auto bathy shifted ----
 # autoplot.bathy(Bathy, geom=c("tile"), coast=T) +
 #   # scale_fill_gradient2(low="dodgerblue4", mid="gainsboro", high="darkgreen") +
-#   geom_point(data = shift.lon(coord_siteN), aes(x = longitude, y = latitude, colour = site)) +
+#   geom_point(data = shift.lon(data_sites), aes(x = longitude, y = latitude, colour = site)) +
 #   labs(y = "Latitude", x = "Longitude", fill = "Elevation") 
 # 
 

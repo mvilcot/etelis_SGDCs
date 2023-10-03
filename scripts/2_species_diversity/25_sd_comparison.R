@@ -32,15 +32,15 @@ temp <-
   dist_merge %>% 
   dplyr::select(contains(c("beta.jtu", "beta.jac", "beta.jne")))
 
-temp <-
-  dist_merge %>%
-  dplyr::filter(!grepl("Hawaii", site))
+# temp <-
+#   dist_merge %>%
+#   dplyr::filter(!grepl("Hawaii", site))
 
 summary(temp)
 
 # order_sites <- 
-#   data_sites[[level]] %>% 
-#   levels(unique(data_sites[order(data_sites$order),][[level]])) %>% 
+#   data_stations[[level]] %>% 
+#   levels(unique(data_stations[order(data_stations$order),][[level]])) %>% 
 #   droplevels()
 # data_samples$site
 
@@ -53,7 +53,7 @@ sd_alpha <- read_csv(paste0("results/2_species_diversity/sd_table_", level, "_",
 
 df <-
   sd_alpha %>% 
-  left_join(data_sites)
+  left_join(data_stations, by = "station")
 
 df$community <- factor(df$community, levels = unique(df$community))
 
@@ -78,9 +78,8 @@ level = "site"
 sd_alpha <- read_csv(paste0("results/2_species_diversity/sd_table_", level, "_", comm_delin, ".csv"))
 
 df <-
-  coord_site %>% 
-  rownames_to_column("site") %>% 
-  left_join(sd_alpha)
+  data_sites %>% 
+  left_join(sd_alpha, by = "site")
 
 df$site <- factor(df$site, levels = unique(df$site))
 df$community <- factor(df$community, levels = unique(df$community))
@@ -107,8 +106,7 @@ level = "site"
 sd_alpha <- read_csv(paste0("results/2_species_diversity/sd_table_", level, "_", comm_delin, ".csv"))
 
 df <-
-  coord_site %>% 
-  rownames_to_column("site") %>% 
+  data_sites %>% 
   left_join(sd_alpha)
 
 df$site <- factor(df$site, levels = unique(df$site))

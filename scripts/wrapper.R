@@ -1,25 +1,24 @@
 # Wrapper script for the Etelis coruscans analyses
 
 # ---- libraries ----
-# scripts
+## scripts
 library(tidyverse)      # the beautiful beautiful tidyverse
-library(pracma)         # findintervals
-library(glue)           # use braces for PXA axis
-# library(reshape)        # melt
 library(ecodist)        # MRM
-library(dotwhisker)     # dotwhisket plot
+library(glue)           # use braces for PXA axis
+# library(dotwhisker)     # dotwhisket plot
+# library(pracma)         # findintervals
 
-# plot
+## plot
 library(ggplot2)        # plots
-# library(wesanderson)    # palette
-library(ggh4x)
-library(patchwork)      # easy multiple plot
-library(gridExtra)      # easy multiple plot
-# library(paletteer)      # palette
+library(ggh4x)          # nested facets
+library(patchwork)      # multiple plot by hand
+library(gridExtra)      # multiple plot from list
 library(viridis)        # palette
+library(ggrepel)        # text labels on plots
 
-# spatial
+## spatial
 library(terra)          # raster-type package
+library(tidyterra)      # terra ggplot
 library(sdmpredictors)  # bio-oracle portal
 library(geodist)        # geographic distance
 library(marmap)         # bathymetry data
@@ -27,27 +26,27 @@ library(gdistance)
 library(sf)
 library(mapview)
 
-# taxonomy
+## taxonomy
 library(fishtree)       # fish tree of life 
 library(betapart)       # jaccard diversity
 library(ape)
 
-# genetics
+## genetics
 library(adegenet)
 library(dartR)          # SNPs filtering
 library(pcadapt)
-# library(qvalue)
-# library(OutFLANK)
 library(hierfstat)
 library(mmod)
 library(pegas)          # genind2loci
 library(jacpop)         # generate_pw_jaccard
+# library(qvalue)
+# library(OutFLANK)
 
-# phylogenetics
+## phylogenetics
 library(picante)        # pd, mpd
-# library(ggtree)         # beautiful tree plot
 library(phytools)       # midpoint.root
 library(ape)
+# library(ggtree)         # beautiful tree plot
 
 
 
@@ -55,11 +54,11 @@ library(ape)
 
 ## genetic data
 # data_samples <- read.csv("data/metadata_samples.csv")
-# data_sites <- read.csv("data/metadata_sites.csv")
+# data_stations <- read.csv("data/metadata_stations.csv")
 # 
 # data_samples <-
 #   data_samples %>%
-#   left_join(data_sites, by = c("station", "site")) %>%
+#   left_join(data_stations, by = c("station", "site")) %>%
 #   arrange(order)
 
 data_samples <- read.csv("intermediate/0_sampling_design/metadata_samples_subset.csv")
@@ -82,16 +81,17 @@ data_Etelis <- readRDS("data/Presence_data_Fishbase_Etelis_coruscans.RDS")
 
 
 ## ---- taxonomy data ----
-data_fishbase <- rfishbase::load_taxa()
+data_taxo <- rfishbase::load_taxa()
 # data_species2 <- read.csv("data/data_species.csv")
 # data_fishtree <- read.csv("data/PFC_taxonomy.csv")
 
-data_fishbase$Species <- gsub(" ", "_", data_fishbase$Species)
-# colnames(data_fishbase) <- tolower(colnames(data_fishbase))
+data_taxo$Species <- gsub(" ", "_", data_taxo$Species)
+# data_taxo %>% write_csv("data/Taxonomy_Fishbase.csv")
+# colnames(data_taxo) <- tolower(colnames(data_taxo))
 
 
 # species_list <- 
-#   data_fishbase %>% 
+#   data_taxo %>% 
 #   dplyr::filter(Family == "Lutjanidae") %>% 
 #   pull(Species)
 # 
@@ -106,25 +106,37 @@ data_depth <- read_csv("data/data_species_depth_range_teleo.csv")
 
 
 ## ---- spatial data ----
-data_sites <- read_csv("intermediate/0_sampling_design/metadata_sites_subset.csv")
+data_stations <- read_csv("intermediate/0_sampling_design/metadata_stations_subset.csv")
 
 # relevel
 for (level in c("site", "station")){
-  data_sites[[level]] <- 
-    data_sites[[level]] %>% 
-    ordered(levels = unique(data_sites[order(data_sites$order),][[level]])) %>% 
+  data_stations[[level]] <- 
+    data_stations[[level]] %>% 
+    ordered(levels = unique(data_stations[order(data_stations$order),][[level]])) %>% 
     droplevels()
 }
 
-# get mean coordinates by location
-coord_site <- 
-  data_sites %>% 
+# get mean coordinates by site
+data_sites <- 
+  data_stations %>% 
   group_by(site) %>% 
   summarise(longitude=mean(Longitude_approx),
-            latitude=mean(Latitude_approx)) %>% 
-  arrange(factor(site, levels(data_samples$site))) %>%
-  column_to_rownames("site")
+            latitude=mean(Latitude_approx),
+            number_samples=sum(number_samples)) %>% 
+  arrange(factor(site, levels(data_samples$site)))
+# %>%
+  # column_to_rownames("site")
 
+## >>> remove 3 filtered individuals in Hawaii and WAustralia ######
+# # get number of Etelis coruscans sample by site
+# temp <- as.data.frame(table(data_samples$site))
+# colnames(temp) <- c("site", "N")
+# 
+# # merge to coordinates
+# data_sites <-
+#   data_sites %>%
+#   left_join(temp) %>%
+#   as_tibble()
 
 
 

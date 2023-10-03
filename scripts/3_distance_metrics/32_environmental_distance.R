@@ -24,26 +24,26 @@ envt_layers <-
 envt_layers <-
   rast(envt_layers)
 
-## OR load from file
-envt_layers <- 
-  rast(list.files("intermediate/3_distance_metrics/bio-oracle", full.names = T))
+# ## OR load from downloaded file
+# envt_layers <- 
+#   rast(list.files("intermediate/3_distance_metrics/bio-oracle", full.names = T))
 
 
 
 # ---- add buffer around stations ----
 ### !!!!!!!!!!! CHOOSE CORRECT BUFFER #############"
-vect_coord <-
-  data_sites %>% 
+vect_stations <-
+  data_stations %>% 
   dplyr::select(site, station, Longitude_approx, Latitude_approx) %>% 
   vect(geom = c("Longitude_approx", "Latitude_approx"), crs = "WGS84") %>%# convert to spatial vector 
   buffer(width = 50000) # add buffer
 
 
 # ---- extract variables by station ----
-## ERROR MHI AND NEW CALEDONIA!!!!!!!!!!!!
+## >>>> ERROR MHI AND NEW CALEDONIA if too small buffer!!!!!!!!!!!!----
 envt_station <- 
   terra::extract(envt_layers,
-                 vect_coord,
+                 vect_stations,
                  xy = TRUE,
                  ID = FALSE,
                  bind = TRUE,
@@ -58,7 +58,7 @@ envt_station %>%
 
 
 # ---- average by site ----
-## >>>>> CHECK IF POSSIBLE TO AVERAGE ACROSS ALL STATION BUFFER DIRECTLY ##########
+## >>>>> TRY TO AVERAGE ACROSS ALL STATION BUFFER DIRECTLY ##########
 envt_site <-
   envt_station %>%
   pivot_longer(-c(site, station), names_to = "variable") %>% 
@@ -74,37 +74,37 @@ envt_site %>%
             row.names = T, quote = F)
 
 
-# ---- scale variables ----
-envt_site_scaled <- 
+# ---- scale data ----
+envt_site_scaled <-
   envt_site %>%
-  mutate(across(is.numeric, log)) %>% ################# CHECK IF LOG NEEDED (cf DiBattista et al. 2020)
-  column_to_rownames("site") %>% 
-  scale() %>% 
-  as_tibble(rownames = NA) %>% 
+  mutate(across(where(is.numeric), log)) %>% ################# CHECK IF LOG NEEDED (cf DiBattista et al. 2020)
+  column_to_rownames("site") %>%
+  scale() %>%
+  as_tibble(rownames = NA) %>%
   rownames_to_column("site") ## wtf the rownames does not appear but they are still stored
 
 # pivot longer
-envt_site2 <-
+envt_site_long <-
   envt_site %>% 
   pivot_longer(cols = -site, names_to = "variable", values_to = "value")
 
-envt_site2_scaled <-
-  envt_site_scaled %>% 
+envt_site_long_scaled <-
+  envt_site_scaled %>%
   pivot_longer(cols = -site, names_to = "variable", values_to = "value")
 
 # relevel
-envt_site2$site <- 
-  envt_site2$site %>%  
-  ordered(levels = unique(data_sites[order(data_sites$order),][["site"]]))
+envt_site_long$site <- 
+  envt_site_long$site %>%  
+  ordered(levels = unique(data_stations[order(data_stations$order),][["site"]]))
 
-envt_site2_scaled$site <- 
-  envt_site2_scaled$site %>%  
-  ordered(levels = unique(data_sites[order(data_sites$order),][["site"]]))
+envt_site_long_scaled$site <-
+  envt_site_long_scaled$site %>%
+  ordered(levels = unique(data_stations[order(data_stations$order),][["site"]]))
 
 
 
 # ---- boxplot ----
-ggplot(envt_site2, aes(site, value, fill = site, color = site)) +
+ggplot(envt_site_long, aes(site, value, fill = site, color = site)) +
   geom_boxplot() +
   facet_wrap( ~ variable, ncol=1, scales = "free_y") +
   scale_color_manual(values = color_perso) +
@@ -112,47 +112,62 @@ ggplot(envt_site2, aes(site, value, fill = site, color = site)) +
 ggsave(width = 5, height = 10, 
        filename = paste0("results/3_distance_metrics/environmental_variables_bdmean_absolute.png"))
 
-ggplot(envt_site2_scaled, aes(site, value, fill = site, color = site)) +
+ggplot(envt_site_long_scaled, aes(site, value, fill = site, color = site)) +
   geom_boxplot() +
   facet_wrap( ~ variable, ncol=1, scales = "free_y") +
   scale_color_manual(values = color_perso) +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
-ggsave(width = 5, height = 10, 
+ggsave(width = 5, height = 10,
        filename = paste0("results/3_distance_metrics/environmental_variables_bdmean_scaled.png"))
 
 
 
-# ---- map plot----
+# ---- map ----
 my.colors = colorRampPalette(c("#5E85B8","#EDF0C0","#C13127"))
 
-coord_vect <- vect(shift.lon(coord_site), geom=c("longitude", "latitude"), crs = "EPSG:4326")
+## center to pacific
+vect_sites <-
+  data_sites %>% 
+  vect(geom = c("longitude", "latitude"), crs = "WGS84") %>% 
+  terra::rotate(left = FALSE) # to put in 0/360 instead of -180/180
 
-envt_layers_360 <- 
-  terra::rotate(envt_layers, left = FALSE)
+# vect_sites <- # do the same thing, manually
+#   vect(shift.lon(data_sites), geom=c("longitude", "latitude"), 
+#        crs = "EPSG:4326")
 
-envt_layers_crop <- 
-  terra::crop(envt_layers_360, extent(30, 220, -35, 35))
+envt_layers_Pcrop <- 
+  envt_layers %>% 
+  terra::rotate(left = FALSE) %>% # to put in 0/360 instead of -180/180
+  terra::crop(extent(30, 220, -50, 50)) # crop to area of interest
 
-pdf("results/3_distance_metrics/map_environmental_variables_bdmean.pdf", width = 12, height = 5)
-for(var in 1:dim(envt_layers_crop)[3]){
-  plot(envt_layers_crop[[var]], col=my.colors(1000))
-  plot(coord_vect, add = T, col = "grey20")
-  title(cex.sub = 1.25, main = var)
+
+## plot
+pdf("results/3_distance_metrics/environmental_variables_bdmean_map.pdf", width = 8, height = 5)
+for(var in names(envt_layers_Pcrop)){
+  # plot(envt_layers_Pcrop[[var]], col=my.colors(1000))
+  # plot(vect_sites, add = T, col = "grey20")
+  # title(cex.sub = 1.25, main = var)
+  
+  gg <- 
+    ggplot() +
+    geom_spatraster(data = envt_layers_Pcrop[[var]]) +
+    scale_fill_whitebox_c(palette = "muted") +
+    geom_spatvector(data = vect_sites) +
+    labs(fill = gsub("BO2_|_bdmean", "", var)) +
+    # scale_fill_viridis_c() +
+    # scale_fill_distiller(palette = "YlGnBu") +
+    theme_light() +
+    theme(panel.grid.major = element_blank(),
+          legend.position="bottom") 
+  print(gg)
 }
 dev.off()
 
-
-# library(tidyterra)
-# ggplot() +
-#   geom_spatraster(data = envt_layers_crop[[variables[1]]]) +
-#   scale_fill_whitebox_c(palette = "muted") +
-#   theme_light()
 
 
 
 
 # ---- PCA ----
-## >>>>> ADD PERCENTAGE AXIS !!!!! ########
 # read variables 
 
 # keep environmental variables
@@ -161,45 +176,56 @@ dev.off()
 #   dplyr::select(-c(x, y, longitude, latitude))
 
 envt_var <- 
-  envt_site %>% 
+  envt_site_scaled %>% 
   column_to_rownames("site")
+
+library(corrplot)
+corrplot(cor(envt_var))
 
 # run pca
 pca_env <- dudi.pca(df = envt_var, scannf = FALSE, nf = 5) 
+
+# analyse pca
+library(factoextra)
+pca_eig <- get_eigenvalue(pca_env)
+fviz_eig(pca_env, addlabels = TRUE)
+fviz_pca_var(pca_env)
+fviz_contrib(pca_env, choice = "var", axes = 1, top = 10)
 
 # compute euclidian distance between coordinates
 dist_mat$environment <- 
   vegdist(pca_env$li, method = "euclidean", na.rm = TRUE) # euclidean distance based on the 3 PCA axes
 
-# extract pca coordinates
-pca_coord <- 
-  pca_env$li %>% 
-  rownames_to_column("site")
+# eigenvalues
+percent_explained <- pca_env$eig / sum(pca_env$eig) * 100
 
-# # analyse pca
-library("factoextra")
-pca_eig <- get_eigenvalue(pca_env)
-fviz_eig(pca_env, addlabels = TRUE, ylim = c(0, 50))
-fviz_pca_var(pca_env, col.var = "black")
+# set axis labels
+pretty_pe <- format(round(percent_explained, digits =1), nsmall=1, trim=TRUE)
+labels <- c(glue("PC1 ({pretty_pe[1]}%)"),
+            glue("PC2 ({pretty_pe[2]}%)"))
 
-ggplot(pca_coord, aes(x=Axis1, y=Axis2, color = site)) +
+# plot
+gg <-
+  ggplot(pca_env$li, aes(x=Axis1, y=Axis2, color=rownames(pca_env$li))) +
   geom_point() +
-  # labs(x=labels[1], y=labels[2]) +
-  geom_text(aes(label = site)) +
+  labs(x=labels[1], y=labels[2]) +
+  ggrepel::geom_text_repel(label = rownames(pca_env$li)) +
   scale_color_manual(values = color_perso) +
+  theme_light() +
   theme(legend.position="none")
-ggsave("results/3_distance_metrics/PCA_environmental_variables_bdmean_absolute.png", 
+ggsave("results/3_distance_metrics/PCA_environmental_variables_bdmean_scaled.png", 
+       gg,
        height = 7, width = 7, units = "in", dpi = 300)
 
 
-## export
+# export
 dist_mat %>% 
   saveRDS("intermediate/3_distance_metrics/dist_geo_envtbdmean.RDS")
 
 
 
 
-# ---- *** DRAFTs ----
+# ---- *** DRAFTS ----
 ## *** current velocity ----
 # layers_velocity <- 
 #   list_layers() %>%

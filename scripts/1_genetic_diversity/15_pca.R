@@ -49,8 +49,8 @@ pca_scores <-
 # setup axis
 percent_explained <- PCA$eig / sum(PCA$eig) * 100
 pretty_pe <- format(round(percent_explained, digits =1), nsmall=1, trim=TRUE)
-labels <- c(glue("PCA Axis 1 ({pretty_pe[1]}%)"),
-            glue("PCA Axis 2 ({pretty_pe[2]}%)"))
+labels <- c(glue("PC1 ({pretty_pe[1]}%)"),
+            glue("PC2 ({pretty_pe[2]}%)"))
 
 # save  
 gg1 <- 
@@ -113,8 +113,8 @@ pca_scores <-
 # setup axis
 percent_explained <- PCA$eig / sum(PCA$eig) * 100
 pretty_pe <- format(round(percent_explained, digits =1), nsmall=1, trim=TRUE)
-labels <- c(glue("PCA Axis 1 ({pretty_pe[1]}%)"),
-            glue("PCA Axis 2 ({pretty_pe[2]}%)"))
+labels <- c(glue("PC1 ({pretty_pe[1]}%)"),
+            glue("PC2 ({pretty_pe[2]}%)"))
 
 # save  
 gg2 <- 
@@ -135,7 +135,7 @@ plotly::ggplotly(gg2)
 # ---- Save plots together ----
 
 gg1 + gg2 + plot_layout(guides = "collect") 
-ggsave(paste0("results/1_genetic_diversity/PCA_perso_", filters, "_", level, ".png"),
+ggsave(paste0("results/1_genetic_diversity/PCA_perso_", filters, "_", level, "_2.png"),
        height = 5, width = 12)
 
 
@@ -189,8 +189,8 @@ pca_scores <-
 # setup axis
 percent_explained <- PCA$eig / sum(PCA$eig) * 100
 pretty_pe <- format(round(percent_explained, digits =1), nsmall=1, trim=TRUE)
-labels <- c(glue("PCA Axis 1 ({pretty_pe[1]}%)"),
-            glue("PCA Axis 2 ({pretty_pe[2]}%)"))
+labels <- c(glue("PC1 ({pretty_pe[1]}%)"),
+            glue("PC2 ({pretty_pe[2]}%)"))
 
 # save  
 gg <- 

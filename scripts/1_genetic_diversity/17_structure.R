@@ -111,32 +111,6 @@ dev.off()
 
 
 
-## TESTS!!
-# coord = read.table("coordinates.coord") 
-# pop = rep(1:60, each = 10)
-# 
-# 
-# K = 3 
-# Npop = 10
-# qpop = matrix(NA, ncol = K, nrow = Npop)
-# coord.pop = matrix(NA, ncol = 2, nrow = Npop) 
-# for (i in rownames(coord_site)){ 
-#   qpop[i,] = apply(qmatrix[pop == i,], 2, mean) 
-#   coord.pop[i,] = apply(coord[pop == i,], 2, mean)
-#   }
-# 
-# 
-# 
-# plot(coord_site, xlab = "longitude", ylab = "latitude", type = "n")
-# map(add = T, col = "grey90", fill = TRUE)
-# for (i in 1:10){ 
-#   add.pie(z = qpop[i,], x = coord.pop[i,1], y = coord.pop[i,2], labels = "", 
-#           col = c("orange","violet","lightgreen"))
-#   }
-# 
-
-
-
 
 # ---- tess3 ----
 # https://bcm-uga.github.io/TESS3_encho_sen/articles/main-vignette.html
@@ -205,3 +179,35 @@ structure <- dartR::gl.run.structure(
   save2tmp = FALSE,
   verbose = NULL
 )
+
+
+
+
+# ---- **** DRAFTS ----
+
+
+## TESTS!!
+# coord = read.table("coordinates.coord")
+# pop = rep(1:60, each = 10)
+# 
+# 
+# K = 3 
+# Npop = 10
+# qpop = matrix(NA, ncol = K, nrow = Npop)
+# coord.pop = matrix(NA, ncol = 2, nrow = Npop) 
+# for (i in data_sites$site){ 
+#   qpop[i,] = apply(qmatrix[pop == i,], 2, mean) 
+#   coord.pop[i,] = apply(coord[pop == i,], 2, mean)
+#   }
+# 
+# 
+# 
+# plot(data_sites, xlab = "longitude", ylab = "latitude", type = "n")
+# map(add = T, col = "grey90", fill = TRUE)
+# for (i in 1:10){ 
+#   add.pie(z = qpop[i,], x = coord.pop[i,1], y = coord.pop[i,2], labels = "", 
+#           col = c("orange","violet","lightgreen"))
+#   }
+# 
+
+

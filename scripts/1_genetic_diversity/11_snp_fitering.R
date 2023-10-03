@@ -128,7 +128,7 @@ gl4
 for (level in c("site", "station")){
   gl4$other$ind.metrics[[level]] <- 
     gl4$other$ind.metrics[[level]] %>% 
-    ordered(levels = unique(data_sites[order(data_sites$order),][[level]])) %>% 
+    ordered(levels = unique(data_stations[order(data_stations$order),][[level]])) %>% 
     droplevels()
 }
 
@@ -137,17 +137,17 @@ gl4@pop <-
   gl4@other$ind.metrics[["site"]]
 
 
-# # ---- subset metadata ----
+# ---- subset metadata ----
 # data_samples <-
 #   data_samples %>%
 #   dplyr::filter(id %in% gl4$ind.names)
 # data_samples %>% write.csv("intermediate/0_sampling_design/metadata_samples_subset.csv",
 #                               row.names = F, quote = T)
 # 
-# data_sites <-
-#   data_sites %>%
+# data_stations <-
+#   data_stations %>%
 #   dplyr::filter(station %in% data_samples$station)
-# data_sites %>% write.csv("intermediate/0_sampling_design/metadata_sites_subset.csv",
+# data_stations %>% write.csv("intermediate/0_sampling_design/metadata_stations_subset.csv",
 #                          row.names = F, quote = T)
 
 

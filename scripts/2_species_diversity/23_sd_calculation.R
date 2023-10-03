@@ -1,4 +1,5 @@
-## -----> !!!!! CHANGE SCRIPT AND MAKE IT AS A FUNCTION, depending of community delineation
+
+## >>>>> !!!!! CHANGE SCRIPT AND MAKE IT AS A FUNCTION, depending of community delineation ####
 
 # This script calculates species richness per site and jaccard indices between sites
 

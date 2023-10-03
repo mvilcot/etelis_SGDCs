@@ -6,14 +6,6 @@ gd_alpha <- read.csv(paste0("results/1_genetic_diversity/gd_table_", level, ".cs
 gd_beta <- readRDS(paste0("results/1_genetic_diversity/gd_list_pairwise_", level, ".RDS"))
 BS <- readRDS(paste0("intermediate/1_genetic_diversity/basic_stats_", level, ".RDS"))
 
-# order_sites <- 
-#   data_sites[[level]] %>% 
-#   levels(unique(data_sites[order(data_sites$order),][[level]])) %>% 
-#   droplevels()
-# data_samples$site
-
-
-
 
 # ---- alpha GD by location ----
 
@@ -94,8 +86,7 @@ ggsave(paste0("results/1_genetic_diversity/plot_Hs_Fst_pop_specific_", level, ".
 # Hs ~ longitude ----
 ## load
 df <-
-  coord_site %>% 
-  rownames_to_column("site") %>% 
+  data_sites %>% 
   left_join(gd_alpha)
 
 ## relevel
