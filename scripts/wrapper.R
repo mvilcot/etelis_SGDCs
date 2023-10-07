@@ -81,13 +81,14 @@ data_Etelis <- readRDS("data/Presence_data_Fishbase_Etelis_coruscans.RDS")
 
 
 ## ---- taxonomy data ----
-data_taxo <- rfishbase::load_taxa()
-# data_species2 <- read.csv("data/data_species.csv")
-# data_fishtree <- read.csv("data/PFC_taxonomy.csv")
+## data_species2 <- read.csv("data/data_species.csv")
+##  data_fishtree <- read.csv("data/PFC_taxonomy.csv")
 
-data_taxo$Species <- gsub(" ", "_", data_taxo$Species)
+
+# data_taxo <- rfishbase::load_taxa()
+# data_taxo$Species <- gsub(" ", "_", data_taxo$Species)
 # data_taxo %>% write_csv("data/Taxonomy_Fishbase.csv")
-# colnames(data_taxo) <- tolower(colnames(data_taxo))
+data_taxo <- read_csv("data/Taxonomy_Fishbase.csv")
 
 
 # species_list <- 

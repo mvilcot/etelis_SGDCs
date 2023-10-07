@@ -24,20 +24,19 @@ dist_mat$geodist <-
 # ---- distance by sea ----
 Bathy <- readRDS("intermediate/0_sampling_design/_archive/bathymetry.RDS")
 
-# compute distance by sea
 trans <- 
-  trans.mat(Bathy, min.depth=-5, max.depth=NULL)
+  # trans.mat(Bathy, min.depth=-5, max.depth=NULL)
+  trans.mat(Bathy, min.depth=-45, max.depth=5000)
+# trans %>% saveRDS("intermediate/3_distance_metrics/transition_matrix.RDS")
 
 #### >>>>> !!! error when too high resolution for Guam ############
 dist_mat$seadist <- 
   lc.dist(trans, shift.lon(coord_sites), res = "dist")
 
-get.depth(Bathy, shift.lon(coord_sites), locator = F)
+# get.depth(Bathy, shift.lon(coord_sites), locator = F)
 
 # ---- export ----
 dist_mat %>% 
-  saveRDS("intermediate/3_distance_metrics/dist_geo2.RDS")
-# dist_mat2 <-
-#   readRDS("intermediate/3_distance_metrics/dist_geo.RDS")
+  saveRDS("intermediate/3_distance_metrics/dist_geo.RDS")
 
 
