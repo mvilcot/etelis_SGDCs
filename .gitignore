@@ -7,4 +7,7 @@ data/
 intermediate/
 results/
 scripts/unsorted/
+
 marmap_coord_*.csv
+gtypes.*.structureRun
+seed.txt

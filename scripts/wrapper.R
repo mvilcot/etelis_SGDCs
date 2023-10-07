@@ -32,13 +32,14 @@ library(betapart)       # jaccard diversity
 library(ape)
 
 ## genetics
+library(dartR)          # amazing wrapper for pop genetics analysis
 library(adegenet)
-library(dartR)          # SNPs filtering
-library(pcadapt)
 library(hierfstat)
 library(mmod)
 library(pegas)          # genind2loci
 library(jacpop)         # generate_pw_jaccard
+library(LEA)            # SNMF
+# library(pcadapt)
 # library(qvalue)
 # library(OutFLANK)
 
