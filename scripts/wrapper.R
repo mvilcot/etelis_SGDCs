@@ -1,7 +1,7 @@
 # Wrapper script for the Etelis coruscans analyses
 
 # ---- libraries ----
-## scripts
+## global
 library(tidyverse)      # the beautiful beautiful tidyverse
 library(ecodist)        # MRM
 library(glue)           # use braces for PXA axis

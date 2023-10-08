@@ -4,12 +4,12 @@
 # parameters
 filters = "missind1_callrate0.70_maf0.05"
 level = "site"
-sites = "noSeychelles"
+sites = "allsites"
 
 # read genlight
 genlight <- 
   read.genlight(filters, level,
-                site2drop = "Seychelles",
+                site2drop = NULL,
                 site2keep = NULL,
                 station2drop = NULL,
                 station2keep = NULL)
@@ -126,17 +126,9 @@ genlightLL@other$latlon <-
   dplyr::rename(lat = latitude) %>%
   dplyr::rename(lon = longitude)
 
-# add lon/lat (when location by station)
-# genlightLL@other$latlon <-
-#   genlightLL@other$ind.metrics %>%
-#   left_join(shift.lon(data_stations), by = c("site", "station")) %>%
-#   dplyr::select(Latitude_approx, Longitude_approx) %>%
-#   dplyr::rename(lat = Latitude_approx) %>%
-#   dplyr::rename(lon = Longitude_approx)
-
 # subset loci
 # nloci <- 500
-# genlightLLsub <- 
+# genlightLLsub <-
 #   gl.subsample.loci(genlightLL, n = nloci, method = 'random', mono.rm = T)
 
 
@@ -149,8 +141,8 @@ genlightLL$pop <- factor(as.character(genlightLL$pop))
 
 ## run structure ----
 kmin <- 1
-kmax <- 9
-nrep <- 5
+kmax <- 3
+nrep <- 2
 nloci <- genlightLL$n.loc
 
 structure <- 
@@ -161,32 +153,61 @@ structure <-
     exec = "C:/Users/vilcot/Documents/Structure2.3.4_nonGUI/console/structure.exe",
     plot.out = FALSE)
 
-structure %>% saveRDS(paste0("intermediate/1_genetic_diversity/STRUCTURE_", nloci, "loci_", sites, "_K", kmin, "-", kmax, "_r", nrep, ".RDS"))
+# structure %>% saveRDS(paste0("intermediate/1_genetic_diversity/STRUCTURE_", nloci, "loci_", sites, "_K", kmin, "-", kmax, "_r", nrep, ".RDS"))
 
 
 ## output ----
 structure <- readRDS(paste0("intermediate/1_genetic_diversity/STRUCTURE_", nloci, "loci_", sites, "_K", kmin, "-", kmax, "_r", nrep, ".RDS"))
 
-k <- 2
+
+# evanno plot
+## >>> CHECK MEANING OF EACH PLOT ########
 ev <- gl.evanno(structure)
+
+evgg <- # arrange plots
+  ev$plots$mean.ln.k + 
+  ev$plots$ln.pk +
+  ev$plots$ln.ppk + 
+  ev$plots$delta.k +
+  plot_annotation(tag_levels = 'a', # add tags
+                  tag_prefix = '(',
+                  tag_suffix = ')',
+                  tag_sep = "")
+
+evgg <- # add common x axis
+  wrap_elements(panel = evgg) +
+  labs(tag = "K") + 
+  theme(plot.tag = element_text(size = rel(1)),
+        plot.tag.position = "bottom")
+
+
+ggsave(paste0("results/1_genetic_diversity/STRUCTURE_evanno_", nloci, "loci_", sites, "_K", kmin, "-", kmax, "_r", nrep, ".png"),
+       evgg, 
+       height = 6, width = 8)
+
+
+# automatic ancestry plot
+k <- 2
 qmat <- gl.plot.structure(structure, K=k, colors_clusters = viridis(k))
+
+# map barplot
 gl.map.structure(qmat, genlightLL, K=k, scalex=0.5, scaley=0.2) 
+
 
 
 ## plot structure ----
 
 ### preparing data ----
-k=2
 qmat_plot_large <- 
   as.data.frame(qmat[[1]]) %>% 
-  dplyr::select(c("orig.pop", "Label", contains("cluster")))
+  dplyr::select(c("orig.pop", "Label", contains("cluster"))) 
 qmat_plot_long <- 
   qmat_plot_large %>% 
   pivot_longer(contains("cluster"), names_to = "cluster", values_to = "ancestry_prop")
 qmat_plot_long$orig.pop <- factor(qmat_plot_long$orig.pop, levels = levels(data_sites$site))
 qmat_plot_long <- 
   qmat_plot_long %>% 
-  dplyr::arrange(orig.pop)
+  dplyr::arrange(orig.pop, Label, cluster, ancestry_prop)
 
 
 
@@ -195,22 +216,24 @@ qmat_plot_long <-
 # set up custom facet strips
 facetstrips <-
   ggh4x::strip_nested(
-    text_x = elem_list_text(size = c(8, 4), angle = 90, vjust = 0.5, hjust=0),
+    text_x = elem_list_text(size = c(8, 4), angle = 90, vjust = 0.5, hjust=1),
     by_layer_x = TRUE,
     clip = "off"
   )
 
 
-ggplot(qmat_plot_long, aes(Label, ancestry_prop, fill = cluster)) +
+gg <- 
+  ggplot(qmat_plot_long, aes(Label, ancestry_prop, fill = cluster, color = cluster)) +
   geom_col() +
   ggh4x::facet_nested(~ orig.pop,
-                      # switch = "x",
+                      switch = "x",
                       nest_line = element_line(linewidth = 1, lineend = "round"),
                       scales = "free", space = "free", strip = facetstrips) +
   labs(x = "", y = "Ancestry proportion") +
   scale_y_continuous(expand = c(0, 0)) +
-  scale_x_discrete(expand = expansion(add = 0.5)) +
+  scale_x_discrete(expand = expansion(add = 0.15)) +
   scale_fill_viridis_d() +
+  scale_color_viridis_d() +
   theme(
     panel.spacing.x = unit(0.15, "lines"),
     # axis.text.x = element_text(size=2, angle = 90, vjust = 0.5, hjust=1),
@@ -218,9 +241,80 @@ ggplot(qmat_plot_long, aes(Label, ancestry_prop, fill = cluster)) +
     axis.ticks.x = element_blank(),
     panel.grid = element_blank(),
     panel.background = element_rect(fill = 'white', color = 'white'),
-    strip.background = element_rect(fill = "white"))
+    strip.background = element_rect(fill = "white", color = "grey"))
+
+gg
+ggsave(paste0("results/1_genetic_diversity/STRUCTURE_barplot_", nloci, "loci_", sites, "_K", k, ".png"),
+       gg,
+       height = 4, width = 10)
 
 
+
+
+### perso map ----
+## >>>>> TO DO ###########
+qmat_plot_large <-
+  qmat_plot_large %>% 
+  mutate(CLUSTER = ifelse(cluster1 >= 0.8, "K1",
+                          ifelse(cluster2 >= 0.8, "K2", "mixed")))
+
+prop_cluster <-
+  qmat_plot_large %>% 
+  dplyr::rename(site = orig.pop) %>% 
+  group_by(site, CLUSTER) %>% 
+  dplyr::summarise(value = n(), .groups = "keep") %>% 
+  pivot_wider(names_from = CLUSTER, values_from = value)
+prop_cluster$site <- ordered(prop_cluster$site, levels=levels(data_sites$site))
+
+prop_cluster <-
+  prop_cluster %>% 
+  left_join(data_sites, by = "site")
+
+prop_cluster <- prop_cluster %>% replace(is.na(.), 0)
+
+# load maps --
+# full map
+map1 <-
+  fortify(maps::map(fill=TRUE, plot=FALSE)) %>% 
+  as_tibble()
+
+# add map +360
+## >>> SEE IF POSSIBLE TO DO WITH terra::rotate(left = FALSE) #########
+map2 <- 
+  map1 %>% 
+  mutate(long = long + 360,
+         group = group + max(map1$group) + 1)
+
+# crop lon & lat extent
+map <- 
+  rbind(map1, map2) %>% 
+  filter(long > 20  & long < 210 & lat <48 & lat > -48)
+
+library(scatterpie)
+gg <- 
+  ggplot() +
+  ## Countries
+  geom_polygon(data = map, aes(x = long, y = lat, group = group), fill="grey20") +
+  ## Sites
+  geom_scatterpie(data = shift.lon(prop_cluster),
+             aes(x = longitude, y = latitude), #r = number_samples/10
+             cols = c("K1", "K2"),
+             pie_scale = 1.5, color=NA, alpha=.8) + 
+  ggrepel::geom_text_repel(data = shift.lon(prop_cluster),
+                           aes(x = longitude, y = latitude, color = site, label = site),
+                           hjust=0.5, vjust=0, max.overlaps = 5, nudge_x = -10) +
+  ## Theme
+  scale_color_viridis(discrete = T) +
+  scale_fill_viridis(discrete = T, direction = 1) +
+  theme_minimal() +
+  # theme(legend.position = "none") +
+  labs(x = "Longitude", y = "Latitude") +
+  coord_equal()
+  
+gg
+ggsave(paste0("results/1_genetic_diversity/STRUCTURE_mappiechart_", nloci, "loci_", sites, "_K", k, ".png"),
+       gg,
+       height = 8, width = 15)
 
 
 
