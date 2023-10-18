@@ -9,6 +9,8 @@ comm_delin_list <-
     "taxonomy_env_reef-associated")
 
 comm_delin <- comm_delin_list[1]
+# comm_delin <- "taxonomy_PCADAPTallsites"
+
 
 # list_communities <- readRDS(paste0("intermediate/2_species_diversity/List_community_", comm_delin, ".RDS"))
 names_communities <- c("Etelinae", "Lutjanidae", "Eupercaria/misc", "Teleostei")
@@ -137,7 +139,7 @@ stat_Mantel <-
   list()
 metricSD = "beta.jtu"
 
-for (i in 1:length(list_communities)){
+for (i in 1:length(names_communities)){
   lab <- labs_list[i]
   comm <- names_communities[i]
   metricSDcomm <- paste(comm, metricSD, sep = ".")
@@ -227,7 +229,7 @@ for(comm_delin in comm_delin_list) {
         SGDC_table[i,]$r <- stat$statistic
         SGDC_table[i,]$pval <- stat$signif
 
-        print(i)
+        cat(i, "\n")
         i=i+1
       }
     }
@@ -235,7 +237,9 @@ for(comm_delin in comm_delin_list) {
 }
 
 
-SGDC_table$signif <- ifelse(SGDC_table$pval < 0.05, "*", "NS")
+SGDC_table$signif <- ifelse(SGDC_table$pval < 0.001, "***", 
+                            ifelse(SGDC_table$pval < 0.01, "**", 
+                                   ifelse(SGDC_table$pval < 0.05, "*", "NS")))
 
 SGDC_table %>%
   write_csv("results/4_continuity/beta_SGDCs_table_2.csv")
@@ -258,6 +262,34 @@ ggplot(SGDC_table, aes(x=community_delineation,
 
 ggsave(paste0("results/4_continuity/beta_SGDCs_plot.png"),
        height = 8, width = 15, units = 'in', dpi = 300)
+
+## when only one community delin
+SGDC_tablesub <-
+  SGDC_table %>% 
+  dplyr::filter(community_delineation == "taxonomy") %>% 
+  dplyr::filter(locations == "without Seychelles")
+SGDC_tablesub$taxonomic_scale <- factor(SGDC_tablesub$taxonomic_scale,
+                                     level = names_communities)
+
+ggplot(SGDC_tablesub, aes(
+                       x=r,
+                       y=taxonomic_scale,
+                       shape=signif,
+                       group=metricSD,
+                       color=metricSD)) +
+  geom_vline(xintercept = 0, linetype=2, color="grey20") +
+  geom_point(size = 2.5) +
+  scale_shape_manual(values=c(19, 1))+
+  scale_color_manual(values = c("#92e101", "#5faa8e", "#458cff"))+  #"#78c556"
+  theme_light() +
+  xlim(c(-0.6,0.6)) +
+  ylab("") +
+  xlab("r Mantel") +
+  scale_y_discrete(limits=rev)
+
+ggsave(paste0("results/4_continuity/beta_SGDCs_plot_taxonomy_noSeychelles_vertical.png"),
+       height = 4, width = 6, units = 'in', dpi = 300)
+
 
 
 
@@ -312,12 +344,12 @@ for (locations in c("allsites", "noSeychelles")){
   for (metricGD in c("Fst", "GstPP.hed", "D.Jost")){
     
     statLM <- summary(lm(scale(dist_merge[[metricGD]]) ~
-                           scale(dist_merge$environment) +
-                           scale(dist_merge$seadist)))
+                           scale(dist_merge$seadist) +
+                           scale(dist_merge$environment)))
     
     statMRM <- MRM(scale(dist_merge[[metricGD]]) ~
-                     scale(dist_merge$environment) +
-                     scale(dist_merge$seadist),
+                     scale(dist_merge$seadist) +
+                     scale(dist_merge$environment),
                    nperm = 9999)
     
     tempLM <-
@@ -350,7 +382,9 @@ MRMgd$explanatory_variable <- gsub('scale(dist_merge$', '', MRMgd$explanatory_va
 MRMgd$explanatory_variable <- gsub(')', '', MRMgd$explanatory_variable, fixed = T)
 
 # significance
-MRMgd$signif <- ifelse(MRMgd$pval < 0.05, "*", "NS")
+MRMgd$signif <- ifelse(MRMgd$pval < 0.001, "***", 
+                       ifelse(MRMgd$pval < 0.01, "**", 
+                              ifelse(MRMgd$pval < 0.05, "*", "NS")))
 
 # save
 MRMgd %>%
@@ -367,19 +401,19 @@ for(comm_delin in comm_delin_list) {
   for (locations in c("allsites", "noSeychelles")){
     if(locations == "noSeychelles"){dist_merge <- mat.subset(dist_merge, "Seychelles")}
     
-    for (comm in names(list_communities)){
+    for (comm in names_communities){
       
       for (metricSD in c("beta.jac", "beta.jtu", "beta.jne")){
         
         metricSDcomm <- paste(comm, metricSD, sep = ".")
         
         statLM <- summary(lm(scale(dist_merge[[metricSDcomm]]) ~
-                               scale(dist_merge$environment) +
-                               scale(dist_merge$seadist)))
+                               scale(dist_merge$seadist) +
+                               scale(dist_merge$environment)))
         
         statMRM <- MRM(scale(dist_merge[[metricSDcomm]]) ~
-                         scale(dist_merge$environment) +
-                         scale(dist_merge$seadist),
+                         scale(dist_merge$seadist) +
+                         scale(dist_merge$environment),
                        nperm = 9999)
         
         tempLM <-
@@ -416,8 +450,9 @@ MRMsd$explanatory_variable <- gsub('scale(dist_merge$', '', MRMsd$explanatory_va
 MRMsd$explanatory_variable <- gsub(')', '', MRMsd$explanatory_variable, fixed = T)
 
 # significance
-MRMsd$signif <- ifelse(MRMsd$pval < 0.05, "*", "NS")
-
+MRMsd$signif <- ifelse(MRMsd$pval < 0.001, "***", 
+                       ifelse(MRMsd$pval < 0.01, "**", 
+                              ifelse(MRMsd$pval < 0.05, "*", "NS")))
 # save
 MRMsd %>%
   write_csv("results/4_continuity/MRM_beta_sd_envt_seadist_bdmean.csv")
@@ -434,16 +469,15 @@ MRMgd$response_variable <- factor(MRMgd$response_variable, levels = unique(MRMgd
 MRMsd$response_variable <- factor(MRMsd$response_variable, levels = unique(MRMsd$response_variable))
 
 ### GD
-ggplot(MRMgd, aes(x=explanatory_variable, y=Estimate, group=response_variable, color=response_variable)) +
-  geom_hline(yintercept = 0,linetype=2) +
-  geom_point(position=position_dodge(width = -0.4)) +
-  geom_pointrange(aes(ymin=Estimate - 1.96*Std..Error,
-                    ymax=Estimate + 1.96*Std..Error),
-                position=position_dodge(width = -0.4)) +
-  scale_color_viridis(option="plasma", discrete=T)+
-  facet_wrap(~locations, scale="free") +
-  ylim(c(-1,1)) +
-  coord_flip()
+ggplot(MRMgd, aes(x=Estimate, y=explanatory_variable, group=response_variable, color=response_variable)) +
+  geom_vline(xintercept = 0,linetype=2) +
+  geom_pointrange(aes(xmin=Estimate - 1.96*Std..Error,
+                      xmax=Estimate + 1.96*Std..Error),
+                  position=position_dodge(width = -0.4)) +
+  scale_color_viridis(option="rocket", discrete=T, end = 0.8)+
+  facet_wrap(~locations) +
+  xlim(c(-1,1)) +
+  theme_light()
 
 ggsave(paste0("results/4_continuity/DWplotPERSO_MRM_beta_gd_envt_seadist_bdmean.png"),
        height = 5, width = 12, units = 'in', dpi = 300)
@@ -451,52 +485,73 @@ ggsave(paste0("results/4_continuity/DWplotPERSO_MRM_beta_gd_envt_seadist_bdmean.
 
 ### SD
 # all combined
-ggplot(MRMsd, aes(x=explanatory_variable,
-                  y=Estimate,
+ggplot(MRMsd, aes(x=Estimate,
+                  y=explanatory_variable,
                   shape=community_delineation,
                   group=interaction(community_delineation, response_variable),
                   color=response_variable)) +
-  geom_hline(yintercept = 0,linetype=2) +
-  geom_point(position=position_dodge(width = -1)) +
-  geom_pointrange(aes(ymin=Estimate - 1.96*Std..Error,
-                    ymax=Estimate + 1.96*Std..Error),
-                position=position_dodge(width = -1)) +
-  scale_color_viridis(option="plasma", discrete=T)+
+  geom_vline(xintercept = 0, linetype=2) +
+  geom_pointrange(aes(xmin=Estimate - 1.96*Std..Error,
+                    xmax=Estimate + 1.96*Std..Error),
+                    position=position_dodge(width=-1)) +
+  scale_color_viridis(option="mako", discrete=T, end = 0.8) +
   facet_grid(vars(taxonomic_scale), vars(locations), scale="free") +
-  coord_flip()
+  xlim(c(-1,1)) +
+  theme_light()
 
-ggsave(paste0("results/4_continuity/DWplotPERSO_MRM_beta_sd_envt_seadist_", comm_delin, "_bdmean.png"),
-       height = 12, width = 15, units = 'in', dpi = 300)
+ggsave(paste0("results/4_continuity/DWplotPERSO_MRM_beta_sd_envt_seadist_bdmean.png"),
+       height = 10, width = 12, units = 'in', dpi = 300)
 
 
-# beta.jtu separated
-
+# metric by metric
 for(metricSD in unique(MRMsd$response_variable)){
   MRMsub <-
     MRMsd %>%
-    filter(response_variable == metricSD) 
+    filter(response_variable == metricSD)
 
-  ggplot(MRMsub, aes(x=explanatory_variable,
-                    y=Estimate,
+  ggplot(MRMsub, aes(x=Estimate,
+                    y=explanatory_variable,
                     shape=community_delineation,
-                    # group=interaction(community_delineation, response_variable),
                     color=community_delineation)) +
-    geom_hline(yintercept = 0,linetype=2) +
-    geom_point(position=position_dodge(width = -0.5)) +
-    geom_pointrange(aes(ymin=Estimate - 1.96*Std..Error,
-                        ymax=Estimate + 1.96*Std..Error),
-                    position=position_dodge(width = -0.5)) +
+    geom_vline(xintercept = 0, linetype=2) +
+    geom_pointrange(aes(xmin=Estimate - 1.96*Std..Error,
+                        xmax=Estimate + 1.96*Std..Error),
+                    position=position_dodge(width=-0.5)) +
+    scale_color_viridis(option="cividis", discrete=T, end = 0.8) +
     facet_grid(vars(taxonomic_scale), vars(locations), scale="free") +
-    scale_x_discrete(limits = rev(levels(MRMsub$community_delineation))) +
-    scale_color_viridis(option="cividis", discrete=T)+
-    coord_flip() +
+    xlim(c(-1,1)) +
+    theme_light() +
     ggtitle(metricSD)
 
   ggsave(paste0("results/4_continuity/DWplotPERSO_MRM_beta_sd_envt_seadist_", metricSD, "_bdmean.png"),
-         height = 8, width = 15, units = 'in', dpi = 300)
+         height = 8, width = 12, units = 'in', dpi = 300)
 
 }
 
+
+
+# only taxonomy
+comm_delin <- "taxonomy"
+
+MRMsub <-
+  MRMsd %>%
+  filter(community_delineation == comm_delin)
+
+ggplot(MRMsub, aes(x=Estimate,
+                  y=explanatory_variable,
+                  group=interaction(response_variable),
+                  color=response_variable)) +
+  geom_vline(xintercept = 0, linetype=2) +
+  geom_pointrange(aes(xmin=Estimate - 1.96*Std..Error,
+                      xmax=Estimate + 1.96*Std..Error),
+                  position=position_dodge(width=-0.4)) +
+  scale_color_viridis(option="mako", discrete=T, end = 0.8) +
+  facet_grid(vars(taxonomic_scale), vars(locations), scale="free") +
+  xlim(c(-1,1)) +
+  theme_light()
+
+ggsave(paste0("results/4_continuity/DWplotPERSO_MRM_beta_sd_envt_seadist_bdmean_", comm_delin, ".png"),
+       height = 5, width = 12, units = 'in', dpi = 300)
 
 
 
@@ -505,7 +560,6 @@ for(metricSD in unique(MRMsd$response_variable)){
 # multi.mantel: same values as MRM ! but allows to take residuals
 
 comm_delin = comm_delin_list[3]
-list_communities <- readRDS(paste0("intermediate/2_species_diversity/List_community_", comm_delin, ".RDS"))
 
 comm = names_communities[2]
 metricSD = paste(comm, "beta.jtu", sep = ".")

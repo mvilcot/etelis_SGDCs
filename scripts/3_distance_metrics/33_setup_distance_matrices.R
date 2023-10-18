@@ -4,11 +4,11 @@
 level = "site"
 
 # communtity delineation
-# comm_delin = "taxonomy"
+comm_delin = "taxonomy"
 # comm_delin = "taxonomy_depth1_crosses45-400m"
 # comm_delin = "taxonomy_depth2_contains45-400m"
 # comm_delin = "taxonomy_depth3_within45-400m"
-comm_delin = "taxonomy_env_reef-associated"
+# comm_delin = "taxonomy_env_reef-associated"
 
 
 # read

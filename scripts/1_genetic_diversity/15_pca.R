@@ -1,11 +1,10 @@
 
-
 # ---- PCA all sites ----
 
 ## load data ----
 
 # parameters
-sites = "noCocos"
+sites = "allsites"
 filters = "missind1_callrate0.70_maf0.05"
 level = "site"
 
@@ -19,16 +18,14 @@ genlight <-
 
 genlight
 
-
+genlight <- readRDS("intermediate/1_genetic_diversity/Genlight_Etelis_coruscans_ordered_missind1_callrate0.70_maf0.05_PCADAPTb_allsites.RDS")
 
 ## run PCA ----
-# PCA <- adegenet::glPca(genlight, center = TRUE, scale = FALSE, nf = 10, loadings = TRUE,
-#                        alleleAsUnit = FALSE, useC = TRUE, parallel = require("parallel"),
-#                        n.cores = NULL, returnDotProd=FALSE, matDotProd=NULL)
+npca <- length(genlight$ind.names) - 1
 
-# PCA <- dartR::gl.pcoa(genlight)
-# saveRDS(PCA, paste0("intermediate/1_genetic_diversity/PCA_output_", filters, "_", sites, "_", level, ".RDS"))
-PCA <- readRDS(paste0("intermediate/1_genetic_diversity/PCA_output_", filters, "_", sites, "_", level, ".RDS"))
+# PCA <- adegenet::glPca(genlight, nf = npca)
+# PCA %>% saveRDS(paste0("intermediate/1_genetic_diversity/PCA_output_", filters, "_", sites, "_", level, "_", npca, "PCA_PCADAPTb.RDS"))
+PCA <- readRDS(paste0("intermediate/1_genetic_diversity/PCA_output_", filters, "_", sites, "_", level, "_", npca, "PCA.RDS"))
 
 
 
@@ -58,8 +55,7 @@ gg1 <-
   geom_point(size = 2, alpha = 0.6) +
   labs(x=labels[1], y=labels[2]) +
   scale_color_manual(values = color_perso) +
-  theme_light() +
-  labs(tag = "(a)") 
+  theme_light()
 
 plotly::ggplotly(gg1)
 
@@ -69,7 +65,7 @@ plotly::ggplotly(gg1)
 ## load data ----
 
 # parameters
-sites = "noCocos_noSeychelles"
+sites = "noSeychelles"
 filters = "missind1_callrate0.70_maf0.05"
 level = "site"
 
@@ -86,13 +82,11 @@ genlight
 
 
 ## run PCA ----
-# PCA <- adegenet::glPca(genlight, center = TRUE, scale = FALSE, nf = 10, loadings = TRUE,
-#                        alleleAsUnit = FALSE, useC = TRUE, parallel = require("parallel"),
-#                        n.cores = NULL, returnDotProd=FALSE, matDotProd=NULL)
+npca <- length(genlight$ind.names) - 1
 
-# PCA <- dartR::gl.pcoa(genlight)
-# saveRDS(PCA, paste0("intermediate/1_genetic_diversity/PCA_output_", filters, "_", sites, "_", level, ".RDS"))
-PCA <- readRDS(paste0("intermediate/1_genetic_diversity/PCA_output_", filters, "_", sites, "_", level, ".RDS"))
+# PCA <- adegenet::glPca(genlight, nf = npca)
+# PCA %>% saveRDS(paste0("intermediate/1_genetic_diversity/PCA_output_", filters, "_", sites, "_", level, "_", npca, "PCA.RDS"))
+PCA <- readRDS(paste0("intermediate/1_genetic_diversity/PCA_output_", filters, "_", sites, "_", level, "_", npca, "PCA.RDS"))
 
 
 
@@ -123,8 +117,7 @@ gg2 <-
   labs(x=labels[1], y=labels[2]) +
   scale_color_manual(values = color_perso) +
   theme_light() +
-  theme(legend.position = "none") +
-  labs(tag = "(b)") 
+  theme(legend.position = "none")
 
 plotly::ggplotly(gg2)
 
@@ -134,8 +127,10 @@ plotly::ggplotly(gg2)
 
 # ---- Save plots together ----
 
-gg1 + gg2 + plot_layout(guides = "collect") 
-ggsave(paste0("results/1_genetic_diversity/PCA_perso_", filters, "_", level, "_2.png"),
+gg1 + gg2 + 
+  plot_layout(guides = "collect") +
+  plot_annotation(tag_levels = "a", tag_prefix = "(", tag_suffix = ")")
+ggsave(paste0("results/1_genetic_diversity/PCA_perso_", filters, "_", level, "_PCADAPTb.png"),
        height = 5, width = 12)
 
 

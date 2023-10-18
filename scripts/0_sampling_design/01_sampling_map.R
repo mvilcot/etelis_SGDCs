@@ -187,29 +187,49 @@ ggsave("results/0_sampling_design/ggplot_Map_sampling_sites.png",
 
 
 ## no range
+#### >>> HERE ####
+reefs <- vect("data/seascape/14_001_WCMC008_CoralReefs2021_v4_1/01_Data/WCMC008_CoralReef2021_Py_v4_1.shp")
+# from https://data.unep-wcmc.org/datasets/1
+reefsC <-
+  reefs %>% 
+  terra::rotate(left = FALSE) %>% 
+  terra::crop(extent(20, 210, -48, 48))
+
+
 gg <- 
   ggplot() +
+  
   ## Countries
   geom_polygon(data = map, aes(x = long, y = lat, group = group), fill="grey20") +
+   
+  ## reefs
+  geom_spatvector(data = reefsC, color = "grey40", linewidth = 0.02) +
+  
   ## Sites
   geom_point(data = shift.lon(data_sites),
              aes(x = longitude, y = latitude, color = site, size = number_samples),
              fill = "white", shape = 21) +
   ggrepel::geom_text_repel(data = shift.lon(data_sites),
+                           size = 3.2,
                            aes(x = longitude, y = latitude, color = site, label = site),
-                           hjust=0, vjust=0, max.overlaps = 5, nudge_x = -10) +
+                           hjust=0.5, vjust=0, max.overlaps = 10, nudge_x = -5, nudge_y = 0,
+                           direction = "both",
+                           force = 5,
+                           bg.color = "grey70", bg.r = 0.02) +
+
   ## Theme
-  scale_color_viridis(discrete = T) +
+  scale_color_viridis(discrete = T, end = 1) +
   theme_minimal() +
   theme(legend.position = "none") +
-  labs(x = "Longitude", y = "Latitude") +
-  coord_map()
+  theme(plot.background = element_rect(fill = 'white', color = "white")) +
+  labs(x = "Longitude", y = "Latitude")
+  # coord_cartesian()
 
 gg
 
-ggsave("results/0_sampling_design/ggplot_Map_sampling_sites_norange.png", 
+ggsave("results/0_sampling_design/ggplot_Map_sampling_sites_norange_REEFS_good.png", 
        gg,
-       height = 7, width = 11)
+       height = 7, width = 11, dpi = 500)
 
 
 

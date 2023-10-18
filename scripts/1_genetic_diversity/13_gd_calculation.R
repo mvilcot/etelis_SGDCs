@@ -4,7 +4,7 @@
 # parameters
 filters = "missind1_callrate0.70_maf0.05"
 level = "site"
-sites = "noCocos"
+sites = "allsites"
 
 # read genlight
 genlight <- 
@@ -14,7 +14,7 @@ genlight <-
                 station2drop = NULL,
                 station2keep = NULL)
 
-genlight
+genlight 
 
 # 
 # genlight <- 
@@ -52,7 +52,7 @@ gmatrixPAloc <-
 # ---- mean genetic diversity ----
 
 # basic stats
-BS <- hierfstat::basic.stats(genind)
+BS <- basic.stats(genind)
 BSo <- BS$overall
 
 # Jost additive framework Dst = Ht - Hs
@@ -123,21 +123,22 @@ gd_alpha <-
       tibble::rownames_to_column(level), 
     by = level)
 
-## ---- with dartR ----
-## !!!!!! Similar values, except for Christmas Island... issue ECO019 Ho very high ####
-alpha_pop <-
-  gl.report.heterozygosity(genlight, method = "pop") %>% 
-  dplyr::rename(site = pop) %>% 
-  dplyr::left_join(
-    data.frame(popFst.WG = popFst$betaiovl) %>% 
-      tibble::rownames_to_column(level), 
-    by = level)
 
-alpha_ind <-
-  gl.report.heterozygosity(genlight, method = "ind") 
-
-alpha_pop %>% write_csv(paste0("results/1_genetic_diversity/gd_table_", level, "_dartR_pop.csv"))
-alpha_ind %>% write_csv(paste0("results/1_genetic_diversity/gd_table_ind_dartR.csv"))
+# ## ---- with dartR ----
+# ## !!!!!! Similar values, except for Christmas Island... issue ECO019 Ho very high ####
+# alpha_pop <-
+#   gl.report.heterozygosity(genlight, method = "pop") %>% 
+#   dplyr::rename(site = pop) %>% 
+#   dplyr::left_join(
+#     data.frame(popFst.WG = popFst$betaiovl) %>% 
+#       tibble::rownames_to_column(level), 
+#     by = level)
+# 
+# alpha_ind <-
+#   gl.report.heterozygosity(genlight, method = "ind") 
+# 
+# alpha_pop %>% write_csv(paste0("results/1_genetic_diversity/gd_table_", level, "_dartR_pop.csv"))
+# alpha_ind %>% write_csv(paste0("results/1_genetic_diversity/gd_table_dartR_ind.csv"))
 
 
 

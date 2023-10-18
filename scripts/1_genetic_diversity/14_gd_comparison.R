@@ -40,10 +40,11 @@ alpha_ind <- read_csv(paste0("results/1_genetic_diversity/gd_table_ind_dartR.csv
 alpha_ind <-
   alpha_ind %>% 
   dplyr::rename(id = ind.name) %>% 
-  full_join(data_samples)
+  full_join(data_samples, by= "id")
 
 # plot
-ggplot(alpha_ind, aes(x=.data[[level]], y=.data[["Ho"]], fill = .data[[level]])) + 
+ggA <- 
+  ggplot(alpha_ind, aes(x=.data[[level]], y=.data[["Ho"]], fill = .data[[level]])) + 
   geom_boxplot() +
   scale_fill_manual(values = color_perso) +
   theme_light() +
@@ -55,31 +56,30 @@ ggsave(paste0("results/1_genetic_diversity/boxplot_alpha_Ho_", level, "_ind_dart
 
 
 # ---- Hs ~ Fst pop specific ----
-
 library(ggrepel)
 
 # Pearson, lm
-corP <- cor(gd_alpha$Ho, gd_alpha$popFst.WG)
-model <- summary(lm(Ho ~ popFst.WG, data = gd_alpha))
+corP <- cor.test(gd_alpha$Hs, gd_alpha$popFst.WG)
+# model <- summary(lm(Hs ~ popFst.WG, data = gd_alpha))
 
 # relevel sites
 gd_alpha[[level]] <- factor(gd_alpha[[level]], levels = levels(data_samples[[level]]))
 
 # plot
-ggplot(gd_alpha, aes(x=popFst.WG, y=Ho, color = .data[[level]])) + 
-  geom_smooth(method='lm', formula=y~x, colour = "grey35") +
-  geom_point() +
+ggplot(gd_alpha, aes(x=popFst.WG, y=Hs, color = .data[[level]])) + 
+  geom_smooth(method='lm', formula=y~x, color = "grey35") +
+  geom_point(size = 4, alpha = 0.8) +
+  geom_text_repel(data = gd_alpha[gd_alpha$site %in% c("Seychelles","Christmas_Island","Hawaii","W_Australia"),],
+                  aes(label=.data[[level]]), box.padding = 0.5, size = 3.5) +
   scale_color_manual(values = color_perso) +
-  geom_text_repel(aes(label=.data[[level]]), ) +
   annotate('text', x=max(gd_alpha$popFst.WG), y=max(gd_alpha$Hs), 
-           hjust=1, vjust=1, size=4.5,
-           label=paste0("LM adjusted R² = ", round(model$adj.r.squared, 3), 
-                        ", P = ", round(coef(model)[2,4], 4),
-                        "\n Pearson = ", round(corP, 4)))
+           hjust=1, vjust=0.5, size=3,
+           label=paste0("r = ", signif(corP$estimate, 3), "\n p-value = ", signif(corP$p.value, 1))) + 
+  theme_light()
 
 # save
-ggsave(paste0("results/1_genetic_diversity/plot_Hs_Fst_pop_specific_", level, ".png"),
-       width = 8, height = 6)
+ggsave(paste0("results/1_genetic_diversity/plot_Hs_Fst_pop_specific_", level, "_light.png"),
+       width = 7, height = 5)
 
 
 
