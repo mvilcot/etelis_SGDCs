@@ -91,8 +91,7 @@ ggSD <-
            hjust = 0, vjust = 1,
            label=paste0("r Mantel = ", sprintf("%.3f", sMantel_IBDsd$statistic), ", p = ", sMantel_IBDsd$signif)) +
   # "\nR² MRM = ", round(sMRM_IBDsd$r.squared[["R2"]], 4), ", p = ", round(sMRM_IBDsd$r.squared[["pval"]], 5))) +
-  theme_light() +
-  labs(tag = "(a)") #title = "Species IBD"
+  theme_light()
 
 # genetic IBD
 ggGD <-
@@ -104,8 +103,7 @@ ggGD <-
            hjust = 0, vjust = 1,
            label=paste0("r Mantel = ", sprintf("%.3f", sMantel_IBDgd$statistic), ", p = ", sMantel_IBDgd$signif)) +
   # "\nr MRM = ", round(sMRM_IBDgd$r.squared[["R2"]], 4), ", p = ", round(sMRM_IBDgd$r.squared[["pval"]], 5))) +
-  theme_light() +
-  labs(tag = "(b)") #title = "Genetics IBD"
+  theme_light()
 
 
 # SGDCs
@@ -118,12 +116,12 @@ ggSGDCs <-
            hjust = 0, vjust = 1,
            label=paste0("r Mantel = ", sprintf("%.3f", sMantel_SGDC$statistic), ", p = ", sMantel_SGDC$signif)) +
   # "\nr MRM = ", round(sMRM_SGDC$r.squared[["R2"]], 4), ", p = ", round(sMRM_SGDC$r.squared[["pval"]], 5))) +
-  theme_light() +
-  labs(tag = "(c)") #title = "SGDC"
+  theme_light()
 
 
 # merge plots
-ggSD + ggGD + ggSGDCs #+ plot_annotation(title = comm)
+ggSD + ggGD + ggSGDCs + #+ plot_annotation(title = comm)
+  plot_annotation(tag_levels = "a", tag_prefix = "(", tag_suffix = ")")
 ggsave(width = 14, height = 4,
        filename = paste0("results/4_continuity/IBD_beta_SGDC_noSeychelles_", metricSD, "_", metricGD, "_", metricDIST, "_", comm_delin, ".png"))
 

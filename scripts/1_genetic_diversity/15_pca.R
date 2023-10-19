@@ -18,7 +18,7 @@ genlight <-
 
 genlight
 
-genlight <- readRDS("intermediate/1_genetic_diversity/Genlight_Etelis_coruscans_ordered_missind1_callrate0.70_maf0.05_PCADAPTb_allsites.RDS")
+# genlight <- readRDS("intermediate/1_genetic_diversity/Genlight_Etelis_coruscans_ordered_missind1_callrate0.70_maf0.05_PCADAPTb_allsites.RDS")
 
 ## run PCA ----
 npca <- length(genlight$ind.names) - 1
@@ -58,6 +58,12 @@ gg1 <-
   theme_light()
 
 plotly::ggplotly(gg1)
+
+ggsave(paste0("results/1_genetic_diversity/PCA_perso_", filters, "_", level, "_", sites, ".png"),
+       gg1,
+       height = 5, width = 7)
+
+
 
 
 # ---- PCA no Seychelles ----
@@ -130,7 +136,7 @@ plotly::ggplotly(gg2)
 gg1 + gg2 + 
   plot_layout(guides = "collect") +
   plot_annotation(tag_levels = "a", tag_prefix = "(", tag_suffix = ")")
-ggsave(paste0("results/1_genetic_diversity/PCA_perso_", filters, "_", level, "_PCADAPTb.png"),
+ggsave(paste0("results/1_genetic_diversity/PCA_perso_", filters, "_", level, ".png"),
        height = 5, width = 12)
 
 
