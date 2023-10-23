@@ -390,10 +390,10 @@ for(i in 1:nrow(data_regions)){
     ggplot() +
     geom_spatvector(data = MEOWsub, fill = "grey95", color = "grey40") +
     geom_spatvector(data = reef_list[[i]], color = "grey10") +
-    # geom_spatvector(data = stations_sub, shape = 18,
-    #                 color = "#e6c897", size = 2, alpha = 0.8) +
-    geom_spatvector(data = vect_sitesP[i,], shape = 23,
-                    fill = "#EDAE49", color = "#EDAE19", size = 4, alpha = 0.8) +
+    geom_spatvector(data = stations_sub, shape = 3,
+                    color = "cyan4", size = 3, alpha = 0.8) +
+    geom_spatvector(data = vect_sitesP[i,], shape = 19,
+                    fill = "cyan4", color = "cyan4", size = 4, alpha = 0.9) + #EDAE19
     # ggrepel::geom_text_repel(data = shift.lon(data_sites)[i,], aes(x=longitude, y=latitude, label = focalsite), color = "orange") +
     ggtitle(paste(focalsite, data_regions$ECOREGION[i], sep = ", ")) + 
     theme_light()
@@ -403,7 +403,7 @@ for(i in 1:nrow(data_regions)){
 gg_grob <- arrangeGrob(grobs = gg_list, ncol=5)
 plot(gg_grob)
 ggsave(gg_grob, width = 20, height = 10, 
-       filename = paste0("results/0_sampling_design/MEOW_reef_shapes.png"))
+       filename = paste0("results/0_sampling_design/MEOW_reef_shapes_stations.png"))
 
 
 

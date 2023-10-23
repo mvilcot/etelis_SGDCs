@@ -56,7 +56,6 @@ ggsave(paste0("results/1_genetic_diversity/boxplot_alpha_Ho_", level, "_ind_dart
 
 
 # ---- Hs ~ Fst pop specific ----
-library(ggrepel)
 
 # Pearson, lm
 corP <- cor.test(gd_alpha$Hs, gd_alpha$popFst.WG)
@@ -70,7 +69,8 @@ ggplot(gd_alpha, aes(x=popFst.WG, y=Hs, color = .data[[level]])) +
   geom_smooth(method='lm', formula=y~x, color = "grey35") +
   geom_point(size = 4, alpha = 0.8) +
   geom_text_repel(data = gd_alpha[gd_alpha$site %in% c("Seychelles","Christmas_Island","Hawaii","W_Australia"),],
-                  aes(label=.data[[level]]), box.padding = 0.5, size = 3.5) +
+                  aes(label=.data[[level]]), box.padding = 0.5, size = 3.5,
+                  bg.color = "grey70", bg.r = 0.02) +
   scale_color_manual(values = color_perso) +
   annotate('text', x=max(gd_alpha$popFst.WG), y=max(gd_alpha$Hs), 
            hjust=1, vjust=0.5, size=3,

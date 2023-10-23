@@ -3,70 +3,119 @@
 level = "site"
 
 # communtity delineation
-comm_delin = "taxonomy"
-# comm_delin = "taxonomy_depth1_crosses45-400m"
-# comm_delin = "taxonomy_depth2_contains45-400m"
-# comm_delin = "taxonomy_depth3_within45-400m"
-# comm_delin = "taxonomy_env_reef-associated"
+comm_delin_list <-
+  c("taxonomy",
+    "taxonomy_depth1_crosses45-400m",
+    "taxonomy_depth2_contains45-400m",
+    "taxonomy_depth3_within45-400m",
+    "taxonomy_env_reef-associated")
 
 list_communities <- readRDS(paste0("intermediate/2_species_diversity/List_community_", comm_delin, ".RDS"))
+names_communities <- c("Etelinae", "Lutjanidae", "Eupercaria/misc", "Teleostei")
 
 # parameters
-comm = names(list_communities)[2]
 metricSD = "richness_site"
 metricGD = "Hs"
 
 
-# ---- load ----
-# gd_alpha <- read_csv(paste0("results/1_genetic_diversity/gd_table_", level, ".csv"))
-# sd_alpha <- read_csv(paste0("results/2_species_diversity/sd_table_", level, "_", comm_delin, ".csv"))
+
+
+# ---- table ----
+i=1
+metricGD = "Hs"
+SGDC_alpha <- tibble(community_delineation = NA,
+                     locations = NA,
+                     taxonomic_scale = NA,
+                     metricGD = NA,
+                     metricSD = NA,
+                     r = NA,
+                     pval = NA
+)
+
+for(comm_delin in comm_delin_list) {
+  
+  alpha_merge <- read_csv(paste0("results/3_distance_metrics/alpha_diversity_", comm_delin, ".csv"))
+  
+  for (locations in c("all sites", "without Seychelles")){
+    
+    if(locations == "without Seychelles"){
+      alpha_sub <- filter(alpha_merge, site != "Seychelles")
+    }
+    alpha_sub <- alpha_merge
+
+    
+    for (metricSD in names_communities){
+    
+        # corr
+        stat_pearson <- cor.test(alpha_sub[[metricGD]], alpha_sub[[metricSD]])
+        
+        SGDC_alpha[i,]$community_delineation <- comm_delin
+        SGDC_alpha[i,]$locations <- locations
+        SGDC_alpha[i,]$taxonomic_scale <- metricSD
+        SGDC_alpha[i,]$metricGD <- metricGD
+        SGDC_alpha[i,]$metricSD <- "species richness"
+        SGDC_alpha[i,]$r <- stat_pearson$estimate
+        SGDC_alpha[i,]$pval <- stat_pearson$p.value
+        
+        cat(i, "\n")
+        i=i+1
+    
+    }
+  }
+}
+
+
+SGDC_alpha$signif <- ifelse(SGDC_alpha$pval < 0.001, "***", 
+                            ifelse(SGDC_alpha$pval < 0.01, "**", 
+                                   ifelse(SGDC_alpha$pval < 0.05, "*", "NS")))
+
+SGDC_alpha %>%
+  write_csv("results/4_continuity/alpha_SGDCs_table.csv")
+
+
+
+
+
+# ---- plot ----
 
 alpha_merge <- read_csv(paste0("results/3_distance_metrics/alpha_diversity_", comm_delin, ".csv"))
-
-
-
-# ---- SGDCs ----
+alpha_merge$site <- factor(alpha_merge$site,
+                           level = unique(alpha_merge$site))
 
 gg_list <- list()
-labs_list <- c("(a)","(b)","(c)","(d)")
-
-for (i in 1:length(list_communities)){
-  comm <- names(list_communities)[i]
-  lab <- labs_list[i]
-  
+for (comm in names_communities){
   # filter Seychelles
-  # alpha_sub <-
-    # filter(alpha_merge, site != "Seychelles")
+  # alpha_sub <- filter(alpha_merge, site != "Seychelles")
   alpha_sub <- alpha_merge
   
   # corr
-  # sgdc_alpha <- summary(lm(alpha_sub[[metricGD]] ~ alpha_sub[[metricSD]]))
-  sgdc_alpha <- cor.test(alpha_sub[[comm]], alpha_sub[[metricGD]])
+  # stat_pearson <- summary(lm(alpha_sub[[metricGD]] ~ alpha_sub[[metricSD]]))
+  stat_pearson <- cor.test(alpha_sub[[comm]], alpha_sub[[metricGD]])
   
   # plot
-  gg_list[[comm]] <- 
+  gg_list[[comm]] <-
     ggplot(alpha_sub, 
            aes(.data[[comm]], .data[[metricGD]], 
                color = .data[[level]], label = .data[[level]])) +
-    geom_point() +
-    geom_text_repel() +
+    geom_point(size = 2, alpha = 0.8) +
+    geom_text_repel(bg.color = "grey70", bg.r = 0.02) +
     xlab(paste0("species richness (", comm, ")")) +
     scale_color_manual(values = color_perso) +
     annotate('text', 
-             x=min(alpha_sub[[comm]]), y=max(alpha_sub[[metricGD]]),
+             x=min(alpha_sub[[comm]]), y=1.01*max(alpha_sub[[metricGD]]),
              hjust = 0, vjust = 1,
-             # label=paste0("LM adj.R² = ", sprintf("%.3f", sgdc_alpha$adj.r.squared), "\np = ", sprintf("%.3f", coef(sgdc_alpha)[2,4]))) +
-             label=paste0("r = ", sprintf("%.3f", sgdc_alpha$estimate), "\np-value = ", sprintf("%.3f", sgdc_alpha$p.value))) +
-    labs(tag = lab) + #title = comm
+             label=paste0("r Pearson = ", round(stat_pearson$estimate, 3), "\np = ", round(stat_pearson$p.value, 3))) +
     theme_light() +
     theme(legend.position = "none")
   
   
 }
 
-gg_grob <- arrangeGrob(grobs = gg_list, ncol=4)
-# plot(gg_grob)
-ggsave(gg_grob, width = 20, height = 5, 
-       filename = paste0("results/4_continuity/alpha_SGDCs_allsites_", level, "_", metricGD, "_", metricSD, "_",  comm_delin, ".png"))
+gg_grob <-
+  patchwork::wrap_plots(gg_list, tag_level = "new", guides = "collect") +
+  plot_annotation(tag_level = "a", tag_prefix = "(", tag_suffix = ")")
+plot(gg_grob)
+ggsave(gg_grob, width = 10, height = 9,
+       filename = paste0("results/4_continuity/alpha_SGDCs_allsites_plot_", comm_delin, ".png"))
 
 

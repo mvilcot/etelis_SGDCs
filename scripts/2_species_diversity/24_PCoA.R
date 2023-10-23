@@ -29,11 +29,11 @@ for (metricSD in c("beta.jac", "beta.jtu")){
                 glue("PCo Axis 2 ({pretty_pe[2]}%)"))
     
     # plot
-    gg_list[[i]] <- 
+    gg_list[[i]] <-
       ggplot(pcoa$li, aes(x=A1, y=A2, color=rownames(pcoa$li))) +
       geom_point() +
       labs(x=labels[1], y=labels[2]) +
-      geom_text(label = rownames(pcoa$li)) +
+      geom_text_repel(label = rownames(pcoa$li), bg.color = "grey70", bg.r = 0.02) +
       scale_color_manual(values = color_perso) +
       ggtitle(comm, subtitle = metricSD) +
       theme_light() +
@@ -44,15 +44,13 @@ for (metricSD in c("beta.jac", "beta.jtu")){
   
 }
 
-gg_grob <- arrangeGrob(grobs = gg_list, 
-                       ncol = length(names(sd_mat))/2, # ncol = length(names(sd_mat)), 
-                       nrow = 2 # nrow = length(names(sd_mat[[1]])),
-          )
-
+gg_grob <-
+  patchwork::wrap_plots(gg_list, tag_level = "new") +
+  plot_annotation(tag_level = "a", tag_prefix = "(", tag_suffix = ")") 
 plot(gg_grob)
 
 ggsave(gg_grob, width = 10, height = 10, 
-       filename = paste0("results/2_species_diversity/PCoA_beta_species_diversity_", comm_delin, ".png"))
+       filename = paste0("results/2_species_diversity/PCoA_beta_species_diversity_", comm_delin, "-2.png"))
 
 
 

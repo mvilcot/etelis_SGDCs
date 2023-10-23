@@ -88,6 +88,33 @@ ggsave(paste0("results/3_distance_metrics/heatmap_SD_", comm, ".png"),
 
 
 
+# ---- Jaccard partitonning heatmap ----
+
+comm <- "Etelinae"
+
+dist_merge[[paste0(comm, ".ratio")]] <- 
+  dist_merge[[paste0(comm, ".beta.jtu")]] /
+  dist_merge[[paste0(comm, ".beta.jac")]]
+  
+gg <- 
+  ggplot(data = dist_merge, aes(site2, site1, fill = .data[[paste0(comm, ".ratio")]]))+ 
+  geom_tile()+ 
+  scale_fill_viridis(direction = -1, option = "mako", begin = 0.05, end = 0.95) +
+  labs(fill = "jtu/jac") +
+  labs(x = "", y = "") + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1), 
+        panel.grid = element_blank(), 
+        panel.background = element_rect(fill = "white"),
+        plot.background = element_rect(fill = "white")) + 
+  coord_fixed()
+
+gg
+ggsave(paste0("results/3_distance_metrics/heatmap_SD_", comm, "_ratio_jtu_jne.png"),
+       width = 5, height = 4)
+
+
+
+
 # ---- seadist heatmap ----
 
 gg <-  
