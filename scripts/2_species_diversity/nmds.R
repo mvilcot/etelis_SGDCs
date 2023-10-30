@@ -1,7 +1,7 @@
 
 # ---- read distance matrix ----
 level = "site"
-comm_delin = "taxonomic_scale_Fishbase"
+comm_delin = "taxonomy"
 
 sd_mat <- readRDS(paste0("results/2_species_diversity/sd_list_pairwise_", level, "_", comm_delin, ".RDS"))
 

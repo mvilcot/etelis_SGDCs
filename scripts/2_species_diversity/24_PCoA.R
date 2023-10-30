@@ -7,6 +7,9 @@ sd_mat <- readRDS(paste0("results/2_species_diversity/sd_list_pairwise_", level,
 
 
 
+
+
+
 # ---- PCoA ----
 
 gg_list <- list()
@@ -19,7 +22,7 @@ for (metricSD in c("beta.jac", "beta.jtu")){
     
     # run pcoa
     pcoa <- dudi.pco(quasieuclid(mat_SDbeta), scannf=FALSE, nf=8)
-    
+
     # eigenvalues
     percent_explained <- pcoa$eig / sum(pcoa$eig) * 100
     
@@ -28,12 +31,18 @@ for (metricSD in c("beta.jac", "beta.jtu")){
     labels <- c(glue("PCo Axis 1 ({pretty_pe[1]}%)"),
                 glue("PCo Axis 2 ({pretty_pe[2]}%)"))
     
+    pcoa_coord <-
+      pcoa$li %>%
+      rownames_to_column(level) %>% 
+      left_join(data_sites, by = "site")
+      # left_join(data_stations, by = "station")
+      
     # plot
-    gg_list[[i]] <-
-      ggplot(pcoa$li, aes(x=A1, y=A2, color=rownames(pcoa$li))) +
+    # gg_list[[i]] <-
+      ggplot(pcoa_coord, aes(x=A1, y=A2, color=site)) +
       geom_point() +
       labs(x=labels[1], y=labels[2]) +
-      geom_text_repel(label = rownames(pcoa$li), bg.color = "grey70", bg.r = 0.02) +
+      geom_text_repel(label = pcoa_coord[[level]], bg.color = "grey70", bg.r = 0.02) +
       scale_color_manual(values = color_perso) +
       ggtitle(comm, subtitle = metricSD) +
       theme_light() +

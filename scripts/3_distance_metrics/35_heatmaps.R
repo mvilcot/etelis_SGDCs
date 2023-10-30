@@ -139,7 +139,7 @@ ggsave(paste0("results/3_distance_metrics/heatmap_seadist.png"),
 
 # ---- environment heatmap ----
 
-brewer.pal(n = 3, name = "Greens")
+RColorBrewer::brewer.pal(n = 3, name = "Greens")
 
 gg <-  
   ggplot(data = dist_merge, aes(site2, site1, fill = environment))+ 

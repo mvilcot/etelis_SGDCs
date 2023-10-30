@@ -70,18 +70,18 @@ envt_site <-
 
 ## export
 envt_site %>% 
-  write.csv("intermediate/3_distance_metrics/bio_oracle_variables_bdmean_stationbuffer_siteaverage.csv",
-            row.names = T, quote = F)
+  write_csv("intermediate/3_distance_metrics/bio_oracle_variables_bdmean_stationbuffer_siteaverage.csv")
 
 
 # ---- scale data ----
 envt_site_scaled <-
   envt_site %>%
-  mutate(across(where(is.numeric), log)) %>% ################# CHECK IF LOG NEEDED (cf DiBattista et al. 2020)
+  ### >>>>> CHECK IF LOG NEEDED (cf DiBattista et al. 2020) #################
+  mutate(across(where(is.numeric), log)) %>% 
   column_to_rownames("site") %>%
   scale() %>%
   as_tibble(rownames = NA) %>%
-  rownames_to_column("site") ## wtf the rownames does not appear but they are still stored
+  rownames_to_column("site") ## the rownames does not appear but they are still stored...
 
 # pivot longer
 envt_site_long <-
@@ -184,6 +184,9 @@ corrplot(cor(envt_var))
 
 # run pca
 pca_env <- dudi.pca(df = envt_var, scannf = FALSE, nf = 5) 
+pca_env$li %>% 
+  rownames_to_column("site") %>% 
+  write_csv("intermediate/3_distance_metrics/PCA_environment_axis_site.csv")
 
 # analyse pca
 library(factoextra)

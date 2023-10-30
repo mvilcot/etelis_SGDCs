@@ -299,7 +299,7 @@ for (i in 1:nrow(SGDC_betaSUB)){
       geom_point(shape = 19, alpha = 0.8) +
       xlab(paste0(metricSD, " (", comm, ")")) +
       annotate('text',
-               x = min(dist_merge[[metricSDcomm]]), y = max(dist_merge[[metricGD]]) + 0.10*max(dist_merge[[metricGD]]),
+               x = min(dist_merge[[metricSDcomm]]), y = 1.1 * max(dist_merge[[metricGD]]),
                hjust = 0, vjust = 1,
                label = paste0("r Mantel = ", round(SGDC_betaSUB[i, "r"], 4), "\np = ", SGDC_betaSUB[i, "pval"])) +
       theme_light()
@@ -325,8 +325,9 @@ ggsave(gg_grob, width = 10, height = 9,
 
 ## load ----
 source("scripts/4_continuity/sgdcs_decomposition_Lamy.R")
+## >>>> à adapter à du beta... avec phytools::multi.mantel
 
-comm_delin <- comm_delin_list[5]
+comm_delin <- comm_delin_list[1]
 
 dist_merge <-
   read_csv(paste0("results/3_distance_metrics/dist_geo_envtbdmean_gd_sd_", comm_delin, ".csv"))
@@ -355,6 +356,23 @@ dev.off()
 
 
 
+# perso plot
+temp <- SGDC.decomp(SD = dist_merge[[metricSD]],
+                    GD = dist_merge[[metricGD]],
+                    FACTOR = dist_merge[,c("environment","seadist")])
+temp <- 
+  temp$Contribution %>% 
+  as_tibble(rownames = NA) %>% 
+  rownames_to_column("variable")
+temp$variable <- factor(temp$variable, levels = temp$variable)
+ggplot(temp, aes(y = variable, x = Contribution, fill = variable)) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = c("#A1D99B", "#9ECAE1", "#ffb734", "grey", "grey20")) +
+  theme_light() +
+  theme(legend.position = "none")
+ggsave(paste0("results/4_continuity/variance_decompositionPERSO_beta_SGDCs_noSeychelles_", comm, "_", comm_delin, "_bdmean.png"),
+       width = 10, height = 5)
+    
 # ---- 5. MRM ----
 
 ## MRM gd table ----
@@ -590,39 +608,97 @@ ggsave(paste0("results/4_continuity/DWplotPERSO2_MRM_beta_sd_envt_seadist_bdmean
 # 6. SGDCs residuals ----
 # multi.mantel: same values as MRM ! but allows to take residuals
 
-comm_delin = comm_delin_list[3]
+comm_delin = comm_delin_list[1]
 
-comm = names_communities[2]
-metricSD = paste(comm, "beta.jtu", sep = ".")
+dist_merge <-
+  read_csv(paste0("results/3_distance_metrics/dist_geo_envtbdmean_gd_sd_", comm_delin, ".csv"))
+dist_mat <-
+  readRDS(paste0("intermediate/3_distance_metrics/dist_geo_envtbdmean_gd_sd_", comm_delin, ".RDS"))
+
+dist_mat <- lapply(dist_mat, function(x) mat.subset(x, "Seychelles"))
+dist_merge <- mat.subset(dist_merge, "Seychelles")
+
 metricGD = "Fst"
+metricSD = "beta.jtu"
 
-dist_mat <- readRDS(paste0("intermediate/3_distance_metrics/dist_geo_envt_res17-4_gd_sd_", comm_delin, ".RDS"))
+gglist <- list()
+for (comm in names_communities){
+  
+  # comm = names_communities[2]
+  metricSDcomm = paste(comm, metricSD, sep = ".")
 
-for(i in 1:length(dist_mat)){
-  dist_mat[[i]] <- as.matrix(dist_mat[[i]])
-  dist_mat[[i]] <- dist_mat[[i]][!grepl("Seychelles", rownames(dist_mat[[i]])),
-                                 !grepl("Seychelles", colnames(dist_mat[[i]]))]
-  dist_mat[[i]] <- as.dist(dist_mat[[i]])
+
+  
+  
+  ## MRM ----
+  modelGD <-
+    phytools::multi.mantel((dist_mat[[metricGD]]),
+                           list(dist_mat$environment,
+                                dist_mat$seadist),
+                           nperm = 1000)
+  
+  modelSD <-
+    phytools::multi.mantel((dist_mat[[metricSDcomm]]),
+                           list(dist_mat$environment,
+                                dist_mat$seadist),
+                           nperm = 1000)
+  
+  stats_res <- 
+    mantel(modelGD$residuals, modelSD$residuals, permutations = 9999)
+  
+  
+  
+  ## LM ----
+  modelGD <-
+    lm((dist_merge[[metricGD]]) ~ 
+         dist_merge$environment +
+         dist_merge$seadist)
+  
+  modelSD <-
+    lm((dist_merge[[metricSDcomm]]) ~
+         dist_merge$environment +
+         dist_merge$seadist)
+  
+  summary(lm(modelGD$residuals ~ modelSD$residuals))
+  
+  
+  df <- data.frame(SDres = modelSD$residuals, GDres = modelGD$residuals)
+  
+  if(stats_res$signif <= 0.05){
+    gglist[[comm]] <-
+      ggplot(df, aes(x = SDres, y = GDres)) +
+      geom_smooth(method = "lm", color = "grey50", fill = "grey80") +
+      geom_point(shape = 19, alpha = 0.8) +
+      xlab(paste0("residuals(", metricSD, ") (", comm, ")")) +
+      ylab(paste0("residuals(", metricGD, ")")) +
+      annotate('text',
+               x = min(df$SDres), y = 1.5*max(df$GDres),
+               hjust = 0, vjust = 1,
+               label = paste0("r Mantel = ", round(stats_res$statistic, 4), "\np = ", stats_res$signif)) +
+      theme_light()
+  }
+  
+  if(stats_res$signif > 0.05){
+    gglist[[comm]] <-
+      ggplot(df, aes(x = SDres, y = GDres)) +
+      geom_point(shape = 19, alpha = 0.8) +
+      xlab(paste0("residuals(", metricSD, ") (", comm, ")")) +
+      ylab(paste0("residuals(", metricGD, ")")) +
+      annotate('text',
+               x = min(df$SDres), y = 1.5*max(df$GDres),
+               hjust = 0, vjust = 1,
+               label = paste0("r Mantel = ", round(stats_res$statistic, 4), "\np = ", stats_res$signif)) +
+      theme_light()
+  }
 }
 
+gg_grob <-
+  patchwork::wrap_plots(gglist, tag_level = "new") +
+  plot_annotation(tag_level = "a", tag_prefix = "(", tag_suffix = ")")
+plot(gg_grob)
 
-## MRM ----
-modelGD <-
-  phytools::multi.mantel((dist_mat[[metricGD]]),
-                         list(dist_mat$environment,
-                              dist_mat$seadist),
-                         nperm = 1000)
-
-modelSD <-
-  phytools::multi.mantel((dist_mat[[metricSD]]),
-                         list(dist_mat$environment,
-                              dist_mat$seadist),
-                         nperm = 1000)
-
-## residual correlation ----
-mantel(modelGD$residuals, modelSD$residuals)
-
-
+ggsave(width = 10, height = 9,
+       filename = paste0("results/4_continuity/beta_SGDCs_plot_significant_RESIDUALS.png"))
 
 
 
