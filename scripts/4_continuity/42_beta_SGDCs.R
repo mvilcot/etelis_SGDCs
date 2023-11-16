@@ -53,7 +53,7 @@ qqnorm(dist_mat[[metricSD]])
 qqnorm(dist_mat[[metricGD]])
 
 
-# ---- 1. IBD + SGDCs ----
+# ---- 1. IBD/IBE + SGDCs ----
 
 # parameters
 comm <- "Lutjanidae"
@@ -137,49 +137,76 @@ ggsave(width = 14, height = 4,
 
 # ---- 2. SGDC table ----
 ## table ----
-i=1
-metricGD = "Fst"
-SGDC_beta <- tibble(community_delineation = NA,
-                     locations = NA,
-                     taxonomic_scale = NA,
-                     metricGD = NA,
-                     metricSD = NA,
-                     r = NA,
-                     pval = NA
-                     )
+library(boot)
+names_communities2 <- gsub("Eupercaria/misc", "Eupercaria_misc", names_communities)
 
-for(comm_delin in comm_delin_list) {
+metricGD = "Fst"
+
+# create empty table
+SGDC_beta <- tibble(community_delineation = NA,
+                    locations = NA,
+                    taxonomic_scale = NA,
+                    metricGD = NA,
+                    metricSD = NA,
+                    r = NA,
+                    rlwr = NA,
+                    rupr = NA,
+                    pval = NA,
+)
+
+# coeff_function <- function(formula, data, indices) {
+#   d <- data[indices,] #allows boot to select sample
+#   fit <- lm(formula, data=d) #fit regression model
+#   return(summary(fit)$coefficients[2,1]) #return R-squared of model
+# }
+library(ecodist)        # MRM
+
+i=1 # initialisation
+for(comm_delin in comm_delin_list[1]) { #[1]
 
   for (locations in c("all sites", "without Seychelles")){
 
-    dist_mat <-
-      readRDS(paste0("intermediate/3_distance_metrics/dist_geo_envt_res17-4_gd_sd_", comm_delin, ".RDS"))
-
+    dist_mat <- readRDS(paste0("intermediate/3_distance_metrics/dist_geo_envt_res17-4_gd_sd_", comm_delin, ".RDS"))
+    dist_merge <- read_csv(paste0("results/3_distance_metrics/dist_geo_envtbdmean_gd_sd_", comm_delin, ".csv"))
+    
+    ## >>>> Eupercaria!!!!!!!! ----
+    colnames(dist_merge) <- gsub("Eupercaria/misc", "Eupercaria_misc", colnames(dist_merge))
+    names(dist_mat) <- gsub("Eupercaria/misc", "Eupercaria_misc", names(dist_mat))
+    
     ## subset sites --
     if(locations == "without Seychelles"){
-      for(j in 1:length(dist_mat)){
-        dist_mat[[j]] <- as.matrix(dist_mat[[j]])
-        dist_mat[[j]] <- dist_mat[[j]][!grepl("Seychelles", rownames(dist_mat[[j]])),
-                                       !grepl("Seychelles", colnames(dist_mat[[j]]))]
-        dist_mat[[j]] <- as.dist(dist_mat[[j]])
-      }
+      dist_mat <- lapply(dist_mat, function(x){mat.subset(x, "Seychelles")})
+      dist_merge <- mat.subset(dist_merge, "Seychelles")
     }
 
-    for (comm in names_communities){
+    for (comm in names_communities2){
 
       for (metric in c("beta.jac", "beta.jtu", "beta.jne")){
 
         metricSDcomm <- paste(comm, metric, sep = ".")
 
         stat <- vegan::mantel(dist_mat[[metricSDcomm]], dist_mat[[metricGD]], permutations = 9999)
+        
+        ## Get bootstraps on R²
+        # fm <- as.formula(paste("scale(", metricSDcomm, ") ~ scale(", metricGD, ")", sep=""))
+        # stat2 <- summary(lm(fm, data = dist_merge))
+        # boots <- boot(data=dist_merge, statistic=coeff_function, R=1000, formula=fm)
+        
+        fm <- as.formula(paste(metricSDcomm, " ~ ", metricGD, sep=""))
+        stat3 <- ecodist::mantel(dist_mat[[metricSDcomm]] ~ dist_mat[[metricGD]], nperm = 9999, nboot = 9999, cboot = 0.95)        
+        # boots_ci <- boot.ci(boots, type="bca")
+        # plot(reps)
 
         SGDC_beta[i,]$community_delineation <- comm_delin
         SGDC_beta[i,]$locations <- locations
         SGDC_beta[i,]$taxonomic_scale <- comm
         SGDC_beta[i,]$metricGD <- metricGD
         SGDC_beta[i,]$metricSD <- metric
-        SGDC_beta[i,]$r <- stat$statistic
-        SGDC_beta[i,]$pval <- stat$signif
+        SGDC_beta[i,]$r <- stat3[1]# stat$statistic
+        SGDC_beta[i,]$rlwr <- stat3[5] #stat2$coefficients[2,1] - 1.96*stat2$coefficients[2,2] #boots_ci$bca[4] 
+        SGDC_beta[i,]$rupr <- stat3[6] # stat2$coefficients[2,1] + 1.96*stat2$coefficients[2,2] #boots_ci$bca[5]
+        SGDC_beta[i,]$pval <- stat3[2] # stat$signif Ha: r>0
+
 
         cat(i, "\n")
         i=i+1
@@ -194,18 +221,62 @@ SGDC_beta$signif <- ifelse(SGDC_beta$pval < 0.001, "***",
                                    ifelse(SGDC_beta$pval < 0.05, "*", "NS")))
 
 SGDC_beta %>%
-  write_csv("results/4_continuity/beta_SGDCs_table.csv")
+  write_csv("results/4_continuity/beta_SGDCs_table_CImantel_taxonomy.csv")
 
 
-## plot ----
+## plot one community delin ----
+SGDC_betasub <-
+  SGDC_beta %>% 
+  dplyr::filter(community_delineation == "taxonomy") %>% 
+  dplyr::filter(locations == "without Seychelles") %>% 
+  dplyr::filter(metricSD != "beta.jne")
+
+SGDC_betasub$taxonomic_scale <- 
+  factor(SGDC_betasub$taxonomic_scale,
+         level = names_communities2)
+
+SGDC_betasub$metricSD <- 
+  factor(SGDC_betasub$metricSD,
+         level = c("beta.jac", "beta.jtu")) #"beta.jne", 
+
+ggplot(SGDC_betasub, aes(
+                       x=r,
+                       y=taxonomic_scale,
+                       # shape=signif,
+                       group=metricSD,
+                       color=metricSD)) +
+  geom_vline(xintercept = 0, linetype=2, color="grey20") +
+  # geom_point(size = 2.5) +
+  geom_pointrange(aes(x=r,
+                      xmin=rlwr,
+                      xmax=rupr),
+                    size = 0.3, linewidth = 0.3,
+                    position=position_dodge(width = 0.4)) +
+  # scale_shape_manual(values=c(19, 19, 1), )+
+  scale_color_manual(values = c("#60CEACFF", "#395D9CFF"))+ # "0B0405FF", 
+  # scale_color_viridis(option="mako", discrete=T, end = 0.8) +
+  xlim(c(-0.6, 0.9)) +
+  ylab("") +
+  xlab("Mantel r") +
+  theme_light() +
+  theme(legend.title=element_blank(), legend.position="top") +
+  guides(shape = "none") +
+  scale_y_discrete(limits=rev)
+
+ggsave(paste0("results/4_continuity/beta_SGDCs_DWplot_taxonomy_noSeychelles_CImantel.png"),
+       height = 4, width = 5, units = 'in', dpi = 300)
+
+
+
+## plot with all comm delin ----
 SGDC_beta$taxonomic_scale <- factor(SGDC_beta$taxonomic_scale,
-                                     level = names_communities)
+                                    level = names_communities)
 
 ggplot(SGDC_beta, aes(x=community_delineation,
-                       y=r,
-                       shape=signif,
-                       group=taxonomic_scale,
-                       color=taxonomic_scale)) +
+                      y=r,
+                      shape=signif,
+                      group=taxonomic_scale,
+                      color=taxonomic_scale)) +
   geom_hline(yintercept = 0, linetype=2) +
   geom_point(size = 2.5, position=position_dodge(width = 0.4)) +
   scale_shape_manual(values=c(19, 19, 19, 1))+
@@ -216,47 +287,13 @@ ggplot(SGDC_beta, aes(x=community_delineation,
 ggsave(paste0("results/4_continuity/beta_SGDCs_DWplot.png"),
        height = 8, width = 15, units = 'in', dpi = 300)
 
-## when only one community delin
-SGDC_betasub <-
-  SGDC_beta %>% 
-  dplyr::filter(community_delineation == "taxonomy") %>% 
-  dplyr::filter(locations == "without Seychelles")
-
-SGDC_betasub$taxonomic_scale <- 
-  factor(SGDC_betasub$taxonomic_scale,
-         level = names_communities)
-
-SGDC_betasub$metricSD <- 
-  factor(SGDC_betasub$metricSD,
-         level = c("beta.jne", "beta.jac", "beta.jtu"))
-
-ggplot(SGDC_betasub, aes(
-                       x=r,
-                       y=taxonomic_scale,
-                       shape=signif,
-                       group=metricSD,
-                       color=metricSD)) +
-  geom_vline(xintercept = 0, linetype=2, color="grey20") +
-  geom_point(size = 2.5) +
-  scale_shape_manual(values=c(19, 19, 1), )+
-  scale_color_manual(values = c("#0B0405FF", "#60CEACFF", "#395D9CFF"))+ # mako
-  # scale_color_viridis(option="mako", discrete=T, end = 0.8) +
-  xlim(c(-0.6,0.6)) +
-  ylab("") +
-  xlab("Mantel r") +
-  theme_light() +
-  theme(legend.title=element_blank(), legend.position="top") +
-  guides(shape = "none") +
-  scale_y_discrete(limits=rev)
-
-ggsave(paste0("results/4_continuity/beta_SGDCs_DWplot_taxonomy_noSeychelles.png"),
-       height = 4, width = 5, units = 'in', dpi = 300)
-
-
-
 
 
 # ---- 3. SGDCs significant plot ----
+
+
+SGDC_beta <- read_csv("results/4_continuity/beta_SGDCs_table.csv")
+
 
 SGDC_betaSUB <- 
   SGDC_beta %>% 
@@ -512,96 +549,142 @@ MRMsd <- read_csv("results/4_continuity/MRM_beta_sd_envt_seadist_bdmean.csv")
 MRMgd$response_variable <- factor(MRMgd$response_variable, levels = unique(MRMgd$response_variable))
 MRMsd$response_variable <- factor(MRMsd$response_variable, levels = unique(MRMsd$response_variable))
 
-### GD
-ggplot(MRMgd, aes(x=Estimate, y=explanatory_variable, group=response_variable, color=response_variable)) +
+MRMplot <-
+  MRMgd %>% 
+  bind_cols(taxonomic_scale = "Etelis coruscans") %>% 
+  bind_cols(community_delineation = comm_delin) %>% 
+  bind_rows(MRMsd) %>% 
+  dplyr::filter(!response_variable %in% c("GstPP.hed", "D.Jost", "beta.jne")) %>% 
+  dplyr::filter(community_delineation == comm_delin)
+
+MRMplot$taxonomic_scale <- 
+  factor(MRMplot$taxonomic_scale, levels = c("Etelis coruscans", names_communities))
+
+MRMplot <- 
+  MRMplot %>% 
+  mutate(locations = replace(locations, locations == "allsites", "all sites")) %>% 
+  mutate(locations = replace(locations, locations == "noSeychelles", "without Seychelles"))
+
+color_response <- c(Fst =  "#F69C73FF",
+                    # D.Jost = "#03051AFF",
+                    beta.jac = "#60CEACFF",
+                    beta.jtu = "#395D9CFF")
+
+
+### GD + SD ----
+ggplot(MRMplot, aes(x=Estimate, y=explanatory_variable, 
+                     group=response_variable, color=response_variable, shape=response_variable)) +
   geom_vline(xintercept = 0,linetype=2) +
   geom_pointrange(aes(xmin=Estimate - 1.96*Std..Error,
                       xmax=Estimate + 1.96*Std..Error),
                   position=position_dodge(width = -0.4)) +
-  scale_color_viridis(option="rocket", discrete=T, end = 0.8)+
-  facet_wrap(~locations) +
-  xlim(c(-1,1)) +
-  theme_light()
+  scale_color_manual('', values = color_response)+
+  facet_grid(rows = vars(taxonomic_scale), 
+             cols = vars(locations)) +
+  xlim(c(-1,1)) + 
+  ylab("") +
+  labs(shape = "") +
+  theme_light() +
+  theme(strip.background = element_rect(color = "grey"),
+        legend.position = "top")
+  # theme(axis.text.y = element_text(color = color_explanatory))
 
-ggsave(paste0("results/4_continuity/DWplotPERSO_MRM_beta_gd_envt_seadist_bdmean.png"),
-       height = 5, width = 12, units = 'in', dpi = 300)
-
-
-### SD
-# all combined
-ggplot(MRMsd, aes(x=Estimate,
-                  y=explanatory_variable,
-                  shape=community_delineation,
-                  group=interaction(community_delineation, response_variable),
-                  color=response_variable)) +
-  geom_vline(xintercept = 0, linetype=2) +
-  geom_pointrange(aes(xmin=Estimate - 1.96*Std..Error,
-                    xmax=Estimate + 1.96*Std..Error),
-                    position=position_dodge(width=-1)) +
-  scale_color_viridis(option="mako", discrete=T, end = 0.8) +
-  facet_grid(vars(taxonomic_scale), vars(locations), scale="free") +
-  xlim(c(-1,1)) +
-  theme_light()
-
-ggsave(paste0("results/4_continuity/DWplotPERSO_MRM_beta_sd_envt_seadist_bdmean.png"),
-       height = 10, width = 12, units = 'in', dpi = 300)
-
-
-# metric by metric
-for(metricSD in unique(MRMsd$response_variable)){
-  MRMsub <-
-    MRMsd %>%
-    filter(response_variable == metricSD)
-
-  ggplot(MRMsub, aes(x=Estimate,
-                    y=explanatory_variable,
-                    shape=community_delineation,
-                    color=community_delineation)) +
-    geom_vline(xintercept = 0, linetype=2) +
-    geom_pointrange(aes(xmin=Estimate - 1.96*Std..Error,
-                        xmax=Estimate + 1.96*Std..Error),
-                    position=position_dodge(width=-0.5)) +
-    scale_color_viridis(option="cividis", discrete=T, end = 0.8) +
-    facet_grid(vars(taxonomic_scale), vars(locations), scale="free") +
-    xlim(c(-1,1)) +
-    theme_light() +
-    ggtitle(metricSD)
-
-  ggsave(paste0("results/4_continuity/DWplotPERSO_MRM_beta_sd_envt_seadist_", metricSD, "_bdmean.png"),
-         height = 8, width = 12, units = 'in', dpi = 300)
-
-}
+ggsave(paste0("results/4_continuity/DWplotPERSO_MRM_beta_combined_envt_seadist.png"),
+         height = 8, width = 8, units = 'in', dpi = 500)
 
 
 
-# only taxonomy
-comm_delin <- "taxonomy"
 
-MRMsub <-
-  MRMsd %>%
-  filter(community_delineation == comm_delin)
-
-MRMsub$response_variable <- 
-  factor(MRMsub$response_variable,
-         level = c("beta.jne", "beta.jac", "beta.jtu"))
-
-ggplot(MRMsub, aes(x=Estimate,
-                  y=explanatory_variable,
-                  group=interaction(response_variable),
-                  color=response_variable)) +
-  geom_vline(xintercept = 0, linetype=2) +
-  geom_pointrange(aes(xmin=Estimate - 1.96*Std..Error,
-                      xmax=Estimate + 1.96*Std..Error),
-                  position=position_dodge(width=-0.4)) +
-  scale_color_manual(values = c("#0B0405FF", "#60CEACFF", "#395D9CFF"))+
-  # scale_color_viridis(option="mako", discrete=T, end = 0.8) +
-  facet_grid(vars(taxonomic_scale), vars(locations), scale="free") +
-  xlim(c(-1,1)) +
-  theme_light()
-
-ggsave(paste0("results/4_continuity/DWplotPERSO2_MRM_beta_sd_envt_seadist_bdmean_", comm_delin, ".png"),
-       height = 8, width = 10, units = 'in', dpi = 300)
-
+# ### GD ----
+# ggplot(MRMgd, aes(x=Estimate, y=explanatory_variable, group=response_variable, color=response_variable)) +
+#   geom_vline(xintercept = 0,linetype=2) +
+#   geom_pointrange(aes(xmin=Estimate - 1.96*Std..Error,
+#                       xmax=Estimate + 1.96*Std..Error),
+#                   position=position_dodge(width = -0.4)) +
+#   scale_color_viridis(option="rocket", discrete=T, end = 0.8)+
+#   facet_wrap(~locations) +
+#   xlim(c(-1,1)) +
+#   theme_light()
+# 
+# ggsave(paste0("results/4_continuity/DWplotPERSO_MRM_beta_gd_envt_seadist_bdmean.png"),
+#        height = 5, width = 12, units = 'in', dpi = 300)
+# 
+# 
+# ### SD ----
+# # all community delineations
+# ggplot(MRMsd, aes(x=Estimate,
+#                   y=explanatory_variable,
+#                   shape=community_delineation,
+#                   group=interaction(community_delineation, response_variable),
+#                   color=response_variable)) +
+#   geom_vline(xintercept = 0, linetype=2) +
+#   geom_pointrange(aes(xmin=Estimate - 1.96*Std..Error,
+#                     xmax=Estimate + 1.96*Std..Error),
+#                     position=position_dodge(width=-1)) +
+#   scale_color_viridis(option="mako", discrete=T, end = 0.8) +
+#   facet_grid(vars(taxonomic_scale), vars(locations), scale="free") +
+#   xlim(c(-1,1)) +
+#   theme_light()
+# 
+# ggsave(paste0("results/4_continuity/DWplotPERSO_MRM_beta_sd_envt_seadist_bdmean.png"),
+#        height = 10, width = 12, units = 'in', dpi = 300)
+# 
+# 
+# # metric by metric
+# for(metricSD in unique(MRMsd$response_variable)){
+#   MRMsub <-
+#     MRMsd %>%
+#     filter(response_variable == metricSD)
+# 
+#   ggplot(MRMsub, aes(x=Estimate,
+#                     y=explanatory_variable,
+#                     shape=community_delineation,
+#                     color=community_delineation)) +
+#     geom_vline(xintercept = 0, linetype=2) +
+#     geom_pointrange(aes(xmin=Estimate - 1.96*Std..Error,
+#                         xmax=Estimate + 1.96*Std..Error),
+#                     position=position_dodge(width=-0.5)) +
+#     scale_color_viridis(option="cividis", discrete=T, end = 0.8) +
+#     facet_grid(vars(taxonomic_scale), vars(locations), scale="free") +
+#     xlim(c(-1,1)) +
+#     theme_light() +
+#     ggtitle(metricSD)
+# 
+#   ggsave(paste0("results/4_continuity/DWplotPERSO_MRM_beta_sd_envt_seadist_", metricSD, "_bdmean.png"),
+#          height = 8, width = 12, units = 'in', dpi = 300)
+# 
+# }
+# 
+# 
+# 
+# # only taxonomy
+# comm_delin <- "taxonomy"
+# 
+# MRMsub <-
+#   MRMsd %>%
+#   filter(community_delineation == comm_delin)
+# 
+# MRMsub$response_variable <- 
+#   factor(MRMsub$response_variable,
+#          level = c("beta.jne", "beta.jac", "beta.jtu"))
+# 
+# ggplot(MRMsub, aes(x=Estimate,
+#                   y=explanatory_variable,
+#                   group=interaction(response_variable),
+#                   color=response_variable)) +
+#   geom_vline(xintercept = 0, linetype=2) +
+#   geom_pointrange(aes(xmin=Estimate - 1.96*Std..Error,
+#                       xmax=Estimate + 1.96*Std..Error),
+#                   position=position_dodge(width=-0.4)) +
+#   scale_color_manual(values = c("#0B0405FF", "#60CEACFF", "#395D9CFF"))+
+#   # scale_color_viridis(option="mako", discrete=T, end = 0.8) +
+#   facet_grid(vars(taxonomic_scale), vars(locations), scale="free") +
+#   xlim(c(-1,1)) +
+#   theme_light()
+# 
+# ggsave(paste0("results/4_continuity/DWplotPERSO2_MRM_beta_sd_envt_seadist_bdmean_", comm_delin, ".png"),
+#        height = 8, width = 10, units = 'in', dpi = 300)
+# 
 
 
 

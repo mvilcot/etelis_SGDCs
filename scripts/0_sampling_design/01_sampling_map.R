@@ -207,8 +207,8 @@ gg <-
   
   ## Sites
   geom_point(data = shift.lon(data_sites),
-             aes(x = longitude, y = latitude, color = site, size = number_samples),
-             fill = "white", shape = 21) +
+             aes(x = longitude, y = latitude, fill = site, color = site,size = number_samples),
+             alpha = 0.6, shape = 21) +
   ggrepel::geom_text_repel(data = shift.lon(data_sites),
                            size = 3.2,
                            aes(x = longitude, y = latitude, color = site, label = site),
@@ -218,6 +218,7 @@ gg <-
                            bg.color = "grey70", bg.r = 0.02) +
 
   ## Theme
+  scale_fill_viridis(discrete = T, end = 1) +
   scale_color_viridis(discrete = T, end = 1) +
   theme_minimal() +
   theme(legend.position = "none") +
@@ -227,10 +228,10 @@ gg <-
 
 gg
 
-ggsave("results/0_sampling_design/ggplot_Map_sampling_sites_norange_REEFS_good.png", 
-       gg,
-       height = 7, width = 11, dpi = 500)
-
+ggsave("results/0_sampling_design/ggplot_Map_sampling_sites_norange_REEFS_final.png", 
+       gg, height = 7, width = 11, dpi = 500)
+ggsave("results/0_sampling_design/ggplot_Map_sampling_sites_norange_REEFS_final.pdf", 
+       gg, height = 7, width = 11)
 
 
 # ---- Map seamounts, reefs ----
