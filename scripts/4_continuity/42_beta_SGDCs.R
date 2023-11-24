@@ -438,7 +438,8 @@ for (locations in c("allsites", "noSeychelles")){
       rownames_to_column("explanatory_variable")
     
     tempMRM <-
-      data.frame(pval = statMRM$coef[-1,2]) %>%
+      data.frame(pval = statMRM$coef[-1,2],
+                 rsquared = statMRM$r.squared[1]) %>%
       rownames_to_column("explanatory_variable")
     # dplyr::rename(coefficients = "scale(dist_merge[[metricGD]])")
     # rbind(tibble(explanatory_variable = "R²",
@@ -502,7 +503,8 @@ for(comm_delin in comm_delin_list) {
           rownames_to_column("explanatory_variable")
         
         tempMRM <-
-          data.frame(pval = statMRM$coef[-1,2]) %>%
+          data.frame(pval = statMRM$coef[-1,2],
+                     rsquared = statMRM$r.squared[1]) %>%
           rownames_to_column("explanatory_variable")
         # dplyr::rename(coefficients = "scale(dist_merge[[metricSD]])")
         # rbind(tibble(explanatory_variable = "R²",
