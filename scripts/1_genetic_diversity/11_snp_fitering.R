@@ -156,7 +156,7 @@ gl4@pop <-
 filters <- "missind1_callrate0.70_maf0.05"
 
 gl4 %>% 
-  writeRDS(paste0("intermediate/1_genetic_diversity/Genlight_Etelis_coruscans_ordered_", filters, ".RDS"))
+  saveRDS(paste0("intermediate/1_genetic_diversity/Genlight_Etelis_coruscans_ordered_", filters, ".RDS"))
 
 
 # ---- Smearplot ----

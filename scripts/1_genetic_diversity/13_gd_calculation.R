@@ -137,8 +137,8 @@ gd_alpha <-
 # alpha_ind <-
 #   gl.report.heterozygosity(genlight, method = "ind") 
 # 
-# alpha_pop %>% write_csv(paste0("results/1_genetic_diversity/gd_table_", level, "_dartR_pop.csv"))
-# alpha_ind %>% write_csv(paste0("results/1_genetic_diversity/gd_table_dartR_ind.csv"))
+# alpha_pop %>% write_csv(paste0("results/1_genetic_diversity/gd_table_", level, "_dartR.csv"))
+# alpha_ind %>% write_csv(paste0("results/1_genetic_diversity/gd_table_ind_dartR.csv"))
 
 
 

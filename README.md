@@ -1,3 +1,2 @@
-First open the "Etelis.Rproj" before running any R script. 
-All scripts are wrapped into "wrapper.R"
-
+First, open the "Etelis.Rproj" file. 
+Before running any of the R scripts, the "wrapper.R" file must be loaded.

@@ -62,7 +62,7 @@ library(ape)
 #   left_join(data_stations, by = c("station", "site")) %>%
 #   arrange(order)
 
-data_samples <- read.csv("intermediate/0_sampling_design/metadata_samples_subset.csv")
+data_samples <- read.csv("data/metadata_samples.csv")
 
 for (level in c("site", "station")){ # order levels
   data_samples[[level]] <- 
@@ -108,7 +108,7 @@ data_depth <- read_csv("data/data_species_depth_range_teleo.csv")
 
 
 ## ---- spatial data ----
-data_stations <- read_csv("intermediate/0_sampling_design/metadata_stations_subset.csv")
+data_stations <- read_csv("data/metadata_stations.csv")
 
 # relevel
 for (level in c("site", "station")){
