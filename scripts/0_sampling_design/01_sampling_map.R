@@ -1,3 +1,4 @@
+library(mapview)
 
 # data range Etelis coruscans ----
 # Keep only presence data
@@ -92,7 +93,7 @@ bat_xyz <- as.xyz(Bathy)
 # library(sf)
 # autoplot.bathy(Bathy, geom="tile")
 
-## bathy
+### bathy ----
 gg <- 
   ggplot() +
   
@@ -131,7 +132,7 @@ ggsave("results/0_sampling_design/ggplot_Map_sampling_sites_bathy_10.png",
        height = 8, width = 12)
 
 
-## no bathy
+### no bathy ----
 # gg <- 
 #   ggplot() +
 #  
@@ -186,7 +187,7 @@ ggsave("results/0_sampling_design/ggplot_Map_sampling_sites.png",
        height = 7, width = 11)
 
 
-## no range
+### no range ----
 #### >>> HERE ####
 reefs <- vect("data/seascape/14_001_WCMC008_CoralReefs2021_v4_1/01_Data/WCMC008_CoralReef2021_Py_v4_1.shp")
 # from https://data.unep-wcmc.org/datasets/1
@@ -195,7 +196,13 @@ reefsC <-
   terra::rotate(left = FALSE) %>% 
   terra::crop(extent(20, 210, -48, 48))
 
+data_sites$labels <- paste0(data_sites$site, ' (', data_sites$number_samples, ')')
+data_sites$labels <- gsub('_', ' ', data_sites$labels)
+data_sites$labels <- gsub('W Australia', 'Western Australia', data_sites$labels)
 
+
+#plot 
+library(ggspatial)
 gg <- 
   ggplot() +
   
@@ -207,31 +214,43 @@ gg <-
   
   ## Sites
   geom_point(data = shift.lon(data_sites),
-             aes(x = longitude, y = latitude, fill = site, color = site,size = number_samples),
-             alpha = 0.6, shape = 21) +
+             aes(x = longitude, y = latitude, fill = site, color = site), #size = number_samples
+             size = 3, alpha = 0.6, shape = 21) +
+  # scale_size(breaks=c(10, 20, 50, 100,250,500)) +
+
   ggrepel::geom_text_repel(data = shift.lon(data_sites),
-                           size = 3.2,
-                           aes(x = longitude, y = latitude, color = site, label = site),
-                           hjust=0.5, vjust=0, max.overlaps = 10, nudge_x = -5, nudge_y = 0,
+                           size = 3.1, segment.color = 'transparent',
+                           aes(x = longitude, y = latitude, color = site, label = labels),
+                           hjust = 0.9, vjust = 0, max.overlaps = 10, nudge_y = -3, 
                            direction = "both",
-                           force = 5,
+                           force = 1,
                            bg.color = "grey70", bg.r = 0.02) +
 
   ## Theme
   scale_fill_viridis(discrete = T, end = 1) +
   scale_color_viridis(discrete = T, end = 1) +
   theme_minimal() +
-  theme(legend.position = "none") +
-  theme(plot.background = element_rect(fill = 'white', color = "white")) +
-  labs(x = "Longitude", y = "Latitude")
+  theme(legend.position = 'none', 
+        plot.background = element_rect(fill = 'white', color = "white")) +
+  guides(color = 'none', fill = 'none') +
+  labs(x = "", y = "") +
+  # labs(x = "Longitude", y = "Latitude") +
+  
+  # scales
+  # annotation_scale(location = "bl", plot_unit = 'km', ) +
+  annotation_north_arrow(location = "tr", which_north = "true",
+                         height = unit(0.4, "in"), width = unit(0.4, "in"),
+                         pad_x = unit(0.3, "in"), pad_y = unit(0.3, "in"),
+                         style = north_arrow_orienteering) 
   # coord_cartesian()
 
-gg
+# gg
 
-ggsave("results/0_sampling_design/ggplot_Map_sampling_sites_norange_REEFS_final.png", 
-       gg, height = 7, width = 11, dpi = 500)
-ggsave("results/0_sampling_design/ggplot_Map_sampling_sites_norange_REEFS_final.pdf", 
-       gg, height = 7, width = 11)
+### {FIGURE 1} ####
+ggsave("results/0_sampling_design/_1_ggplot_Map_sampling_sites_norange_REEFS_FINAL.png", 
+       gg, height = 6, width = 11, dpi = 500)
+ggsave("results/0_sampling_design/_1_ggplot_Map_sampling_sites_norange_REEFS_FINAL.pdf",
+       gg, height = 6, width = 11)
 
 
 # ---- Map seamounts, reefs ----

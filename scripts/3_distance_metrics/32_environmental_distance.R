@@ -40,7 +40,7 @@ vect_stations <-
 
 
 # ---- extract variables by station ----
-## >>>> ERROR MHI AND NEW CALEDONIA if too small buffer!!!!!!!!!!!!----
+## >>>> ERROR MHI AND NEW CALEDONIA if too small buffer... ----
 envt_station <- 
   terra::extract(envt_layers,
                  vect_stations,
@@ -183,9 +183,9 @@ library(corrplot)
 corrplot(cor(envt_var))
 
 # run pca
-pca_env <- dudi.pca(df = envt_var, scannf = FALSE, nf = 5) 
-pca_env$li %>% 
-  rownames_to_column("site") %>% 
+pca_env <- dudi.pca(df = envt_var, scannf = FALSE, nf = 5)
+pca_env$li %>%
+  rownames_to_column("site") %>%
   write_csv("intermediate/3_distance_metrics/PCA_environment_axis_site.csv")
 
 # analyse pca
@@ -194,10 +194,6 @@ pca_eig <- get_eigenvalue(pca_env)
 fviz_eig(pca_env, addlabels = TRUE)
 fviz_pca_var(pca_env)
 fviz_contrib(pca_env, choice = "var", axes = 1, top = 10)
-
-# compute euclidian distance between coordinates
-dist_mat$environment <- 
-  vegdist(pca_env$li, method = "euclidean", na.rm = TRUE) # euclidean distance based on the 3 PCA axes
 
 # eigenvalues
 percent_explained <- pca_env$eig / sum(pca_env$eig) * 100
@@ -216,9 +212,24 @@ gg <-
   scale_color_manual(values = color_perso) +
   theme_light() +
   theme(legend.position="none")
-ggsave("results/3_distance_metrics/PCA_environmental_variables_bdmean_scaled.png", 
+ggsave("results/3_distance_metrics/PCA_environmental_variables_bdmean_scaled.png",
        gg,
        height = 7, width = 7, units = "in", dpi = 300)
+
+
+# # eigenvalues
+# percent_explained <- pca_env$eig / sum(pca_env$eig) * 100
+# 
+
+
+# ---- environmental distance ----
+# # euclidian distance from the first 3 PCA axes
+# dist_mat$environment <-
+#   vegdist(pca_env$li, method = "euclidean", na.rm = TRUE) #
+
+# OR more directly, euclidian distance between scaled values
+dist_mat$environment <-
+  vegdist(envt_var, method = "euclidean", na.rm = TRUE) 
 
 
 # export

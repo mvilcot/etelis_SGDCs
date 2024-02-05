@@ -52,6 +52,11 @@ dist_merge <-
   relocate("site")
 
 
+## Rename Eupercaria!!!!!!!! ----
+colnames(dist_merge) <- gsub("Eupercaria/misc", "Eupercaria", colnames(dist_merge))
+names(dist_mat) <- gsub("Eupercaria/misc", "Eupercaria", names(dist_mat))
+
+
 
 # ---- save ----
 dist_merge %>% 
@@ -59,6 +64,7 @@ dist_merge %>%
 
 dist_mat %>% 
   saveRDS(paste0("intermediate/3_distance_metrics/dist_geo_envtbdmean_gd_sd_", comm_delin, ".RDS"))
+
 
 # ---- *** DRAFTS ----
 ## ---- *** SD and GD ----

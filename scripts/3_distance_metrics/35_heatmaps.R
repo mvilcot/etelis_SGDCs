@@ -10,8 +10,28 @@ dist_mergeSUB <-
   dist_merge %>% 
   mat.subset("Seychelles")
 
-names_communities <- c("Etelinae", "Lutjanidae", "Eupercaria/misc", "Teleostei")
+names_communities <- c("Etelinae", "Lutjanidae", "Eupercaria", "Teleostei")
 
+
+
+# great labels ----
+dist_merge <- 
+  dist_merge %>% 
+  mutate(site1 = gsub('_', ' ', site1)) %>% 
+  mutate(site2 = gsub('_', ' ', site2)) %>% 
+  mutate(site1 = gsub('W Australia', 'Western Australia', site1)) %>% 
+  mutate(site2 = gsub('W Australia', 'Western Australia', site2)) %>% 
+  mutate(site1 = factor(site1, levels = LABELS)) %>% 
+  mutate(site2 = factor(site2, levels = LABELS))
+  
+dist_mergeSUB <- 
+  dist_mergeSUB %>% 
+  mutate(site1 = gsub('_', ' ', site1)) %>% 
+  mutate(site2 = gsub('_', ' ', site2)) %>% 
+  mutate(site1 = gsub('W Australia', 'Western Australia', site1)) %>% 
+  mutate(site2 = gsub('W Australia', 'Western Australia', site2)) %>% 
+  mutate(site1 = factor(site1, levels = LABELS[-1])) %>% 
+  mutate(site2 = factor(site2, levels = LABELS[-1]))
 
 gglist <- list()
 
@@ -89,7 +109,7 @@ gg2 <-
         panel.grid = element_blank(), 
         panel.background = element_rect(fill = "white"),
         plot.background = element_rect(fill = "white")) + 
-  ggtitle("Etelis coruscans")+
+  ggtitle("Etelis coruscans") +
   coord_fixed()
 
 gglist[[metricGD]] <-
@@ -114,7 +134,7 @@ for (comm in names_communities){
     ggplot(data = dist_merge, aes(site2, site1, fill = .data[[metricSDcomm]]))+ 
     geom_tile()+ 
     scale_fill_viridis(direction = -1, option = "mako", begin = 0.05, end = 0.95) +
-    labs(fill = "beta.jac") +
+    labs(fill = "βjac") +
     labs(x = "", y = "") + 
     theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1), 
           panel.grid = element_blank(), 
@@ -129,7 +149,7 @@ for (comm in names_communities){
     ggplot(data = dist_merge, aes(site2, site1, fill = .data[[metricSDcomm]]))+ 
     geom_tile()+ 
     scale_fill_viridis(direction = -1, option = "mako", begin = 0.05, end = 0.95) +
-    labs(fill = "beta.jtu") +
+    labs(fill = "βjtu") +
     labs(x = "", y = "") + 
     theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1), 
           panel.grid = element_blank(), 
@@ -161,11 +181,14 @@ ggall <-
   wrap_plots(gglist, ncol = 1) + 
   patchwork::plot_annotation(tag_levels = "a", tag_prefix = "(", tag_suffix = ")")
   
-ggsave(paste0("results/3_distance_metrics/heatmaps_all.png"),
+ggsave(paste0("results/3_distance_metrics/_S3_heatmaps_all.png"),
        plot = ggall,
-       width = 8, height = 20)
+       width = 8, height = 20, dpi = 500)
 
 
+
+
+# ---- *** DRAFTS ----
 # dist_mergeMELT <- 
 #   dist_merge %>% 
 #   pivot_longer(!c("site", "site1", "site2"), names_to = "variable", values_to = "distance") %>% 
@@ -195,32 +218,32 @@ ggsave(paste0("results/3_distance_metrics/heatmaps_all.png"),
 # ggsave(paste0("results/3_distance_metrics/heatmap_ALL.png"),
 #        width = 8, height = 20)
 # 
-
-
-
-# ---- Jaccard partitonning heatmap ----
-
-comm <- "Etelinae"
-
-dist_merge[[paste0(comm, ".ratio")]] <- 
-  dist_merge[[paste0(comm, ".beta.jtu")]] /
-  dist_merge[[paste0(comm, ".beta.jac")]]
-  
-gg <- 
-  ggplot(data = dist_merge, aes(site2, site1, fill = .data[[paste0(comm, ".ratio")]]))+ 
-  geom_tile()+ 
-  scale_fill_viridis(direction = -1, option = "mako", begin = 0.05, end = 0.95) +
-  labs(fill = "jtu/jac") +
-  labs(x = "", y = "") + 
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1), 
-        panel.grid = element_blank(), 
-        panel.background = element_rect(fill = "white"),
-        plot.background = element_rect(fill = "white")) + 
-  coord_fixed()
-
-gg
-ggsave(paste0("results/3_distance_metrics/heatmap_SD_", comm, "_ratio_jtu_jne.png"),
-       width = 5, height = 4)
-
+# 
+# 
+# 
+## ---- *** Jaccard partitonning heatmap ----
+# 
+# comm <- "Etelinae"
+# 
+# dist_merge[[paste0(comm, ".ratio")]] <- 
+#   dist_merge[[paste0(comm, ".beta.jtu")]] /
+#   dist_merge[[paste0(comm, ".beta.jac")]]
+#   
+# gg <- 
+#   ggplot(data = dist_merge, aes(site2, site1, fill = .data[[paste0(comm, ".ratio")]]))+ 
+#   geom_tile()+ 
+#   scale_fill_viridis(direction = -1, option = "mako", begin = 0.05, end = 0.95) +
+#   labs(fill = "jtu/jac") +
+#   labs(x = "", y = "") + 
+#   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1), 
+#         panel.grid = element_blank(), 
+#         panel.background = element_rect(fill = "white"),
+#         plot.background = element_rect(fill = "white")) + 
+#   coord_fixed()
+# 
+# gg
+# ggsave(paste0("results/3_distance_metrics/heatmap_SD_", comm, "_ratio_jtu_jne.png"),
+#        width = 5, height = 4)
+# 
 
 

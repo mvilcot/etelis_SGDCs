@@ -25,8 +25,8 @@ dist_mat$geodist <-
 Bathy <- readRDS("intermediate/0_sampling_design/_archive/bathymetry.RDS")
 
 trans <- 
-  # trans.mat(Bathy, min.depth=-5, max.depth=NULL)
-  trans.mat(Bathy, min.depth=-45, max.depth=5000)
+  trans.mat(Bathy, min.depth=-5, max.depth=NULL)
+  # trans.mat(Bathy, min.depth=-45, max.depth=5000)
 # trans %>% saveRDS("intermediate/3_distance_metrics/transition_matrix.RDS")
 
 #### >>>>> !!! error when too high resolution for Guam ############

@@ -21,10 +21,10 @@ sd_global <- read_csv(paste0("results/2_species_diversity/sd_table_global_", com
 sd_beta <- readRDS(paste0("results/2_species_diversity/sd_list_pairwise_site_", comm_delin, ".RDS"))
 
 dist_merge <-
-  read_csv(paste0("results/3_distance_metrics/dist_geo_envt_res17-4_gd_sd_", comm_delin, ".csv"))
+  read_csv(paste0("results/3_distance_metrics/dist_geo_envtbdmean_gd_sd_", comm_delin, ".csv"))
 
 dist_mat <-
-  readRDS(paste0("intermediate/3_distance_metrics/dist_geo_envt_res17-4_gd_sd_", comm_delin, ".RDS"))
+  readRDS(paste0("intermediate/3_distance_metrics/dist_geo_envtbdmean_gd_sd_", comm_delin, ".RDS"))
 
 
 # ---- summary ----
@@ -104,7 +104,7 @@ ggsave(paste0("results/2_species_diversity/boxplot_alpha_richness_site.png"),
 # load
 level = "site"
 sd_alpha <- read_csv(paste0("results/2_species_diversity/sd_table_", level, "_", comm_delin, ".csv"))
-
+sd_alpha$community <- gsub('Eupercaria/misc', 'Eupercaria', sd_alpha$community)
 df <-
   data_sites %>% 
   left_join(sd_alpha)
@@ -119,12 +119,14 @@ ggplot(df, aes(x=longitude, y=richness_site, fill=site, group=site)) +
   # geom_smooth(color="grey") +
   # geom_point(aes(color=site)) +
   facet_wrap(vars(community), ncol = 4, scales ="free_y") +
-  scale_fill_manual(values = color_perso) +
+  scale_fill_manual('', values = color_perso, labels = LABELS) +
+  ylab('Species richness') +
+  xlab('Longitude') +
   theme_light()
 
-# save
-ggsave(paste0("results/2_species_diversity/alpha_sd_richness_longitude_site.png"),
-       width = 15, height = 6)
+### {FIGURE S4} ####
+ggsave(paste0("results/2_species_diversity/_S4_alpha_sd_richness_longitude_site.png"),
+       width = 10, height = 3.5, dpi = 500)
 
 
 ## richness ~ dist to CT ----

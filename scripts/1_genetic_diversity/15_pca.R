@@ -54,14 +54,15 @@ gg1 <-
   ggplot(pca_scores, aes(x=PC1, y=PC2, color=.data[[level]], label = id)) +
   geom_point(size = 2, alpha = 0.6) +
   labs(x=labels[1], y=labels[2]) +
-  scale_color_manual(values = color_perso) +
+  scale_color_manual('', values = color_perso, labels = LABELS) +
   theme_light()
 
 plotly::ggplotly(gg1)
 
-ggsave(paste0("results/1_genetic_diversity/PCA_perso_", filters, "_", level, "_", sites, ".png"),
+## {FIGURE S1} ####
+ggsave(paste0("results/1_genetic_diversity/_S1_PCA_perso_", filters, "_", level, "_", sites, ".png"),
        gg1,
-       height = 5, width = 7)
+       height = 5, width = 7, dpi = 500)
 
 
 

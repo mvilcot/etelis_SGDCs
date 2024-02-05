@@ -52,11 +52,11 @@ ggA <-
     axis.text.x = element_text(angle = 30, vjust = 1, hjust=1))
 
 ggsave(paste0("results/1_genetic_diversity/boxplot_alpha_Ho_", level, "_ind_dartR.png"),
+       ggA,
        width = 8, height = 6)
 
 
 # ---- Hs ~ Fst pop specific ----
-
 # Pearson, lm
 corP <- cor.test(gd_alpha$Hs, gd_alpha$popFst.WG)
 # model <- summary(lm(Hs ~ popFst.WG, data = gd_alpha))
@@ -65,38 +65,46 @@ corP <- cor.test(gd_alpha$Hs, gd_alpha$popFst.WG)
 gd_alpha[[level]] <- factor(gd_alpha[[level]], levels = levels(data_samples[[level]]))
 
 # plot
+gd_alpha <- 
+  gd_alpha %>% 
+  mutate(Labels = LABELS) 
 ggplot(gd_alpha, aes(x=popFst.WG, y=Hs, color = .data[[level]])) + 
   geom_smooth(method='lm', formula=y~x, color = "grey35") +
   geom_point(size = 4, alpha = 0.8) +
   geom_text_repel(data = gd_alpha[gd_alpha$site %in% c("Seychelles","Christmas_Island","Hawaii","W_Australia"),],
-                  aes(label=.data[[level]]), box.padding = 0.5, size = 3.5,
-                  bg.color = "grey70", bg.r = 0.02) +
-  scale_color_manual(values = color_perso) +
+                  aes(label=.data[["Labels"]]), box.padding = 0.5, size = 3,
+                  bg.color = "grey70", bg.r = 0.02, vjust = 0.5, hjust = 0.5, point.padding = 0.5, force = 100,
+                  show.legend  = FALSE) +
+  scale_color_manual('', values = color_perso, 
+                     labels = LABELS) +
   annotate('text', x=max(gd_alpha$popFst.WG), y=max(gd_alpha$Hs), 
            hjust=1, vjust=0.5, size=3,
-           label=paste0("r = ", signif(corP$estimate, 3), "\n p-value = ", signif(corP$p.value, 1))) + 
+           label=paste0("r Pearson = ", signif(corP$estimate, 3), "\n p = ", signif(corP$p.value, 1))) +
+  xlab('site-specific Fst') +
   theme_light()
 
-# save
-ggsave(paste0("results/1_genetic_diversity/plot_Hs_Fst_pop_specific_", level, "_light.png"),
-       width = 7, height = 5)
+## {FIGURE 2} ####
+ggsave(paste0("results/1_genetic_diversity/_2_plot_Hs_Fst_pop_specific_", level, "_light.png"),
+       width = 6, height = 4, dpi = 500)
+ggsave(paste0("results/1_genetic_diversity/_2_plot_Hs_Fst_pop_specific_", level, "_light.pdf"),
+       width = 6, height = 4)
 
 
 
 # Hs ~ longitude ----
 ## load
+gd_alpha$site <- factor(gd_alpha$site, ordered = T)
+
 df <-
   data_sites %>% 
   left_join(gd_alpha)
 
-## relevel
-df$site <- factor(df$site, levels = unique(df$site))
+## shift coordinates
 df <- shift.lon(df)# Pearson, lm
 
 ## correlation
 corP <- cor.test(df$longitude, df$Ho)
 
-## plot
 ggplot(df, aes(x=longitude, y=Ho, color = .data[[level]])) + 
   # geom_smooth(method='lm', formula=y~x, colour = "grey35") +
   geom_point() +
@@ -110,7 +118,7 @@ ggplot(df, aes(x=longitude, y=Ho, color = .data[[level]])) +
 
 
 # save
-ggsave(paste0("results/1_genetic_diversity/alpha_gd_Ho_longitude_site.png"),
+ggsave(paste0("results/1_genetic_diversity/_alpha_gd_Ho_longitude_site.png"),
        width = 8, height = 6)
 
 

@@ -23,8 +23,9 @@ library(sdmpredictors)  # bio-oracle portal
 library(geodist)        # geographic distance
 library(marmap)         # bathymetry data
 library(gdistance)
-library(sf)
-library(mapview)
+# library(sf) 
+## >>> --> sf causes an issue on distance matrix when loaded !!! #####
+# check in which script it is necessary....
 
 ## taxonomy
 library(fishtree)       # fish tree of life 
@@ -146,7 +147,9 @@ data_sites <-
 level = "site"
 color_perso <- c(viridis(length(levels(data_samples[[level]]))))
 names(color_perso) <- levels(data_samples[[level]])
-
+LABELS <- gsub('_', ' ', names(color_perso))
+LABELS <- gsub('W Australia', 'Western Australia', LABELS)
+  
 
 
 # ---- functions ----

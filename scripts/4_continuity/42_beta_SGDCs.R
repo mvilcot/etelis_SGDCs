@@ -13,7 +13,7 @@ comm_delin <- comm_delin_list[1]
 
 
 # list_communities <- readRDS(paste0("intermediate/2_species_diversity/List_community_", comm_delin, ".RDS"))
-names_communities <- c("Etelinae", "Lutjanidae", "Eupercaria/misc", "Teleostei")
+names_communities <- c("Etelinae", "Lutjanidae", "Eupercaria", "Teleostei")
 
 
 ## load ----
@@ -23,14 +23,17 @@ dist_merge <-
 dist_mat <-
   readRDS(paste0("intermediate/3_distance_metrics/dist_geo_envtbdmean_gd_sd_", comm_delin, ".RDS"))
 
-names(dist_mat)
-
 
 ## subset sites ----
-dist_mat <- lapply(dist_mat, function(x) mat.subset(x, "Seychelles"))
-dist_merge <- mat.subset(dist_merge, "Seychelles")
+# dist_mat <- lapply(dist_mat, function(x) mat.subset(x, "Seychelles"))
+# dist_merge <- mat.subset(dist_merge, "Seychelles")
 
 
+# parameters ----
+comm <- "Lutjanidae"
+metricSD <- paste(comm, "beta.jtu", sep = ".")
+metricGD <- "Fst"
+metricDIST <- "seadist"
 
 
 
@@ -53,13 +56,11 @@ qqnorm(dist_mat[[metricSD]])
 qqnorm(dist_mat[[metricGD]])
 
 
-# ---- 1. IBD/IBE + SGDCs ----
 
-# parameters
-comm <- "Lutjanidae"
-metricSD <- paste(comm, "beta.jtu", sep = ".")
-metricGD <- "Fst"
-metricDIST <- "seadist"
+
+# ---- 1. IBD/IBE ----
+
+## ---- ** old plot IBD ----
 
 # # MRM
 # sMRM_IBDsd <- MRM(dist_mat[[metricSD]] ~ dist_mat[[metricDIST]], nperm = 9999)
@@ -84,7 +85,6 @@ sMantel_SGDC <- vegan::mantel(dist_mat[[metricSD]], dist_mat[[metricGD]], permut
 
 
 
-# ---- plot ---- #
 # add Seychelles color
 dist_merge$Seychelles <- "No"
 dist_merge[grep("Seychelles", dist_merge$site),]$Seychelles <- "Yes"
@@ -135,10 +135,105 @@ ggsave(width = 14, height = 4,
 
 
 
+
+
+## ---- plot IBD + IBE ----
+metricGD <- "Fst"
+metricSDs <- paste(names_communities, "beta.jtu", sep = ".")
+metricDIST <- 'seadist' #'environment'
+
+gg_list <- list()
+i=1
+
+for (metricDIV in c(metricGD, metricSDs)){
+  # for (metricDIST in c("seadist")){ #"environment"
+  
+  for (locations in c("allsites", "noSeychelles")){
+    
+    dist_mergeSUB <- dist_merge
+    dist_matSUB <- dist_mat
+    if(locations == "noSeychelles"){
+      dist_mergeSUB <- mat.subset(dist_merge, "Seychelles")
+      dist_matSUB <- lapply(dist_mat, function(x) mat.subset(x, "Seychelles"))
+    }
+    # add Seychelles color
+    dist_mergeSUB$Seychelles <- "No"
+    dist_mergeSUB[grep("Seychelles", dist_mergeSUB$site),]$Seychelles <- "Yes"
+    
+    
+    ## Mantel
+    sMantel <- vegan::mantel(dist_matSUB[[metricDIV]], dist_matSUB[[metricDIST]], permutations = 9999)
+    
+    if(metricDIST == 'seadist') color_x <- "#3182BD"
+    if(metricDIST == 'environment') color_x <- "#31A354"
+    if(metricDIV %in% metricGD) color_y <- "#F69C73FF" # rocket
+    if(metricDIV %in% metricSDs) color_y <- "#395D9CFF" # mako
+    
+    # proper beta and families
+    metricLAB <- gsub('beta.', 'β', metricDIV)
+    if(metricDIV %in% metricSDs){
+        temp <- str_split_1(metricLAB, '[.]')
+      metricLAB <- paste0(temp[2], ' (', temp[1], ')')
+    }
+
+    
+    if(sMantel$signif < 0.05){
+      gg_list[[i]] <-
+        ggplot(dist_mergeSUB, aes(.data[[metricDIST]], .data[[metricDIV]])) + #, color = Seychelles
+        geom_smooth(method = "lm", color = "grey50", fill = "grey80") +
+        geom_point(aes(shape = Seychelles), show.legend = F, color = color_y) +
+        scale_shape_manual(values = c(19, 1)) +
+        annotate('text',
+                 x=min(dist_mergeSUB[[metricDIST]]), y=max(dist_mergeSUB[[metricDIV]]),
+                 hjust = 0, vjust = 1,
+                 label=paste0("r Mantel = ", sprintf("%.3f", sMantel$statistic), "\np = ", sMantel$signif)) +
+        theme_light() +
+        ylab(metricLAB) +
+        theme(
+          axis.title.x = element_text(colour = color_x),
+          # axis.title.y = element_text(colour = color_y)
+        )
+    }
+    
+    if(sMantel$signif > 0.05){
+      gg_list[[i]] <-
+        ggplot(dist_mergeSUB, aes(.data[[metricDIST]], .data[[metricDIV]], shape = Seychelles)) + #
+        geom_point(aes(shape = Seychelles), show.legend = F, color = color_y) +
+        scale_shape_manual(values = c(19, 1)) +
+        annotate('text',
+                 x=min(dist_mergeSUB[[metricDIST]]), y=max(dist_mergeSUB[[metricDIV]]),
+                 hjust = 0, vjust = 1,
+                 label=paste0("r Mantel = ", sprintf("%.3f", sMantel$statistic), "\np = ", sMantel$signif)) +
+        theme_light() +
+        ylab(metricLAB) +
+        theme(
+          axis.title.x = element_text(colour = color_x),
+          # axis.title.y = element_text(colour = color_y)
+        )
+    }
+    
+    i = i+1
+  }
+}
+
+
+### {FIGURES S8 and S9} ####
+
+gg_grob <-
+  patchwork::wrap_plots(gg_list, ncol = 2, tag_level = "new") +
+  plot_annotation(tag_level = "a", tag_prefix = "(", tag_suffix = ")")
+plot(gg_grob)
+ggsave(gg_grob, width = 10, height = 15, dpi = 500,
+       filename = paste0("results/4_continuity/_S9_isolation_by_", metricDIST, "_", comm_delin, ".png"))
+
+
+
+
+
+
 # ---- 2. SGDC table ----
 ## table ----
 library(boot)
-names_communities2 <- gsub("Eupercaria/misc", "Eupercaria_misc", names_communities)
 
 metricGD = "Fst"
 
@@ -166,20 +261,16 @@ for(comm_delin in comm_delin_list[1]) { #[1]
 
   for (locations in c("all sites", "without Seychelles")){
 
-    dist_mat <- readRDS(paste0("intermediate/3_distance_metrics/dist_geo_envt_res17-4_gd_sd_", comm_delin, ".RDS"))
+    dist_mat <- readRDS(paste0("intermediate/3_distance_metrics/dist_geo_envtbdmean_gd_sd_", comm_delin, ".RDS"))
     dist_merge <- read_csv(paste0("results/3_distance_metrics/dist_geo_envtbdmean_gd_sd_", comm_delin, ".csv"))
-    
-    ## >>>> Eupercaria!!!!!!!! ----
-    colnames(dist_merge) <- gsub("Eupercaria/misc", "Eupercaria_misc", colnames(dist_merge))
-    names(dist_mat) <- gsub("Eupercaria/misc", "Eupercaria_misc", names(dist_mat))
-    
+
     ## subset sites --
     if(locations == "without Seychelles"){
       dist_mat <- lapply(dist_mat, function(x){mat.subset(x, "Seychelles")})
       dist_merge <- mat.subset(dist_merge, "Seychelles")
     }
 
-    for (comm in names_communities2){
+    for (comm in names_communities){
 
       for (metric in c("beta.jac", "beta.jtu", "beta.jne")){
 
@@ -188,8 +279,8 @@ for(comm_delin in comm_delin_list[1]) { #[1]
         stat <- vegan::mantel(dist_mat[[metricSDcomm]], dist_mat[[metricGD]], permutations = 9999)
         
         ## Get bootstraps on R²
-        # fm <- as.formula(paste("scale(", metricSDcomm, ") ~ scale(", metricGD, ")", sep=""))
-        # stat2 <- summary(lm(fm, data = dist_merge))
+        fm <- as.formula(paste("scale(", metricSDcomm, ") ~ scale(", metricGD, ")", sep=""))
+        stat2 <- summary(lm(fm, data = dist_merge))
         # boots <- boot(data=dist_merge, statistic=coeff_function, R=1000, formula=fm)
         
         fm <- as.formula(paste(metricSDcomm, " ~ ", metricGD, sep=""))
@@ -202,10 +293,10 @@ for(comm_delin in comm_delin_list[1]) { #[1]
         SGDC_beta[i,]$taxonomic_scale <- comm
         SGDC_beta[i,]$metricGD <- metricGD
         SGDC_beta[i,]$metricSD <- metric
-        SGDC_beta[i,]$r <- stat3[1]# stat$statistic
-        SGDC_beta[i,]$rlwr <- stat3[5] #stat2$coefficients[2,1] - 1.96*stat2$coefficients[2,2] #boots_ci$bca[4] 
-        SGDC_beta[i,]$rupr <- stat3[6] # stat2$coefficients[2,1] + 1.96*stat2$coefficients[2,2] #boots_ci$bca[5]
-        SGDC_beta[i,]$pval <- stat3[2] # stat$signif Ha: r>0
+        SGDC_beta[i,]$r <- stat$statistic #stat3[1]
+        SGDC_beta[i,]$rlwr <- stat2$coefficients[2,1] - 1.96*stat2$coefficients[2,2] #stat3[5] #boots_ci$bca[4] 
+        SGDC_beta[i,]$rupr <- stat2$coefficients[2,1] + 1.96*stat2$coefficients[2,2] #stat3[6] #boots_ci$bca[5]
+        SGDC_beta[i,]$pval <- stat$signif #stat3[2] ##Ha: r>0
 
 
         cat(i, "\n")
@@ -221,7 +312,7 @@ SGDC_beta$signif <- ifelse(SGDC_beta$pval < 0.001, "***",
                                    ifelse(SGDC_beta$pval < 0.05, "*", "NS")))
 
 SGDC_beta %>%
-  write_csv("results/4_continuity/beta_SGDCs_table_CImantel_taxonomy.csv")
+  write_csv("results/4_continuity/beta_SGDCs_table_CIlm_taxonomy.csv")
 
 
 ## plot one community delin ----
@@ -233,7 +324,7 @@ SGDC_betasub <-
 
 SGDC_betasub$taxonomic_scale <- 
   factor(SGDC_betasub$taxonomic_scale,
-         level = names_communities2)
+         level = names_communities)
 
 SGDC_betasub$metricSD <- 
   factor(SGDC_betasub$metricSD,
@@ -263,7 +354,7 @@ ggplot(SGDC_betasub, aes(
   guides(shape = "none") +
   scale_y_discrete(limits=rev)
 
-ggsave(paste0("results/4_continuity/beta_SGDCs_DWplot_taxonomy_noSeychelles_CImantel.png"),
+ggsave(paste0("results/4_continuity/beta_SGDCs_DWplot_taxonomy_noSeychelles_CIlm.png"),
        height = 4, width = 5, units = 'in', dpi = 300)
 
 
@@ -279,21 +370,19 @@ ggplot(SGDC_beta, aes(x=community_delineation,
                       color=taxonomic_scale)) +
   geom_hline(yintercept = 0, linetype=2) +
   geom_point(size = 2.5, position=position_dodge(width = 0.4)) +
-  scale_shape_manual(values=c(19, 19, 19, 1))+
+  scale_shape_manual(values=c(19, 19, 1))+
   scale_color_manual(values = c("#92e101", "#78c556", "#5fa8aa", "#458cff"))+
   facet_grid(vars(metricSD), vars(locations), scale="fixed") +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
 
-ggsave(paste0("results/4_continuity/beta_SGDCs_DWplot.png"),
+ggsave(paste0("results/4_continuity/beta_SGDCs_DWplot2.png"),
        height = 8, width = 15, units = 'in', dpi = 300)
 
 
 
-# ---- 3. SGDCs significant plot ----
-
-
+# ---- 3. SGDCs plot ----
+## >>> to replace with CI... ####
 SGDC_beta <- read_csv("results/4_continuity/beta_SGDCs_table.csv")
-
 
 SGDC_betaSUB <- 
   SGDC_beta %>% 
@@ -311,6 +400,8 @@ for (i in 1:nrow(SGDC_betaSUB)){
   metricSD <- SGDC_betaSUB[i, "metricSD"] %>% pull()
   metricSDcomm <- paste0(comm, ".", metricSD)
   
+  metricXLAB <- gsub('beta.', 'β', metricSD)
+
   dist_merge <-
     read_csv(paste0("results/3_distance_metrics/dist_geo_envtbdmean_gd_sd_", comm_delin, ".csv"))
   
@@ -323,7 +414,7 @@ for (i in 1:nrow(SGDC_betaSUB)){
       ggplot(dist_merge, aes(.data[[metricSDcomm]], .data[[metricGD]])) +
       geom_smooth(method = "lm", color = "grey50", fill = "grey80") +
       geom_point(shape = 19, alpha = 0.8) +
-      xlab(paste0(metricSD, " (", comm, ")")) +
+      xlab(paste0(metricXLAB, " (", comm, ")")) +
       annotate('text',
                x = min(dist_merge[[metricSDcomm]]), y = 1.1 * max(dist_merge[[metricGD]]),
                hjust = 0, vjust = 1,
@@ -334,7 +425,7 @@ for (i in 1:nrow(SGDC_betaSUB)){
     gg_list[[i]] <-
       ggplot(dist_merge, aes(.data[[metricSDcomm]], .data[[metricGD]])) +
       geom_point(shape = 19, alpha = 0.8) +
-      xlab(paste0(metricSD, " (", comm, ")")) +
+      xlab(paste0(metricXLAB, " (", comm, ")")) +
       annotate('text',
                x = min(dist_merge[[metricSDcomm]]), y = 1.1 * max(dist_merge[[metricGD]]),
                hjust = 0, vjust = 1,
@@ -344,12 +435,15 @@ for (i in 1:nrow(SGDC_betaSUB)){
   
 }
 
+### {FIGURE 4} ####
 gg_grob <-
   patchwork::wrap_plots(gg_list, tag_level = "new") +
   plot_annotation(tag_level = "a", tag_prefix = "(", tag_suffix = ")")
 plot(gg_grob)
-ggsave(gg_grob, width = 10, height = 9,
-       filename = paste0("results/4_continuity/beta_SGDCs_plot_significant.png"))
+ggsave(gg_grob, width = 8, height = 7, dpi = 500,
+       filename = paste0("results/4_continuity/_4_beta_SGDCs_plot_significant.png"))
+ggsave(gg_grob, width = 8, height = 7, 
+       filename = paste0("results/4_continuity/_4_beta_SGDCs_plot_significant.pdf"))
 
 
 
@@ -357,20 +451,11 @@ ggsave(gg_grob, width = 10, height = 9,
 
 
 
-
-# ---- 4. variance decomposition----
+# ---- 4. Variance decomposition----
 
 ## load ----
 source("scripts/4_continuity/sgdcs_decomposition_Lamy.R")
-## >>>> à adapter à du beta... avec phytools::multi.mantel
-
-comm_delin <- comm_delin_list[1]
-
-dist_merge <-
-  read_csv(paste0("results/3_distance_metrics/dist_geo_envtbdmean_gd_sd_", comm_delin, ".csv"))
-
-dist_mat <-
-  readRDS(paste0("intermediate/3_distance_metrics/dist_geo_envtbdmean_gd_sd_", comm_delin, ".RDS"))
+## >>>> to adapt to beta diversity... with phytools::multi.mantel? ####
 
 comm = names_communities[2]
 metricSD = paste(comm, "beta.jtu", sep = ".")
@@ -380,6 +465,7 @@ metricGD = "Fst"
 dist_merge <- mat.subset(dist_merge, "Seychelles")
 
 ## plot ----
+### auto ----
 png(paste0("results/4_continuity/variance_decomposition_beta_SGDCs_noSeychelles_", comm, "_", comm_delin, "_bdmean.png"),
     width = 10, height = 5, units = 'in', res = 300)
 par(oma = c(2,12,2,2),
@@ -393,7 +479,7 @@ dev.off()
 
 
 
-# perso plot
+### perso plot ----
 temp <- SGDC.decomp(SD = dist_merge[[metricSD]],
                     GD = dist_merge[[metricGD]],
                     FACTOR = dist_merge[,c("environment","seadist")])
@@ -401,19 +487,37 @@ temp <-
   temp$Contribution %>% 
   as_tibble(rownames = NA) %>% 
   rownames_to_column("variable")
-temp$variable <- factor(temp$variable, levels = temp$variable)
-ggplot(temp, aes(y = variable, x = Contribution, fill = variable)) +
+
+# rename variables
+temp$variable <- gsub('Var\\(', '', temp$variable)
+temp$variable <- gsub('Cov\\(', '', temp$variable)
+temp$variable <- gsub('\\)', '', temp$variable)
+temp$variable <- gsub('environment', 'Environment', temp$variable)
+temp$variable <- gsub('seadist', 'Distance', temp$variable)
+temp$variable <- gsub(',', ' ×', temp$variable)
+
+
+temp$variable <- factor(temp$variable, levels = temp$variable[c(3,2,1,4,5)])
+
+### {FIGURE 5} ####
+ggplot(temp, aes(y = variable, x = Percent, fill = variable)) +
   geom_bar(stat = "identity") +
-  scale_fill_manual(values = c("#A1D99B", "#9ECAE1", "#ffb734", "grey", "grey20")) +
+  scale_fill_manual(values = c("#ffb734", "#9ECAE1", "#A1D99B", "grey", "grey20")) +
   theme_light() +
-  theme(legend.position = "none")
-ggsave(paste0("results/4_continuity/variance_decompositionPERSO_beta_SGDCs_noSeychelles_", comm, "_", comm_delin, "_bdmean.png"),
-       width = 10, height = 5)
-    
+  ylab('') +
+  theme(legend.position = "none",
+        text = element_text(size = 15))
+ggsave(paste0("results/4_continuity/_5_variance_decompositionPERSO_beta_SGDCs_noSeychelles_", comm, "_", comm_delin, "_bdmean.png"),
+       width = 8, height = 4, dpi = 500)
+ggsave(paste0("results/4_continuity/_5_variance_decompositionPERSO_beta_SGDCs_noSeychelles_", comm, "_", comm_delin, "_bdmean.pdf"),
+       width = 8, height = 4)
+
+
+
+
 # ---- 5. MRM ----
 
 ## MRM gd table ----
-comm_delin <- comm_delin_list[1]
 
 MRMgd <- tibble::tibble()
 for (locations in c("allsites", "noSeychelles")){
@@ -480,6 +584,9 @@ for(comm_delin in comm_delin_list) {
   dist_merge <-
     read_csv(paste0("results/3_distance_metrics/dist_geo_envtbdmean_gd_sd_", comm_delin, ".csv"))
   
+  ### >>> Eupercaria ----
+  colnames(dist_merge) <- gsub('Eupercaria/misc', 'Eupercaria', colnames(dist_merge))
+  
   for (locations in c("allsites", "noSeychelles")){
     if(locations == "noSeychelles"){dist_merge <- mat.subset(dist_merge, "Seychelles")}
     
@@ -543,6 +650,7 @@ MRMsd %>%
 
 
 ## DW plot ----
+comm_delin <- comm_delin_list[1]
 
 ### load
 MRMgd <- read_csv("results/4_continuity/MRM_beta_gd_envt_seadist_bdmean.csv")
@@ -573,7 +681,7 @@ color_response <- c(Fst =  "#F69C73FF",
                     beta.jtu = "#395D9CFF")
 
 
-### GD + SD ----
+### {FIGURE S7} ####
 ggplot(MRMplot, aes(x=Estimate, y=explanatory_variable, 
                      group=response_variable, color=response_variable, shape=response_variable)) +
   geom_vline(xintercept = 0,linetype=2) +
@@ -591,8 +699,8 @@ ggplot(MRMplot, aes(x=Estimate, y=explanatory_variable,
         legend.position = "top")
   # theme(axis.text.y = element_text(color = color_explanatory))
 
-ggsave(paste0("results/4_continuity/DWplotPERSO_MRM_beta_combined_envt_seadist.png"),
-         height = 8, width = 8, units = 'in', dpi = 500)
+ggsave(paste0("results/4_continuity/_S7_DWplotPERSO_MRM_beta_combined_envt_seadist.png"),
+         height = 7, width = 6, units = 'in', dpi = 500)
 
 
 
@@ -705,14 +813,13 @@ dist_merge <- mat.subset(dist_merge, "Seychelles")
 
 metricGD = "Fst"
 metricSD = "beta.jtu"
+metricXLAB <- gsub('beta.', 'β', metricSD)
 
 gglist <- list()
 for (comm in names_communities){
   
   # comm = names_communities[2]
   metricSDcomm = paste(comm, metricSD, sep = ".")
-
-
   
   
   ## MRM ----
@@ -754,7 +861,7 @@ for (comm in names_communities){
       ggplot(df, aes(x = SDres, y = GDres)) +
       geom_smooth(method = "lm", color = "grey50", fill = "grey80") +
       geom_point(shape = 19, alpha = 0.8) +
-      xlab(paste0("residuals(", metricSD, ") (", comm, ")")) +
+      xlab(paste0("residuals(", metricXLAB, ") (", comm, ")")) +
       ylab(paste0("residuals(", metricGD, ")")) +
       annotate('text',
                x = min(df$SDres), y = 1.5*max(df$GDres),
@@ -767,7 +874,7 @@ for (comm in names_communities){
     gglist[[comm]] <-
       ggplot(df, aes(x = SDres, y = GDres)) +
       geom_point(shape = 19, alpha = 0.8) +
-      xlab(paste0("residuals(", metricSD, ") (", comm, ")")) +
+      xlab(paste0("residuals(", metricXLAB, ") (", comm, ")")) +
       ylab(paste0("residuals(", metricGD, ")")) +
       annotate('text',
                x = min(df$SDres), y = 1.5*max(df$GDres),
@@ -777,13 +884,16 @@ for (comm in names_communities){
   }
 }
 
+### {FIGURE S10} ####
 gg_grob <-
   patchwork::wrap_plots(gglist, tag_level = "new") +
   plot_annotation(tag_level = "a", tag_prefix = "(", tag_suffix = ")")
 plot(gg_grob)
 
-ggsave(width = 10, height = 9,
-       filename = paste0("results/4_continuity/beta_SGDCs_plot_significant_RESIDUALS.png"))
+ggsave(width = 8, height = 7, dpi = 500,
+       filename = paste0("results/4_continuity/_S10_beta_SGDCs_plot_significant_RESIDUALS.png"))
+ggsave(width = 8, height = 7,
+       filename = paste0("results/4_continuity/_S10_beta_SGDCs_plot_significant_RESIDUALS.pdf"))
 
 
 

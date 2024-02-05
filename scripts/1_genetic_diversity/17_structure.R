@@ -3,12 +3,12 @@
 # parameters
 filters = "missind1_callrate0.70_maf0.05"
 level = "site"
-sites = "allsites"
+sites = "noSeychelles"
 
 # read genlight
 genlight <- 
   read.genlight(filters, level,
-                site2drop = NULL,
+                site2drop = "Seychelles",
                 site2keep = NULL,
                 station2drop = NULL,
                 station2keep = NULL)
@@ -23,21 +23,21 @@ dartR::gl2geno(genlight,
 
 
 # ---- SNMF ----
-nrun = 9
+kmax = 9
 
 # run snmf
 obj.snmf <-
   LEA::snmf(paste0("intermediate/1_genetic_diversity/GenoLEA_Etelis_coruscans_ordered_", sites, ".geno"),
-       K = 1:nrun, alpha = 100, project = "new", repetitions = 10, entropy = TRUE)
+       K = 1:kmax, alpha = 100, project = "new", repetitions = 10, entropy = TRUE)
 
 obj.snmf %>%
-  saveRDS(paste0("intermediate/1_genetic_diversity/snmf_Etelis_coruscans_K1-", nrun, "_", sites, ".RDS"))
+  saveRDS(paste0("intermediate/1_genetic_diversity/snmf_Etelis_coruscans_K1-", kmax, "_", sites, ".RDS"))
 
 # plot
-pdf(paste0("results/1_genetic_diversity/snmf_Etelis_coruscans_K1-", nrun, "_", sites, "_ggplot2.pdf"),
+pdf(paste0("results/1_genetic_diversity/snmf_Etelis_coruscans_K1-", kmax, "_", sites, "_ggplot2_bis.pdf"),
     height = 4, width = 10)
 plot(obj.snmf, cex = 1.2, pch = 19)
-for (K in 2:nrun){
+for (K in 2:kmax){
   # get the cross-entropy of the 10 runs
   ce = LEA::cross.entropy(obj.snmf, K = K)
   # select the run with the lowest cross-entropy for K = 4
@@ -149,10 +149,11 @@ structure <-
     genlightLL,
     k.range = kmin:kmax,
     num.k.rep = nrep,
+    # pop.prior = "usepopinfo",
     exec = "C:/Users/vilcot/Documents/Structure2.3.4/console/structure.exe",
     plot.out = FALSE)
 
-# structure %>% saveRDS(paste0("intermediate/1_genetic_diversity/STRUCTURE_", nloci, "loci_", sites, "_K", kmin, "-", kmax, "_r", nrep, ".RDS"))
+structure %>% saveRDS(paste0("intermediate/1_genetic_diversity/STRUCTURE_", nloci, "loci_", sites, "_K", kmin, "-", kmax, "_r", nrep, ".RDS"))
 
 
 ## output ---- 
@@ -182,7 +183,9 @@ ggsave(paste0("results/1_genetic_diversity/STRUCTURE_evanno_", nloci, "loci_", s
 
 
 # automatic ancestry plot
-k <- 5
+k <- 2
+
+# proba matrix
 qmat <- gl.plot.structure(structure, K=k, colors_clusters = viridis(k))
 
 # map barplot
@@ -202,7 +205,7 @@ qmat_plot_long <-
 qmat_plot_long$orig.pop <- factor(qmat_plot_long$orig.pop, levels = levels(data_sites$site))
 qmat_plot_long <- 
   qmat_plot_long %>% 
-  dplyr::arrange(orig.pop, Label, cluster, ancestry_prop)
+  dplyr::arrange(orig.pop, ancestry_prop, cluster)
 
 
 
@@ -214,7 +217,7 @@ gg <-
   labs(x = "", y = "Ancestry proportion") +
   scale_y_continuous(expand = c(0, 0)) +
   scale_x_discrete(expand = expansion(add = 0.15)) +
-  scale_fill_viridis_d() +
+  scale_fill_viridis_d('', labels = c('Cluster 1', 'Cluster 2')) +
   theme(
     panel.spacing.x = unit(0.15, "lines"),
     # axis.text.x = element_text(size=2, angle = 90, vjust = 0.5, hjust=1),
@@ -226,9 +229,9 @@ gg <-
     strip.background = element_rect(fill = 'white', color = "white"))
 
 gg
-ggsave(paste0("results/1_genetic_diversity/STRUCTURE_barplot_", nloci, "loci_", sites, "_K", k, ".png"),
-       gg,
-       height = 4, width = 10)
+# ggsave(paste0("results/1_genetic_diversity/STRUCTURE_barplot_", nloci, "loci_", sites, "_K", k, "_usepopinfo2.png"),
+#        gg,
+#        height = 4, width = 10)
 
 
 
@@ -262,9 +265,9 @@ prop_cluster <-
   group_by(site) %>% 
   dplyr::summarise(cluster1 = sum(cluster1), 
                    cluster2 = sum(cluster2), 
-                   cluster3 = sum(cluster3), 
-                   cluster4 = sum(cluster4),
-                   cluster5 = sum(cluster5),
+                   # cluster3 = sum(cluster3), 
+                   # cluster4 = sum(cluster4),
+                   # cluster5 = sum(cluster5),
                    .groups = "keep") 
 prop_cluster$site <- ordered(prop_cluster$site, levels=levels(data_sites$site))
 
@@ -291,31 +294,43 @@ map <-
   filter(long > 20  & long < 210 & lat <48 & lat > -48)
 
 library(scatterpie)
-gg <- 
+gg2 <- 
   ggplot() +
   ## Countries
   geom_polygon(data = map, aes(x = long, y = lat, group = group), fill="grey20") +
   ## Sites
-  geom_scatterpie(data = shift.lon(prop_cluster),
+  geom_scatterpie(data = shift.lon(prop_cluster), 
              aes(x = longitude, y = latitude), #r = number_samples/10
-             cols = c("cluster1", "cluster2", "cluster3", "cluster4", "cluster5"), # 
-             pie_scale = 1.5, color=NA, alpha=.8) + 
-  ggrepel::geom_text_repel(data = shift.lon(prop_cluster),
+             cols = c("cluster1", "cluster2"), # , "cluster3", "cluster4", "cluster5"
+             pie_scale = 1.5, color=NA) + 
+  ggrepel::geom_text_repel(data = shift.lon(prop_cluster), show.legend = FALSE,
                            aes(x = longitude, y = latitude, color = site, label = site),
                            hjust=0.5, vjust=0, max.overlaps = 5, nudge_x = -10,
                            bg.color = "grey70", bg.r = 0.02) +
   ## Theme
   scale_color_viridis(discrete = T) +
-  scale_fill_viridis(discrete = T, direction = 1) +
+  scale_fill_viridis('', discrete = T, direction = 1, labels = c('Cluster 1', 'Cluster 2')) +
   theme_minimal() +
   theme(plot.background = element_rect(fill="white", color = "white")) +
-  labs(x = "Longitude", y = "Latitude") +
+  labs(x = "", y = "") +
   coord_equal()
   
-gg
-ggsave(paste0("results/1_genetic_diversity/STRUCTURE_mappiechart_", nloci, "loci_", sites, "_K", k, "_propancestry.png"),
-       gg,
-       height = 8, width = 15)
+gg1
+# ggsave(paste0("results/1_genetic_diversity/STRUCTURE_mappiechart_", nloci, "loci_", sites, "_K", k, "_propancestry.png"),
+#        gg,
+#        height = 8, width = 15)
+
+
+
+gg12 <- 
+  gg1 / gg2 +
+  plot_layout(guides = 'collect') +
+  plot_annotation(tag_level = "a", tag_prefix = "(", tag_suffix = ")") 
+ggsave(paste0("results/1_genetic_diversity/_S2_STRUCTURE_mappiechart_K", k, "_propancestry2.png"),
+       gg12,
+       height = 10, width = 10, dpi = 500)
+
+
 
 
 

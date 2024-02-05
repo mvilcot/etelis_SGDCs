@@ -29,6 +29,10 @@ alpha_merge <-
   full_join(gd_alpha, sd_alpha, by = level)
 
 
+## Rename Eupercaria!!!!!!!! ----
+colnames(alpha_merge) <- gsub("Eupercaria/misc", "Eupercaria", colnames(alpha_merge))
+
+
 # ---- save ----
 alpha_merge %>% 
   write_csv(paste0("results/3_distance_metrics/alpha_diversity_", comm_delin, ".csv"))
