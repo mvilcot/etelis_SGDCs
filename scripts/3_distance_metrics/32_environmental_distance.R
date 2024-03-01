@@ -47,8 +47,8 @@ envt_station <-
                  xy = TRUE,
                  ID = FALSE,
                  bind = TRUE,
-                 fun=mean, # average across station buffer
-                 na.rm=TRUE) %>% 
+                 fun = mean, # average across station buffer
+                 na.rm = TRUE) %>% 
   as_tibble()
 
 

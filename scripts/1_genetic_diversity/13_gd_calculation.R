@@ -124,7 +124,7 @@ gd_alpha <-
     by = level)
 
 
-# ## ---- with dartR ----
+## ---- with dartR ----
 # ## !!!!!! Similar values, except for Christmas Island... issue ECO019 Ho very high ####
 # alpha_pop <-
 #   gl.report.heterozygosity(genlight, method = "pop") %>% 
@@ -156,8 +156,8 @@ JostD_pair <- mmod::pairwise_D(genind)
 ### either PA by site first, then pairwise jaccard
 jac_pair <- betapart::beta.pair(gmatrixPAloc, index.family="jaccard")
 
-### or pairwise by individual, then average
-jac_pair <- betapart::beta.pair(gmatrixPA, index.family="jaccard")
+# ### or pairwise by individual, then average
+# jac_pair <- betapart::beta.pair(gmatrixPA, index.family="jaccard")
 
 
 # put into list
@@ -170,11 +170,45 @@ list_gd_beta_pair <-
        jne = jac_pair$beta.jne)
 
 
+## ---- corrplot ----
+# ---- melt ----
+dist_melt <- list()
+for (i in 1:length(temp)){
+  dist_melt[[i]] <- melt.dist(distmat = temp[[i]], metric = names(temp)[[i]])
+}
+
+# ---- merge into a table ----
+# full join
+dist_merge <- 
+  dist_melt %>%
+  reduce(full_join, by = c("site1", "site2")) 
+
+
+
+library(Hmisc)
+corr <- Hmisc::rcorr(as.matrix(dist_merge[3:8]))
+M <- corr$r
+p_mat <- corr$P
+p_mat[is.na(p_mat)] <- 0
+
+corrplot::corrplot(M, 
+                   p.mat = p_mat,
+                   type = "upper", 
+                   method = 'number',
+                   sig.level = 0.01)
+
+
+
 # ---- export ----
 BS %>% saveRDS(paste0("intermediate/1_genetic_diversity/basic_stats_", level, ".RDS"))
 gd_global %>% write.csv(paste0("results/1_genetic_diversity/gd_table_global_", level, ".csv"), row.names = F, quote = F)
 gd_alpha %>% write.csv(paste0("results/1_genetic_diversity/gd_table_", level, ".csv"), row.names = F, quote = F)
 list_gd_beta_pair %>% saveRDS(paste0("results/1_genetic_diversity/gd_list_pairwise_", level, ".RDS"))
+
+
+
+
+
 
 
 
@@ -193,34 +227,34 @@ list_gd_beta_pair %>% saveRDS(paste0("results/1_genetic_diversity/gd_list_pairwi
 
 
 ## *** Jaccard ---- 
-# ## HierJd 
-# GDbetaJAC <- HierJd("Intermediate/test.gen", ncode = 3, r = 1, nreg = 1)
-# saveRDS(GDbetaJAC, "Results/test_HierJd_betaGD_stations_noinf2.RDS")
-# # !!!!!!!!!!!!!!!!! Error in HierJd("Intermediate/test.gen", ncode = 3) : !!!!!!!!!!!!
-# # argument "r" is missing, with no default
-# # In addition: There were 27 warnings (use warnings() to see them)
-# 
-# 
-# 
-## TEST Jaccard Betapart
-# PAalleles <- as.matrix(as.data.frame(genind@tab))
-# PAallelesTEST <- PAalleles[ , colSums(is.na(PAalleles))==0]
-# PAallelesTEST[PAallelesTEST > 0] <- 1
-# test <- beta.pair(PAallelesTEST, index.family="jaccard")
-# 
-# PAallelesTEST$site <- genind@pop
-# PAallelesTESTagg <- aggregate(PAallelesTEST[,-ncol(PAallelesTEST)], by=list(Site=PAallelesTEST$site), FUN=max) ##by site
-# test <- beta.multi(PAallelesTEST[,-ncol(PAallelesTEST)], index.family="jaccard")
-# 
-# 
-# Jaccard
-# library(HierDpart)
-# JacHier <- HierJd("_archive/-36_radiator_genomic_converter_20221115@1129/radiator_data_20221115@1129_genepop.gen",
-#                   ncode=3, nreg=1, r=1)
-# print(JacHier)
-# 
-# 
-# 
+## HierJd
+GDbetaJAC <- HierJd("Intermediate/test.gen", ncode = 3, r = 1, nreg = 1)
+saveRDS(GDbetaJAC, "Results/test_HierJd_betaGD_stations_noinf2.RDS")
+# !!!!!!!!!!!!!!!!! Error in HierJd("Intermediate/test.gen", ncode = 3) : !!!!!!!!!!!!
+# argument "r" is missing, with no default
+# In addition: There were 27 warnings (use warnings() to see them)
+
+
+
+# TEST Jaccard Betapart
+PAalleles <- as.matrix(as.data.frame(genind@tab))
+PAallelesTEST <- PAalleles[ , colSums(is.na(PAalleles))==0]
+PAallelesTEST[PAallelesTEST > 0] <- 1
+test <- beta.pair(PAallelesTEST, index.family="jaccard")
+
+PAallelesTEST$site <- genind@pop
+PAallelesTESTagg <- aggregate(PAallelesTEST[,-ncol(PAallelesTEST)], by=list(Site=PAallelesTEST$site), FUN=max) ##by site
+test <- beta.multi(PAallelesTEST[,-ncol(PAallelesTEST)], index.family="jaccard")
+
+
+Jaccard
+library(HierDpart)
+JacHier <- HierJd("_archive/-36_radiator_genomic_converter_20221115@1129/radiator_data_20221115@1129_genepop.gen",
+                  ncode=3, nreg=1, r=1)
+print(JacHier)
+
+
+
 # 
 # 
 ## *** Compute mean alpha by site ---- 

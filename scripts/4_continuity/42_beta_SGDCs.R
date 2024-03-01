@@ -25,8 +25,8 @@ dist_mat <-
 
 
 ## subset sites ----
-# dist_mat <- lapply(dist_mat, function(x) mat.subset(x, "Seychelles"))
-# dist_merge <- mat.subset(dist_merge, "Seychelles")
+dist_mat <- lapply(dist_mat, function(x) mat.subset(x, "Seychelles"))
+dist_merge <- mat.subset(dist_merge, "Seychelles")
 
 
 # parameters ----

@@ -11,9 +11,28 @@ explanatory <-
   left_join(data_sites, by = "site")
 
 
-# # ---- subset Seychelles ----
-# explanatory <- mat.subset(explanatory, "Seychelles")
-# dist_mat[[metric]] <- mat.subset(dist_mat[[metric]], "Seychelles")
+# ---- subset Seychelles ----
+explanatory <- mat.subset(explanatory, "Seychelles")
+dist_mat[[metric]] <- mat.subset(dist_mat[[metric]], "Seychelles")
+
+
+# ---- dbMEM ----
+# https://github.com/laurabenestan/Seascape_reservebenefit/blob/main/04-db-rda/script-dbRDA-neutral.R
+library(adespatial)
+library(SoDA)
+
+#Compute in-water MEM
+dbMEM_inwater <- adespatial::dbmem(dist_mat$geodist, MEM.autocor = "non-null", store.listw = TRUE)
+
+### Transform into a dataframe
+dbMEM.vectors.inwater <- as.data.frame(dbMEM_inwater)
+
+### Transform spatial coordinates into cartesian coordinates 
+geo <- SoDA::geoXY(data_sites$latitude, data_sites$longitude, unit=1000)
+
+### Create euclidean distance matrix
+euclidean_distances <- dist(geo, method="euclidean") 
+
 
 
 # ---- Run RDA ----
@@ -21,13 +40,12 @@ explanatory <-
 dbrda_run  <- 
   capscale(
     dist_mat[[metric]] ~ 
-      # longitude + latitude,
-      BO2_chlomean_bdmean +
-      BO2_dissoxmean_bdmean +
-      BO2_nitratemean_bdmean +
-      BO2_tempmean_bdmean +
-      BO2_salinitymean_bdmean +
-      Condition(longitude + latitude),
+      longitude + latitude,
+      # BO2_chlomean_bdmean +
+      # BO2_dissoxmean_bdmean +
+      # BO2_nitratemean_bdmean +
+      # BO2_tempmean_bdmean +
+      # BO2_salinitymean_bdmean,
     data = explanatory)
 
 # Get the inertia statistics                   
