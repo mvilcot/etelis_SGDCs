@@ -13,7 +13,9 @@ explanatory <-
 
 # ---- subset Seychelles ----
 explanatory <- mat.subset(explanatory, "Seychelles")
+dist_merge <- mat.subset(dist_merge, "Seychelles")
 dist_mat[[metric]] <- mat.subset(dist_mat[[metric]], "Seychelles")
+data_sites <- mat.subset(data_sites, "Seychelles")
 
 
 # ---- dbMEM ----
