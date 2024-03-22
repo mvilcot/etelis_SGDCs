@@ -9,11 +9,11 @@ comm_delin_list <-
     "taxonomy_env_reef-associated")
 
 comm_delin <- comm_delin_list[1]
-# comm_delin <- "taxonomy_PCADAPTallsites"
-
 
 # list_communities <- readRDS(paste0("intermediate/2_species_diversity/List_community_", comm_delin, ".RDS"))
 names_communities <- c("Etelinae", "Lutjanidae", "Eupercaria", "Teleostei")
+
+sites = "noSeychelles"
 
 
 ## load ----
@@ -23,29 +23,26 @@ dist_merge <-
 dist_mat <-
   readRDS(paste0("intermediate/3_distance_metrics/dist_geo_envtbdmean_gd_sd_", comm_delin, ".RDS"))
 
+envt_site <- 
+  read_csv("intermediate/3_distance_metrics/bio_oracle_variables_bdmean_stationbuffer_siteaverage.csv") # %>%
+
 
 ## subset sites ----
-dist_mat <- lapply(dist_mat, function(x) mat.subset(x, "Seychelles"))
-dist_merge <- mat.subset(dist_merge, "Seychelles")
+if (sites == "noSeychelles"){
+  dist_mat <- lapply(dist_mat, function(x) mat.subset(x, "Seychelles"))
+  dist_merge <- mat.subset(dist_merge, "Seychelles")
+}
 
 
-# parameters ----
+
+# ---- 0. check assumptions ----
 comm <- "Lutjanidae"
 metricSD <- paste(comm, "beta.jtu", sep = ".")
 metricGD <- "Fst"
 metricDIST <- "seadist"
 
-
-
-
-
-
-
-
-
-# ---- 0. check assumptions ----
-model <- cor(dist_merge[-c(1:3)])
-corrplot::corrplot(model)
+corALL <- cor(dist_merge[-c(1:3)])
+corrplot::corrplot(corALL)
 
 hist(dist_mat[[metricSD]])
 hist(dist_mat[[metricGD]]) # GD not normal
@@ -57,87 +54,38 @@ qqnorm(dist_mat[[metricGD]])
 
 
 
+# ---- 1. IBD or IBE ----
+## lon-lat dbMEM (X) ----
+# https://github.com/laurabenestan/Seascape_reservebenefit/blob/main/04-db-rda/script-dbRDA-neutral.R
+# compute MEM
+dbMEM_seadist <- adespatial::dbmem(dist_mat$seadist, store.listw = TRUE) # MEM.autocor = "non-null",
+dbMEM.vectors.inwater <- as.data.frame(dbMEM_seadist)
 
-# ---- 1. IBD/IBE ----
-
-## ---- ** old plot IBD ----
-
-# # MRM
-# sMRM_IBDsd <- MRM(dist_mat[[metricSD]] ~ dist_mat[[metricDIST]], nperm = 9999)
-# sMRM_IBDgd <- MRM(dist_mat[[metricGD]] ~ dist_mat[[metricDIST]], nperm = 9999)
-# sMRM_SGDC <- MRM(dist_mat[[metricSD]] ~ dist_mat[[metricGD]], nperm = 9999)
-# # MRM(dist_merge[[metricSD]] ~ dist_merge[[metricDIST]], nperm = 9999) # same with distance matrix or long df
-
-# Mantel
-sMantel_IBDsd <- vegan::mantel(dist_mat[[metricSD]], dist_mat[[metricDIST]], permutations = 9999)
-sMantel_IBDgd <- vegan::mantel(dist_mat[[metricGD]], dist_mat[[metricDIST]], permutations = 9999)
-sMantel_SGDC <- vegan::mantel(dist_mat[[metricSD]], dist_mat[[metricGD]], permutations = 9999)
-
-# # distance decay models
-# sDecay_IBDsd <- decay.model(dist_mat[[metricSD]], dist_mat[[metricDIST]], y.type="dissim", model.type="pow", perm=999)
-# sDecay_IBDgd <- decay.model(dist_mat[[metricGD]], dist_mat[[metricDIST]], y.type="dissim", model.type="pow", perm=999)
-#
-# plot(dist_mat[[metricDIST]], dist_mat[[metricSD]], pch = 16)
-# plot.decay(sDecay_IBDsd, col="green", remove.dots=T, add=T, lwd=2)
-#
-# plot(dist_mat[[metricDIST]], dist_mat[[metricGD]], pch = 16)
-# plot.decay(sDecay_IBDgd, col="green", remove.dots=T, add=T, lwd=2)
+# select MEM
+dbrda_GD0 <- vegan::capscale(dist_mat$Fst ~ 1, data = dbMEM_seadist) # null model, only intercept
+dbrda_GDgeo <- vegan::capscale(dist_mat$Fst ~ ., data = dbMEM_seadist)
+selGEO <- ordiR2step(dbrda_GD0, scope = formula(dbrda_GDgeo), direction="both") 
+selGEO$anova
 
 
 
-# add Seychelles color
-dist_merge$Seychelles <- "No"
-dist_merge[grep("Seychelles", dist_merge$site),]$Seychelles <- "Yes"
+## environment PCA (X) ----
+library(factoextra)
 
-# species IBD
-ggSD <-
-  ggplot(dist_merge) +
-  geom_point(aes(.data[[metricDIST]], .data[[metricSD]], color = Seychelles), show.legend = F) +
-  scale_color_brewer(palette="Dark2") +
-  annotate('text',
-           x=min(dist_merge[[metricDIST]]), y=max(dist_merge[[metricSD]]),
-           hjust = 0, vjust = 1,
-           label=paste0("r Mantel = ", sprintf("%.3f", sMantel_IBDsd$statistic), ", p = ", sMantel_IBDsd$signif)) +
-  # "\nR² MRM = ", round(sMRM_IBDsd$r.squared[["R2"]], 4), ", p = ", round(sMRM_IBDsd$r.squared[["pval"]], 5))) +
-  theme_light()
+# scale
+envt_site_scaled <-
+  envt_site %>% 
+  column_to_rownames("site") %>% 
+  scale(center = T, scale = T) %>% 
+  as.data.frame()
 
-# genetic IBD
-ggGD <-
-  ggplot(dist_merge) +
-  geom_point(aes(.data[[metricDIST]], .data[[metricGD]], color = Seychelles), show.legend = F) +
-  scale_color_brewer(palette="Dark2") +
-  annotate('text',
-           x=min(dist_merge[[metricDIST]]), y=max(dist_merge[[metricGD]]),
-           hjust = 0, vjust = 1,
-           label=paste0("r Mantel = ", sprintf("%.3f", sMantel_IBDgd$statistic), ", p = ", sMantel_IBDgd$signif)) +
-  # "\nr MRM = ", round(sMRM_IBDgd$r.squared[["R2"]], 4), ", p = ", round(sMRM_IBDgd$r.squared[["pval"]], 5))) +
-  theme_light()
+# PCA
+PCA_envt <- prcomp(envt_site_scaled)
+PCA_envtaxis <- as.data.frame(PCA_envt$x) # The principal components can be found in the $x matrix
+fviz_eig(PCA_envt)
 
 
-# SGDCs
-ggSGDCs <-
-  ggplot(dist_merge) +
-  geom_point(aes(.data[[metricSD]], .data[[metricGD]], color = Seychelles)) +
-  scale_color_brewer(palette="Dark2") +
-  annotate('text',
-           x=min(dist_merge[[metricSD]]), y=max(dist_merge[[metricGD]]),
-           hjust = 0, vjust = 1,
-           label=paste0("r Mantel = ", sprintf("%.3f", sMantel_SGDC$statistic), ", p = ", sMantel_SGDC$signif)) +
-  # "\nr MRM = ", round(sMRM_SGDC$r.squared[["R2"]], 4), ", p = ", round(sMRM_SGDC$r.squared[["pval"]], 5))) +
-  theme_light()
-
-
-# merge plots
-ggSD + ggGD + ggSGDCs + #+ plot_annotation(title = comm)
-  plot_annotation(tag_levels = "a", tag_prefix = "(", tag_suffix = ")")
-ggsave(width = 14, height = 4,
-       filename = paste0("results/4_continuity/IBD_beta_SGDC_noSeychelles_", metricSD, "_", metricGD, "_", metricDIST, "_", comm_delin, ".png"))
-
-
-
-
-
-## ---- plot IBD + IBE ----
+## plot ----
 metricGD <- "Fst"
 metricSDs <- paste(names_communities, "beta.jtu", sep = ".")
 metricDIST <- 'seadist' #'environment'
@@ -145,25 +93,29 @@ metricDIST <- 'seadist' #'environment'
 gg_list <- list()
 i=1
 
+library(lmPerm)
+
 for (metricDIV in c(metricGD, metricSDs)){
   # for (metricDIST in c("seadist")){ #"environment"
   
   for (locations in c("allsites", "noSeychelles")){
     
+    ## get locations
     dist_mergeSUB <- dist_merge
     dist_matSUB <- dist_mat
     if(locations == "noSeychelles"){
       dist_mergeSUB <- mat.subset(dist_merge, "Seychelles")
       dist_matSUB <- lapply(dist_mat, function(x) mat.subset(x, "Seychelles"))
     }
-    # add Seychelles color
+    
+    ## add Seychelles color
     dist_mergeSUB$Seychelles <- "No"
     dist_mergeSUB[grep("Seychelles", dist_mergeSUB$site),]$Seychelles <- "Yes"
     
     
     ## Mantel
     sMantel <- vegan::mantel(dist_matSUB[[metricDIV]], dist_matSUB[[metricDIST]], permutations = 9999)
-    
+
     if(metricDIST == 'seadist') color_x <- "#3182BD"
     if(metricDIST == 'environment') color_x <- "#31A354"
     if(metricDIV %in% metricGD) color_y <- "#F69C73FF" # rocket
@@ -180,12 +132,13 @@ for (metricDIV in c(metricGD, metricSDs)){
     if(sMantel$signif < 0.05){
       gg_list[[i]] <-
         ggplot(dist_mergeSUB, aes(.data[[metricDIST]], .data[[metricDIV]])) + #, color = Seychelles
-        geom_smooth(method = "lm", color = "grey50", fill = "grey80") +
+        geom_smooth(method = "lm", color = "grey50", se = F) +
         geom_point(aes(shape = Seychelles), show.legend = F, color = color_y) +
         scale_shape_manual(values = c(19, 1)) +
         annotate('text',
                  x=min(dist_mergeSUB[[metricDIST]]), y=max(dist_mergeSUB[[metricDIV]]),
                  hjust = 0, vjust = 1,
+                 # label=paste0("adj R² = ", sprintf("%.3f", sdbRDA$statistic), "\np = ", sdbRDA$signif)) +
                  label=paste0("r Mantel = ", sprintf("%.3f", sMantel$statistic), "\np = ", sMantel$signif)) +
         theme_light() +
         ylab(metricLAB) +
@@ -203,7 +156,8 @@ for (metricDIV in c(metricGD, metricSDs)){
         annotate('text',
                  x=min(dist_mergeSUB[[metricDIST]]), y=max(dist_mergeSUB[[metricDIV]]),
                  hjust = 0, vjust = 1,
-                 label=paste0("r Mantel = ", sprintf("%.3f", sMantel$statistic), "\np = ", sMantel$signif)) +
+                 label=paste0("adj R² = ", sprintf("%.3f", sdbRDA$statistic), "\np = ", sdbRDA$signif)) +
+                 # label=paste0("r Mantel = ", sprintf("%.3f", sMantel$statistic), "\np = ", sMantel$signif)) +
         theme_light() +
         ylab(metricLAB) +
         theme(
@@ -243,10 +197,15 @@ SGDC_beta <- tibble(community_delineation = NA,
                     taxonomic_scale = NA,
                     metricGD = NA,
                     metricSD = NA,
-                    r = NA,
-                    rlwr = NA,
-                    rupr = NA,
-                    pval = NA,
+                    Mantel_r = NA,
+                    Mantel_rlwr = NA,
+                    Mantel_rupr = NA,
+                    Mantel_pval = NA,
+                    dbRDA_R2 = NA,
+                    dbRDA_adjR2 = NA,
+                    dbRDA_pval = NA,
+                    Pearson_r = NA,
+                    Pearson_pval = NA
 )
 
 # coeff_function <- function(formula, data, indices) {
@@ -272,33 +231,66 @@ for(comm_delin in comm_delin_list[1]) { #[1]
 
     for (comm in names_communities){
 
-      for (metric in c("beta.jac", "beta.jtu", "beta.jne")){
+      for (metricSD in c("beta.jac", "beta.jtu", "beta.jne")){
 
-        metricSDcomm <- paste(comm, metric, sep = ".")
+        metricSDcomm <- paste(comm, metricSD, sep = ".")
 
-        stat <- vegan::mantel(dist_mat[[metricSDcomm]], dist_mat[[metricGD]], permutations = 9999)
+        ### MANTEL ----
+        sMantel <- vegan::mantel(dist_mat[[metricSDcomm]], dist_mat[[metricGD]], permutations = 9999)
         
         ## Get bootstraps on R²
         fm <- as.formula(paste("scale(", metricSDcomm, ") ~ scale(", metricGD, ")", sep=""))
-        stat2 <- summary(lm(fm, data = dist_merge))
+        sMantel2 <- summary(lm(fm, data = dist_merge))
         # boots <- boot(data=dist_merge, statistic=coeff_function, R=1000, formula=fm)
         
         fm <- as.formula(paste(metricSDcomm, " ~ ", metricGD, sep=""))
-        stat3 <- ecodist::mantel(dist_mat[[metricSDcomm]] ~ dist_mat[[metricGD]], nperm = 9999, nboot = 9999, cboot = 0.95)        
+        sMantel3 <- ecodist::mantel(dist_mat[[metricSDcomm]] ~ dist_mat[[metricGD]], nperm = 9999, nboot = 9999, cboot = 0.95)        
         # boots_ci <- boot.ci(boots, type="bca")
         # plot(reps)
 
+        
+        ### Pearson ----
+        sPearson <- cor.test(dist_merge[[metricSDcomm]], dist_merge[[metricGD]],
+                             alternative = c("two.sided"), method = "pearson")
+        sPearsonPERM <- jmuOutlier::perm.cor.test(dist_merge[[metricSDcomm]], dist_merge[[metricGD]], 
+                                                  alternative = c("two.sided"), method = "pearson", 
+                                                  num.sim = 9999)
+        
+        ### dbRDA ----
+        pcoaSD <- prcomp(quasieuclid(dist_mat[[metricSDcomm]]))
+        # pcoaSD <- prcomp(dist_mat[[metricSDcomm]])
+        # factoextra::fviz_eig(pcoaSD)
+        
+
+        ## variable selection
+        # dbrda_SGDC0 <- vegan::capscale(dist_mat[[metricGD]] ~ 1, data = as.data.frame(pcoaSD$x[, 1:7]))
+        # dbrda_SGDCall <- vegan::capscale(dist_mat[[metricGD]] ~ ., data = as.data.frame(pcoaSD$x[, 1:7]))
+        # selSGDC <- ordistep(dbrda_SGDC0,
+        #                       scope = formula(dbrda_SGDCall),
+        #                       direction="both")
+        # 
+        # RsquareAdj(selSGDC) # rsquared RDA
+        # anova.cca(selSGDC) # global signicativity of the RDA
+
+        dbrda_SGDCfin <- vegan::capscale(dist_mat[[metricGD]] ~ ., data = as.data.frame(pcoaSD$x[, 1:7]))
+        
+        
+        ### put in table ----
         SGDC_beta[i,]$community_delineation <- comm_delin
         SGDC_beta[i,]$locations <- locations
         SGDC_beta[i,]$taxonomic_scale <- comm
         SGDC_beta[i,]$metricGD <- metricGD
-        SGDC_beta[i,]$metricSD <- metric
-        SGDC_beta[i,]$r <- stat$statistic #stat3[1]
-        SGDC_beta[i,]$rlwr <- stat2$coefficients[2,1] - 1.96*stat2$coefficients[2,2] #stat3[5] #boots_ci$bca[4] 
-        SGDC_beta[i,]$rupr <- stat2$coefficients[2,1] + 1.96*stat2$coefficients[2,2] #stat3[6] #boots_ci$bca[5]
-        SGDC_beta[i,]$pval <- stat$signif #stat3[2] ##Ha: r>0
-
-
+        SGDC_beta[i,]$metricSD <- metricSD
+        SGDC_beta[i,]$Mantel_r <- sMantel$statistic #sMantel3[1]
+        SGDC_beta[i,]$Mantel_rlwr <- sMantel2$coefficients[2,1] - 1.96*sMantel2$coefficients[2,2] # or sMantel3[5]  # or boots_ci$bca[4] 
+        SGDC_beta[i,]$Mantel_rupr <- sMantel2$coefficients[2,1] + 1.96*sMantel2$coefficients[2,2] # or sMantel3[6]  # orboots_ci$bca[5]
+        SGDC_beta[i,]$Mantel_pval <- sMantel$signif #sMantel3[2] ##Ha: r>0
+        SGDC_beta[i,]$dbRDA_R2 <- RsquareAdj(dbrda_SGDCfin)$r.squared #selSGDC
+        SGDC_beta[i,]$dbRDA_adjR2 <- RsquareAdj(dbrda_SGDCfin)$adj.r.squared
+        SGDC_beta[i,]$dbRDA_pval <- anova.cca(dbrda_SGDCfin)[1,4]
+        SGDC_beta[i,]$Pearson_r <- sPearson$estimate #selSGDC
+        SGDC_beta[i,]$Pearson_pval <- sPearsonPERM$p.value
+        
         cat(i, "\n")
         i=i+1
       }
@@ -307,54 +299,60 @@ for(comm_delin in comm_delin_list[1]) { #[1]
 }
 
 
-SGDC_beta$signif <- ifelse(SGDC_beta$pval < 0.001, "***", 
-                            ifelse(SGDC_beta$pval < 0.01, "**", 
-                                   ifelse(SGDC_beta$pval < 0.05, "*", "NS")))
+SGDC_beta$Mantel_signif <- ifelse(SGDC_beta$Mantel_pval < 0.001, "***", 
+                                  ifelse(SGDC_beta$Mantel_pval < 0.01, "**", 
+                                         ifelse(SGDC_beta$Mantel_pval < 0.05, "*", "NS")))
+SGDC_beta$dbRDA_signif <- ifelse(SGDC_beta$dbRDA_pval < 0.001, "***", 
+                                 ifelse(SGDC_beta$dbRDA_pval < 0.01, "**", 
+                                        ifelse(SGDC_beta$dbRDA_pval < 0.05, "*", "NS")))
+SGDC_beta$Pearson_signif <- ifelse(SGDC_beta$Pearson_pval < 0.001, "***", 
+                                 ifelse(SGDC_beta$Pearson_pval < 0.01, "**", 
+                                        ifelse(SGDC_beta$Pearson_pval < 0.05, "*", "NS")))
 
 SGDC_beta %>%
-  write_csv("results/4_continuity/beta_SGDCs_table_CIlm_taxonomy.csv")
+  write_csv("results/4_continuity/beta_SGDCs_table_CIlm_dbRDA_Pearson_taxonomy_allPCoAaxis.csv")
 
 
 ## plot one community delin ----
-SGDC_betasub <-
+SGDC_betaSUB <-
   SGDC_beta %>% 
   dplyr::filter(community_delineation == "taxonomy") %>% 
   dplyr::filter(locations == "without Seychelles") %>% 
   dplyr::filter(metricSD != "beta.jne")
 
-SGDC_betasub$taxonomic_scale <- 
-  factor(SGDC_betasub$taxonomic_scale,
+SGDC_betaSUB$taxonomic_scale <- 
+  factor(SGDC_betaSUB$taxonomic_scale,
          level = names_communities)
 
-SGDC_betasub$metricSD <- 
-  factor(SGDC_betasub$metricSD,
+SGDC_betaSUB$metricSD <- 
+  factor(SGDC_betaSUB$metricSD,
          level = c("beta.jac", "beta.jtu")) #"beta.jne", 
 
-ggplot(SGDC_betasub, aes(
-                       x=r,
+ggplot(SGDC_betaSUB, aes(
+                       x=Pearson_r,
                        y=taxonomic_scale,
-                       # shape=signif,
+                       shape=Pearson_signif,
                        group=metricSD,
                        color=metricSD)) +
   geom_vline(xintercept = 0, linetype=2, color="grey20") +
-  # geom_point(size = 2.5) +
-  geom_pointrange(aes(x=r,
-                      xmin=rlwr,
-                      xmax=rupr),
-                    size = 0.3, linewidth = 0.3,
-                    position=position_dodge(width = 0.4)) +
-  # scale_shape_manual(values=c(19, 19, 1), )+
+  geom_point(aes(x = Pearson_r)) +
+  # geom_pointrange(aes(x=Mantel_r,
+  #                     xmin=Mantel_rlwr,
+  #                     xmax=Mantel_rupr),
+  #                   size = 0.3, linewidth = 0.3,
+  #                   position=position_dodge(width = 0.4)) +
+  scale_shape_manual(values=c(19, 19, 1), )+
   scale_color_manual(values = c("#60CEACFF", "#395D9CFF"))+ # "0B0405FF", 
   # scale_color_viridis(option="mako", discrete=T, end = 0.8) +
   xlim(c(-0.6, 0.9)) +
   ylab("") +
-  xlab("Mantel r") +
+  xlab("r") +
   theme_light() +
   theme(legend.title=element_blank(), legend.position="top") +
   guides(shape = "none") +
   scale_y_discrete(limits=rev)
 
-ggsave(paste0("results/4_continuity/beta_SGDCs_DWplot_taxonomy_noSeychelles_CIlm.png"),
+ggsave(paste0("results/4_continuity/beta_SGDCs_DWplot_taxonomy_noSeychelles_Pearson.png"),
        height = 4, width = 5, units = 'in', dpi = 300)
 
 
@@ -364,25 +362,26 @@ SGDC_beta$taxonomic_scale <- factor(SGDC_beta$taxonomic_scale,
                                     level = names_communities)
 
 ggplot(SGDC_beta, aes(x=community_delineation,
-                      y=r,
-                      shape=signif,
+                      y=Pearson_r,
+                      shape=Pearson_signif,
+                      # y=dbRDA_adjR2,
+                      # shape=dbRDA_signif,
                       group=taxonomic_scale,
                       color=taxonomic_scale)) +
   geom_hline(yintercept = 0, linetype=2) +
   geom_point(size = 2.5, position=position_dodge(width = 0.4)) +
-  scale_shape_manual(values=c(19, 19, 1))+
+  scale_shape_manual(values=c(19, 19, 19, 1))+
   scale_color_manual(values = c("#92e101", "#78c556", "#5fa8aa", "#458cff"))+
   facet_grid(vars(metricSD), vars(locations), scale="fixed") +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
 
-ggsave(paste0("results/4_continuity/beta_SGDCs_DWplot2.png"),
-       height = 8, width = 15, units = 'in', dpi = 300)
+ggsave(paste0("results/4_continuity/beta_SGDCs_DWplot_Pearson.png"),
+       height = 8, width = 8, units = 'in', dpi = 300)
 
 
 
 # ---- 3. SGDCs plot ----
-## >>> to replace with CI... ####
-SGDC_beta <- read_csv("results/4_continuity/beta_SGDCs_table.csv")
+SGDC_beta <- read_csv("results/4_continuity/beta_SGDCs_table_CIlm_dbRDA_Pearson_taxonomy.csv")
 
 SGDC_betaSUB <- 
   SGDC_beta %>% 
@@ -405,23 +404,23 @@ for (i in 1:nrow(SGDC_betaSUB)){
   dist_merge <-
     read_csv(paste0("results/3_distance_metrics/dist_geo_envtbdmean_gd_sd_", comm_delin, ".csv"))
   
-  if(SGDC_betaSUB[i,"locations"] == "without Seychelles"){
+  if(SGDC_betaSUB[i, "locations"] == "without Seychelles"){
     dist_merge <- mat.subset(dist_merge, "Seychelles")
   }
 
-  if(SGDC_betaSUB[i, "signif"] != "NS"){
+  if(SGDC_betaSUB[i, "Pearson_signif"] != "NS"){
     gg_list[[i]] <-
       ggplot(dist_merge, aes(.data[[metricSDcomm]], .data[[metricGD]])) +
-      geom_smooth(method = "lm", color = "grey50", fill = "grey80") +
+      geom_smooth(method = "lm", color = "grey50", se = FALSE) +
       geom_point(shape = 19, alpha = 0.8) +
       xlab(paste0(metricXLAB, " (", comm, ")")) +
       annotate('text',
                x = min(dist_merge[[metricSDcomm]]), y = 1.1 * max(dist_merge[[metricGD]]),
                hjust = 0, vjust = 1,
-               label = paste0("r Mantel = ", round(SGDC_betaSUB[i, "r"], 4), "\np = ", SGDC_betaSUB[i, "pval"])) +
+               label = paste0("r = ", round(SGDC_betaSUB[i, "Pearson_r"], 4), "\np = ", round(SGDC_betaSUB[i, "Pearson_pval"], 4))) +
       theme_light()
   }
-  if(SGDC_betaSUB[i, "signif"] == "NS"){
+  if(SGDC_betaSUB[i, "Pearson_signif"] == "NS"){
     gg_list[[i]] <-
       ggplot(dist_merge, aes(.data[[metricSDcomm]], .data[[metricGD]])) +
       geom_point(shape = 19, alpha = 0.8) +
@@ -429,7 +428,7 @@ for (i in 1:nrow(SGDC_betaSUB)){
       annotate('text',
                x = min(dist_merge[[metricSDcomm]]), y = 1.1 * max(dist_merge[[metricGD]]),
                hjust = 0, vjust = 1,
-               label = paste0("r Mantel = ", round(SGDC_betaSUB[i, "r"], 4), "\np = ", SGDC_betaSUB[i, "pval"])) +
+               label = paste0("r = ", round(SGDC_betaSUB[i, "Pearson_r"], 4), "\np = ", round(SGDC_betaSUB[i, "Pearson_pval"], 4))) +
       theme_light()
   }
   
@@ -440,10 +439,11 @@ gg_grob <-
   patchwork::wrap_plots(gg_list, tag_level = "new") +
   plot_annotation(tag_level = "a", tag_prefix = "(", tag_suffix = ")")
 plot(gg_grob)
+
 ggsave(gg_grob, width = 8, height = 7, dpi = 500,
-       filename = paste0("results/4_continuity/_4_beta_SGDCs_plot_significant.png"))
+       filename = paste0("results/4_continuity/_4_beta_SGDCs_plot_significant_REVISION_Pearson.png"))
 ggsave(gg_grob, width = 8, height = 7, 
-       filename = paste0("results/4_continuity/_4_beta_SGDCs_plot_significant.pdf"))
+       filename = paste0("results/4_continuity/_4_beta_SGDCs_plot_significant_REVISION_Pearson.pdf"))
 
 
 
@@ -518,7 +518,6 @@ ggsave(paste0("results/4_continuity/_5_variance_decompositionPERSO_beta_SGDCs_no
 # ---- 5. MRM ----
 
 ## MRM gd table ----
-
 MRMgd <- tibble::tibble()
 for (locations in c("allsites", "noSeychelles")){
   dist_merge <-
@@ -578,7 +577,6 @@ MRMgd %>%
 
 
 ## MRM sd table ----
-
 MRMsd <- tibble::tibble()
 for(comm_delin in comm_delin_list) {
   dist_merge <-
@@ -705,98 +703,6 @@ ggsave(paste0("results/4_continuity/_S7_DWplotPERSO_MRM_beta_combined_envt_seadi
 
 
 
-# ### GD ----
-# ggplot(MRMgd, aes(x=Estimate, y=explanatory_variable, group=response_variable, color=response_variable)) +
-#   geom_vline(xintercept = 0,linetype=2) +
-#   geom_pointrange(aes(xmin=Estimate - 1.96*Std..Error,
-#                       xmax=Estimate + 1.96*Std..Error),
-#                   position=position_dodge(width = -0.4)) +
-#   scale_color_viridis(option="rocket", discrete=T, end = 0.8)+
-#   facet_wrap(~locations) +
-#   xlim(c(-1,1)) +
-#   theme_light()
-# 
-# ggsave(paste0("results/4_continuity/DWplotPERSO_MRM_beta_gd_envt_seadist_bdmean.png"),
-#        height = 5, width = 12, units = 'in', dpi = 300)
-# 
-# 
-# ### SD ----
-# # all community delineations
-# ggplot(MRMsd, aes(x=Estimate,
-#                   y=explanatory_variable,
-#                   shape=community_delineation,
-#                   group=interaction(community_delineation, response_variable),
-#                   color=response_variable)) +
-#   geom_vline(xintercept = 0, linetype=2) +
-#   geom_pointrange(aes(xmin=Estimate - 1.96*Std..Error,
-#                     xmax=Estimate + 1.96*Std..Error),
-#                     position=position_dodge(width=-1)) +
-#   scale_color_viridis(option="mako", discrete=T, end = 0.8) +
-#   facet_grid(vars(taxonomic_scale), vars(locations), scale="free") +
-#   xlim(c(-1,1)) +
-#   theme_light()
-# 
-# ggsave(paste0("results/4_continuity/DWplotPERSO_MRM_beta_sd_envt_seadist_bdmean.png"),
-#        height = 10, width = 12, units = 'in', dpi = 300)
-# 
-# 
-# # metric by metric
-# for(metricSD in unique(MRMsd$response_variable)){
-#   MRMsub <-
-#     MRMsd %>%
-#     filter(response_variable == metricSD)
-# 
-#   ggplot(MRMsub, aes(x=Estimate,
-#                     y=explanatory_variable,
-#                     shape=community_delineation,
-#                     color=community_delineation)) +
-#     geom_vline(xintercept = 0, linetype=2) +
-#     geom_pointrange(aes(xmin=Estimate - 1.96*Std..Error,
-#                         xmax=Estimate + 1.96*Std..Error),
-#                     position=position_dodge(width=-0.5)) +
-#     scale_color_viridis(option="cividis", discrete=T, end = 0.8) +
-#     facet_grid(vars(taxonomic_scale), vars(locations), scale="free") +
-#     xlim(c(-1,1)) +
-#     theme_light() +
-#     ggtitle(metricSD)
-# 
-#   ggsave(paste0("results/4_continuity/DWplotPERSO_MRM_beta_sd_envt_seadist_", metricSD, "_bdmean.png"),
-#          height = 8, width = 12, units = 'in', dpi = 300)
-# 
-# }
-# 
-# 
-# 
-# # only taxonomy
-# comm_delin <- "taxonomy"
-# 
-# MRMsub <-
-#   MRMsd %>%
-#   filter(community_delineation == comm_delin)
-# 
-# MRMsub$response_variable <- 
-#   factor(MRMsub$response_variable,
-#          level = c("beta.jne", "beta.jac", "beta.jtu"))
-# 
-# ggplot(MRMsub, aes(x=Estimate,
-#                   y=explanatory_variable,
-#                   group=interaction(response_variable),
-#                   color=response_variable)) +
-#   geom_vline(xintercept = 0, linetype=2) +
-#   geom_pointrange(aes(xmin=Estimate - 1.96*Std..Error,
-#                       xmax=Estimate + 1.96*Std..Error),
-#                   position=position_dodge(width=-0.4)) +
-#   scale_color_manual(values = c("#0B0405FF", "#60CEACFF", "#395D9CFF"))+
-#   # scale_color_viridis(option="mako", discrete=T, end = 0.8) +
-#   facet_grid(vars(taxonomic_scale), vars(locations), scale="free") +
-#   xlim(c(-1,1)) +
-#   theme_light()
-# 
-# ggsave(paste0("results/4_continuity/DWplotPERSO2_MRM_beta_sd_envt_seadist_bdmean_", comm_delin, ".png"),
-#        height = 8, width = 10, units = 'in', dpi = 300)
-# 
-
-
 
 # 6. SGDCs residuals ----
 # multi.mantel: same values as MRM ! but allows to take residuals
@@ -899,6 +805,340 @@ ggsave(width = 8, height = 7,
 
 
 
+
+
+
+
+# ---- 7. dbRDA (geo + env) ----
+## dbRDA GD table ----
+
+varpartGD <- tibble::tibble()
+dbRDAgd <- tibble::tibble()
+
+for (locations in c("All sites", "Without Seychelles")){
+  dist_merge <-
+    read_csv(paste0("results/3_distance_metrics/dist_geo_envtbdmean_gd_sd_", comm_delin, ".csv"), col_types = cols())
+  
+  dist_mat <-
+    readRDS(paste0("intermediate/3_distance_metrics/dist_geo_envtbdmean_gd_sd_", comm_delin, ".RDS"))
+  
+  envt_site <- 
+    read_csv("intermediate/3_distance_metrics/bio_oracle_variables_bdmean_stationbuffer_siteaverage.csv", col_types = cols()) 
+  
+  coord_sites <-
+    data_sites %>%
+    dplyr::select(-number_samples) %>% 
+    shift.lon()
+  
+  if(locations == "Without Seychelles"){
+    dist_merge <- mat.subset(dist_merge, "Seychelles")
+    dist_mat <- lapply(dist_mat, function(x) mat.subset(x, "Seychelles"))
+    envt_site <- mat.subset(envt_site, "Seychelles")
+    coord_sites <- mat.subset(coord_sites, "Seychelles") %>% column_to_rownames("site")
+  }
+  
+  ### a. dbMEM on seadist
+  dbMEM_seadist <- adespatial::dbmem(dist_mat$seadist, store.listw = TRUE) # MEM.autocor = "non-null",
+  # dbMEM_seadist <- adespatial::dbmem(coord_sites, store.listw = TRUE) # MEM.autocor = "non-null",
+  
+  ## keep fist 2 axis, explains ~95% of variation
+  # PCA_seadist <- prcomp(dist_mat$seadist)
+  # factoextra::fviz_eig(PCA_seadist)
+  # sum((PCA_seadist$sdev^2/sum(PCA_seadist$sdev^2))[1:3])
+  dbMEM_seadist <- dbMEM_seadist[,1:2] 
+  
+
+  ### b. environment PCA (X)
+  ## scale
+  envt_site_scaled <-
+    envt_site %>% 
+    column_to_rownames("site") %>% 
+    scale(center = T, scale = T) %>% 
+    as.data.frame()
+  
+  ## PCA
+  PCA_envt <- prcomp(envt_site_scaled)
+  PCA_envtaxis <- as.data.frame(PCA_envt$x) # The principal components can be found in the $x matrix
+
+  ## keep fist 2 axis, explains ~95% of variation
+  # sum((PCA_envt$sdev^2/sum(PCA_envt$sdev^2))[1:2])
+  # factoextra::fviz_eig(PCA_envt)
+  PCA_envtaxis <- PCA_envtaxis[,1:2]
+  
+  
+  for (metricGD in c("Fst", "GstPP.hed", "D.Jost")){ #
+
+    ### a. dbMEM on seadist select variables
+    dbrda_GD0 <- vegan::capscale(dist_mat[[metricGD]] ~ 1, data = dbMEM_seadist) # null model, only intercept
+    dbrda_GDgeo <- vegan::capscale(dist_mat[[metricGD]] ~ ., data = dbMEM_seadist)
+    selGEO <- ordistep(dbrda_GD0, scope = formula(dbrda_GDgeo), 
+                       direction="both", trace = FALSE)
+    
+    MEMstokeep <- 
+      rownames(selGEO$anova) %>% 
+      grep(pattern = "\\+ ", value = TRUE) %>% 
+      gsub(pattern = "\\+ ", replacement = "")
+    
+    dbMEM_seadistsel <-
+      dbMEM_seadist %>% 
+      as.data.frame() %>% 
+      dplyr::select(all_of(MEMstokeep))
+    
+    
+    ### best model table
+    X = cbind(dbMEM_seadistsel, PCA_envtaxis)
+    dbrda_GD0 <- vegan::capscale(dist_mat[[metricGD]] ~ 1, data = X) # null model, only intercept
+    dbrda_GDall <- vegan::capscale(dist_mat[[metricGD]] ~ ., data = X)
+    
+    dbrda_GDsel <- ordistep(dbrda_GD0, scope = formula(dbrda_GDall), 
+                            direction="both", trace = FALSE) 
+    # dbrda_GDsel$anova
+    
+    if(!is.null(dbrda_GDsel$anova)){
+      dbRDAgd <-
+        dbRDAgd %>%
+        rbind(tibble(location = locations,
+                     Model = as.character(dbrda_GDsel$call)[2],
+                     R2 = RsquareAdj(dbrda_GDsel)$r.squared, 
+                     adjR2 = RsquareAdj(dbrda_GDsel)$adj.r.squared,
+                     F = anova.cca(dbrda_GDsel)[1,3],
+                     pval = anova.cca(dbrda_GDsel)[1,4])) %>% 
+        mutate(Model = gsub("dist_mat\\[\\[metricGD\\]\\]", metricGD, Model))
+    }
+    
+    if(is.null(dbrda_GDsel$anova)){
+      dbRDAgd <-
+        dbRDAgd %>%
+        rbind(tibble(location = locations,
+                     Model = metricGD,
+                     R2 = NA, 
+                     adjR2 = NA,
+                     F = NA,
+                     pval = NA))
+    }
+    
+    
+    ### varpart
+    # vpGD <- varpart(dist_mat[[metricGD]], dbMEM_seadist, PCA_envtaxis)
+    # vpGD
+    # showvarparts(2, bg = c("#9ECAE1", "#A1D99B"))
+    # plot(vpGD, bg = c("#9ECAE1", "#A1D99B"), Xnames = c("Distance", "Environment"),
+    #      main = metricGD)
+    
+
+    ## Varpart computatio by hand : sligthly different from varpart plot...
+    RDAabc <- vegan::capscale(dist_mat[[metricGD]] ~ ., data = cbind(dbMEM_seadist, PCA_envtaxis))
+    RDAa <- vegan::capscale(dist_mat[[metricGD]] ~ MEM1 + MEM2 + Condition(PC1 + PC2), data = cbind(dbMEM_seadist, PCA_envtaxis))
+    RDAb <- vegan::capscale(dist_mat[[metricGD]] ~ PC1 + PC2 + Condition(MEM1 + MEM2), data = cbind(dbMEM_seadist, PCA_envtaxis))
+    
+    a <- RsquareAdj(RDAa)$adj.r.squared
+    b <- RsquareAdj(RDAb)$adj.r.squared
+    c <- RsquareAdj(RDAabc)$adj.r.squared - a - b
+    
+    varpartGD <- 
+      varpartGD %>% 
+      rbind(tibble(location = locations,
+                   response_variable = metricGD,
+                   explanatory_variable = c("Distance", "Environment", "Shared", "Residuals"),
+                   variation_explained = c(a, b, c, 1-a-b-c),
+                   pval = c(anova(RDAa)[1,4], anova(RDAb)[1,4], NA, NA))
+      )
+  }
+}
+
+
+# significance
+dbRDAgd$signif <- ifelse(dbRDAgd$pval < 0.001, "***", 
+                         ifelse(dbRDAgd$pval < 0.01, "**", 
+                                ifelse(dbRDAgd$pval < 0.05, "*", "NS")))
+
+varpartGD$signif <- ifelse(varpartGD$pval < 0.001, "***", 
+                         ifelse(varpartGD$pval < 0.01, "**", 
+                                ifelse(varpartGD$pval < 0.05, "*", "NS")))
+dbRDAgd # different runs of ordistep can give different results
+varpartGD
+
+varpartGDwide <- 
+  varpartGD %>% 
+  mutate(variation_explained = paste(round(variation_explained, 4), signif)) %>% 
+  mutate(variation_explained = gsub(" NA", "", variation_explained)) %>% 
+  dplyr::select(-c(pval, signif)) %>% 
+  pivot_wider(names_from = explanatory_variable, values_from = variation_explained)
+
+# save
+dbRDAgd %>% write_csv("results/4_continuity/dbRDA_models_beta_gd.csv")
+varpartGDwide %>% write_csv("results/4_continuity/dbRDA_varpart_beta_gd.csv")
+
+
+
+
+
+## dbRDA SD table ----
+
+varpartSD <- tibble::tibble()
+dbRDAsd <- tibble::tibble()
+for (locations in c("All sites", "Without Seychelles")){
+  dist_merge <-
+    read_csv(paste0("results/3_distance_metrics/dist_geo_envtbdmean_gd_sd_", comm_delin, ".csv"), col_types = cols())
+  
+  dist_mat <-
+    readRDS(paste0("intermediate/3_distance_metrics/dist_geo_envtbdmean_gd_sd_", comm_delin, ".RDS"))
+  
+  envt_site <- 
+    read_csv("intermediate/3_distance_metrics/bio_oracle_variables_bdmean_stationbuffer_siteaverage.csv", col_types = cols()) 
+  
+  if(locations == "Without Seychelles"){
+    dist_merge <- mat.subset(dist_merge, "Seychelles")
+    dist_mat <- lapply(dist_mat, function(x) mat.subset(x, "Seychelles"))
+    envt_site <- mat.subset(envt_site, "Seychelles")
+  }
+  
+  ### a. dbMEM on seadist
+  dbMEM_seadist <- adespatial::dbmem(dist_mat$seadist, store.listw = TRUE) # MEM.autocor = "non-null",
+  # dbMEM_seadist <- adespatial::dbmem(coord_sites, store.listw = TRUE) # MEM.autocor = "non-null",
+  
+  ## keep fist 2 axis, explains ~95% of variation
+  # PCA_seadist <- prcomp(dist_mat$seadist)
+  # factoextra::fviz_eig(PCA_seadist)
+  # sum((PCA_seadist$sdev^2/sum(PCA_seadist$sdev^2))[1:2])
+  dbMEM_seadist <- dbMEM_seadist[, 1:2] 
+  
+  
+  ### b. environment PCA (X)
+  ## scale
+  envt_site_scaled <-
+    envt_site %>% 
+    column_to_rownames("site") %>% 
+    scale(center = T, scale = T) %>% 
+    as.data.frame()
+  
+  ## PCA
+  PCA_envt <- prcomp(envt_site_scaled)
+  PCA_envtaxis <- as.data.frame(PCA_envt$x) # The principal components can be found in the $x matrix
+  # sum((PCA_envt$sdev^2/sum(PCA_envt$sdev^2))[1:2])
+  # factoextra::fviz_eig(PCA_envt)
+  
+  ## keep fist 2 axis, explains ~95% of variation
+  PCA_envtaxis <- PCA_envtaxis[, 1:2]
+  
+  
+  for (comm in names_communities){
+    
+    for (metricSD in c("beta.jac", "beta.jtu")){ #"beta.jne"
+      
+      metricSDcomm <- paste(comm, metricSD, sep = ".")
+      
+      ### a. dbMEM on seadist select variables
+      dbrda_SD0 <- vegan::capscale(dist_mat[[metricSDcomm]] ~ 1, data = dbMEM_seadist) # null model, only intercept
+      dbrda_SDgeo <- vegan::capscale(dist_mat[[metricSDcomm]] ~ ., data = dbMEM_seadist)
+      selGEO <- ordistep(dbrda_SD0, scope = formula(dbrda_SDgeo), 
+                         direction="both", trace = FALSE)
+      
+      MEMstokeep <- 
+        rownames(selGEO$anova) %>% 
+        grep(pattern = "\\+ ", value = TRUE) %>% 
+        gsub(pattern = "\\+ ", replacement = "")
+      
+      dbMEM_seadistsel <-
+        dbMEM_seadist %>% 
+        as.data.frame() %>% 
+        dplyr::select(all_of(MEMstokeep))
+      
+      
+      
+      ### best model table
+      X = cbind(dbMEM_seadistsel, PCA_envtaxis)
+      dbrda_SD0 <- vegan::capscale(dist_mat[[metricSDcomm]] ~ 1, data = X) # null model, only intercept
+      dbrda_SDall <- vegan::capscale(dist_mat[[metricSDcomm]] ~ ., data = X)
+      
+      dbrda_SDsel <- ordistep(dbrda_SD0, scope = formula(dbrda_SDall), 
+                              direction="both", trace = FALSE) 
+      # dbrda_SDsel$anova
+      
+      if(!is.null(dbrda_SDsel$anova)){
+        dbRDAsd <-
+          dbRDAsd %>% 
+          rbind(tibble(location = locations,
+                       Model = as.character(dbrda_SDsel$call)[2],
+                       R2 = RsquareAdj(dbrda_SDsel)$r.squared, 
+                       adjR2 = RsquareAdj(dbrda_SDsel)$adj.r.squared,
+                       F = anova.cca(dbrda_SDsel)[1,3],
+                       pval = anova.cca(dbrda_SDsel)[1,4])) %>% 
+          mutate(Model = gsub("dist_mat\\[\\[metricSDcomm\\]\\]", metricSDcomm, Model))
+      }
+      
+      if(is.null(dbrda_SDsel$anova)){
+        dbRDAsd <-
+          dbRDAsd %>% 
+          rbind(tibble(location = locations,
+                       Model = metricSDcomm,
+                       R2 = NA, 
+                       adjR2 = NA,
+                       F = NA,
+                       pval = NA))
+      }
+        
+        ### varpart
+        # vpSD <- varpart(dist_mat[[metricSDcomm]], dbMEM_seadist, PCA_envtaxis)
+        # vpSD
+        # showvarparts(2, bg = c("#9ECAE1", "#A1D99B"))
+        # plot(vpSD, bg = c("#9ECAE1", "#A1D99B"), Xnames = c("Distance", "Environment"),
+        #      main = metricSDcomm)
+        
+        
+        ## Varpart computatio by hand : sligthly different from varpart plot...
+        RDAabc <- vegan::capscale(dist_mat[[metricSDcomm]] ~ ., data = cbind(dbMEM_seadist, PCA_envtaxis))
+        RDAa <- vegan::capscale(dist_mat[[metricSDcomm]] ~ MEM1 + MEM2 + Condition(PC1 + PC2), data = cbind(dbMEM_seadist, PCA_envtaxis))
+        RDAb <- vegan::capscale(dist_mat[[metricSDcomm]] ~ PC1 + PC2 + Condition(MEM1 + MEM2), data = cbind(dbMEM_seadist, PCA_envtaxis))
+        
+        a <- RsquareAdj(RDAa)$adj.r.squared
+        b <- RsquareAdj(RDAb)$adj.r.squared
+        c <- RsquareAdj(RDAabc)$adj.r.squared - a - b
+        
+        varpartSD <- 
+          varpartSD %>% 
+          rbind(tibble(location = locations,
+                       response_variable = metricSDcomm,
+                       explanatory_variable = c("Distance", "Environment", "Shared", "Residuals"),
+                       variation_explained = c(a, b, c, 1-a-b-c),
+                       pval = c(anova(RDAa)[1,4], anova(RDAb)[1,4], NA, NA))
+          )
+        
+    }
+  }
+}
+
+# significance
+dbRDAsd$signif <- ifelse(dbRDAsd$pval < 0.001, "***", 
+                         ifelse(dbRDAsd$pval < 0.01, "**", 
+                                ifelse(dbRDAsd$pval < 0.05, "*", "NS")))
+
+varpartSD$signif <- ifelse(varpartSD$pval < 0.001, "***", 
+                           ifelse(varpartSD$pval < 0.01, "**", 
+                                  ifelse(varpartSD$pval < 0.05, "*", "NS")))
+dbRDAsd # different runs of ordistep can give different results
+
+varpartSDwide <- 
+  varpartSD %>% 
+  mutate(variation_explained = paste(round(variation_explained, 4), signif)) %>% 
+  mutate(variation_explained = gsub(" NA", "", variation_explained)) %>% 
+  dplyr::select(-c(pval, signif)) %>% 
+  pivot_wider(names_from = explanatory_variable, values_from = variation_explained)
+varpartSDwide
+
+# save
+dbRDAsd %>% write_csv("results/4_continuity/dbRDA_models_beta_sd.csv")
+varpartSDwide %>% write_csv("results/4_continuity/dbRDA_varpart_beta_sd.csv")
+
+
+
+
+
+
+
+
+
+
 # 
 # ---- *** DRAFTS ----
 ## *** SGDCs by distance phylo ----
@@ -971,5 +1211,192 @@ ggsave(width = 8, height = 7,
 # corrplot::corrplot(model)
 # 
 # cor(dist_merge[["seadist"]], dist_merge[["environment"]])
+# 
+# 
+# 
+# 
+# 
+## ---- *** old plot IBD ----
+# 
+# # # MRM
+# # sMRM_IBDsd <- MRM(dist_mat[[metricSD]] ~ dist_mat[[metricDIST]], nperm = 9999)
+# # sMRM_IBDgd <- MRM(dist_mat[[metricGD]] ~ dist_mat[[metricDIST]], nperm = 9999)
+# # sMRM_SGDC <- MRM(dist_mat[[metricSD]] ~ dist_mat[[metricGD]], nperm = 9999)
+# # # MRM(dist_merge[[metricSD]] ~ dist_merge[[metricDIST]], nperm = 9999) # same with distance matrix or long df
+# 
+# # Mantel
+# sMantel_IBDsd <- vegan::mantel(dist_mat[[metricSD]], dist_mat[[metricDIST]], permutations = 9999)
+# sMantel_IBDgd <- vegan::mantel(dist_mat[[metricGD]], dist_mat[[metricDIST]], permutations = 9999)
+# sMantel_SGDC <- vegan::mantel(dist_mat[[metricSD]], dist_mat[[metricGD]], permutations = 9999)
+# 
+# # # distance decay models
+# # sDecay_IBDsd <- decay.model(dist_mat[[metricSD]], dist_mat[[metricDIST]], y.type="dissim", model.type="pow", perm=999)
+# # sDecay_IBDgd <- decay.model(dist_mat[[metricGD]], dist_mat[[metricDIST]], y.type="dissim", model.type="pow", perm=999)
+# #
+# # plot(dist_mat[[metricDIST]], dist_mat[[metricSD]], pch = 16)
+# # plot.decay(sDecay_IBDsd, col="green", remove.dots=T, add=T, lwd=2)
+# #
+# # plot(dist_mat[[metricDIST]], dist_mat[[metricGD]], pch = 16)
+# # plot.decay(sDecay_IBDgd, col="green", remove.dots=T, add=T, lwd=2)
+# 
+# 
+# 
+# # add Seychelles color
+# dist_merge$Seychelles <- "No"
+# dist_merge[grep("Seychelles", dist_merge$site),]$Seychelles <- "Yes"
+# 
+# # species IBD
+# ggSD <-
+#   ggplot(dist_merge) +
+#   geom_point(aes(.data[[metricDIST]], .data[[metricSD]], color = Seychelles), show.legend = F) +
+#   scale_color_brewer(palette="Dark2") +
+#   annotate('text',
+#            x=min(dist_merge[[metricDIST]]), y=max(dist_merge[[metricSD]]),
+#            hjust = 0, vjust = 1,
+#            label=paste0("r Mantel = ", sprintf("%.3f", sMantel_IBDsd$statistic), ", p = ", sMantel_IBDsd$signif)) +
+#   # "\nR² MRM = ", round(sMRM_IBDsd$r.squared[["R2"]], 4), ", p = ", round(sMRM_IBDsd$r.squared[["pval"]], 5))) +
+#   theme_light()
+# 
+# # genetic IBD
+# ggGD <-
+#   ggplot(dist_merge) +
+#   geom_point(aes(.data[[metricDIST]], .data[[metricGD]], color = Seychelles), show.legend = F) +
+#   scale_color_brewer(palette="Dark2") +
+#   annotate('text',
+#            x=min(dist_merge[[metricDIST]]), y=max(dist_merge[[metricGD]]),
+#            hjust = 0, vjust = 1,
+#            label=paste0("r Mantel = ", sprintf("%.3f", sMantel_IBDgd$statistic), ", p = ", sMantel_IBDgd$signif)) +
+#   # "\nr MRM = ", round(sMRM_IBDgd$r.squared[["R2"]], 4), ", p = ", round(sMRM_IBDgd$r.squared[["pval"]], 5))) +
+#   theme_light()
+# 
+# 
+# # SGDCs
+# ggSGDCs <-
+#   ggplot(dist_merge) +
+#   geom_point(aes(.data[[metricSD]], .data[[metricGD]], color = Seychelles)) +
+#   scale_color_brewer(palette="Dark2") +
+#   annotate('text',
+#            x=min(dist_merge[[metricSD]]), y=max(dist_merge[[metricGD]]),
+#            hjust = 0, vjust = 1,
+#            label=paste0("r Mantel = ", sprintf("%.3f", sMantel_SGDC$statistic), ", p = ", sMantel_SGDC$signif)) +
+#   # "\nr MRM = ", round(sMRM_SGDC$r.squared[["R2"]], 4), ", p = ", round(sMRM_SGDC$r.squared[["pval"]], 5))) +
+#   theme_light()
+# 
+# 
+# # merge plots
+# ggSD + ggGD + ggSGDCs + #+ plot_annotation(title = comm)
+#   plot_annotation(tag_levels = "a", tag_prefix = "(", tag_suffix = ")")
+# ggsave(width = 14, height = 4,
+#        filename = paste0("results/4_continuity/IBD_beta_SGDC_noSeychelles_", metricSD, "_", metricGD, "_", metricDIST, "_", comm_delin, ".png"))
+# 
 
 
+## *** GD ----
+# ggplot(MRMgd, aes(x=Estimate, y=explanatory_variable, group=response_variable, color=response_variable)) +
+#   geom_vline(xintercept = 0,linetype=2) +
+#   geom_pointrange(aes(xmin=Estimate - 1.96*Std..Error,
+#                       xmax=Estimate + 1.96*Std..Error),
+#                   position=position_dodge(width = -0.4)) +
+#   scale_color_viridis(option="rocket", discrete=T, end = 0.8)+
+#   facet_wrap(~locations) +
+#   xlim(c(-1,1)) +
+#   theme_light()
+# 
+# ggsave(paste0("results/4_continuity/DWplotPERSO_MRM_beta_gd_envt_seadist_bdmean.png"),
+#        height = 5, width = 12, units = 'in', dpi = 300)
+# 
+# 
+## *** SD ----
+# # all community delineations
+# ggplot(MRMsd, aes(x=Estimate,
+#                   y=explanatory_variable,
+#                   shape=community_delineation,
+#                   group=interaction(community_delineation, response_variable),
+#                   color=response_variable)) +
+#   geom_vline(xintercept = 0, linetype=2) +
+#   geom_pointrange(aes(xmin=Estimate - 1.96*Std..Error,
+#                     xmax=Estimate + 1.96*Std..Error),
+#                     position=position_dodge(width=-1)) +
+#   scale_color_viridis(option="mako", discrete=T, end = 0.8) +
+#   facet_grid(vars(taxonomic_scale), vars(locations), scale="free") +
+#   xlim(c(-1,1)) +
+#   theme_light()
+# 
+# ggsave(paste0("results/4_continuity/DWplotPERSO_MRM_beta_sd_envt_seadist_bdmean.png"),
+#        height = 10, width = 12, units = 'in', dpi = 300)
+# 
+# 
+# # metric by metric
+# for(metricSD in unique(MRMsd$response_variable)){
+#   MRMsub <-
+#     MRMsd %>%
+#     filter(response_variable == metricSD)
+# 
+#   ggplot(MRMsub, aes(x=Estimate,
+#                     y=explanatory_variable,
+#                     shape=community_delineation,
+#                     color=community_delineation)) +
+#     geom_vline(xintercept = 0, linetype=2) +
+#     geom_pointrange(aes(xmin=Estimate - 1.96*Std..Error,
+#                         xmax=Estimate + 1.96*Std..Error),
+#                     position=position_dodge(width=-0.5)) +
+#     scale_color_viridis(option="cividis", discrete=T, end = 0.8) +
+#     facet_grid(vars(taxonomic_scale), vars(locations), scale="free") +
+#     xlim(c(-1,1)) +
+#     theme_light() +
+#     ggtitle(metricSD)
+# 
+#   ggsave(paste0("results/4_continuity/DWplotPERSO_MRM_beta_sd_envt_seadist_", metricSD, "_bdmean.png"),
+#          height = 8, width = 12, units = 'in', dpi = 300)
+# 
+# }
+# 
+# 
+# 
+# # only taxonomy
+# comm_delin <- "taxonomy"
+# 
+# MRMsub <-
+#   MRMsd %>%
+#   filter(community_delineation == comm_delin)
+# 
+# MRMsub$response_variable <- 
+#   factor(MRMsub$response_variable,
+#          level = c("beta.jne", "beta.jac", "beta.jtu"))
+# 
+# ggplot(MRMsub, aes(x=Estimate,
+#                   y=explanatory_variable,
+#                   group=interaction(response_variable),
+#                   color=response_variable)) +
+#   geom_vline(xintercept = 0, linetype=2) +
+#   geom_pointrange(aes(xmin=Estimate - 1.96*Std..Error,
+#                       xmax=Estimate + 1.96*Std..Error),
+#                   position=position_dodge(width=-0.4)) +
+#   scale_color_manual(values = c("#0B0405FF", "#60CEACFF", "#395D9CFF"))+
+#   # scale_color_viridis(option="mako", discrete=T, end = 0.8) +
+#   facet_grid(vars(taxonomic_scale), vars(locations), scale="free") +
+#   xlim(c(-1,1)) +
+#   theme_light()
+# 
+# ggsave(paste0("results/4_continuity/DWplotPERSO2_MRM_beta_sd_envt_seadist_bdmean_", comm_delin, ".png"),
+#        height = 8, width = 10, units = 'in', dpi = 300)
+# 
+# 
+# 
+# 
+# 
+# 
+# 
+## *** Varapart computation ----
+## METHOD 1 computation
+# RDAabc <- vegan::capscale(dist_mat[[metricGD]] ~ ., data = cbind(dbMEM_seadist, PCA_envtaxis))
+# RDAac <- vegan::capscale(dist_mat[[metricGD]] ~ ., data = dbMEM_seadist)
+# RDAbc <- vegan::capscale(dist_mat[[metricGD]] ~ ., data = PCA_envtaxis)
+
+# abc <- RsquareAdj(RDAabc)$adj.r.squared # = a+b+c 
+# ac <- RsquareAdj(RDAac)$adj.r.squared   # = a+c seadist
+# bc <- RsquareAdj(RDAbc)$adj.r.squared   # = b+c environment
+# c <- ac + bc - abc  # covariance
+
+# a <- ac - c         # seadist
+# b <- bc - c         # environment

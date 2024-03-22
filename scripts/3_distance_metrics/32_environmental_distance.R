@@ -31,7 +31,6 @@ envt_layers <-
 
 
 # ---- add buffer around stations ----
-### !!!!!!!!!!! CHOOSE CORRECT BUFFER #############"
 vect_stations <-
   data_stations %>% 
   dplyr::select(site, station, Longitude_approx, Latitude_approx) %>% 
@@ -76,8 +75,7 @@ envt_site %>%
 # ---- scale data ----
 envt_site_scaled <-
   envt_site %>%
-  ### >>>>> CHECK IF LOG NEEDED (cf DiBattista et al. 2020) #################
-  mutate(across(where(is.numeric), log)) %>% 
+  # mutate(across(where(is.numeric), log)) %>%
   column_to_rownames("site") %>%
   scale() %>%
   as_tibble(rownames = NA) %>%
@@ -142,7 +140,7 @@ envt_layers_Pcrop <-
 
 
 ## plot
-pdf("results/3_distance_metrics/environmental_variables_bdmean_map.pdf", width = 8, height = 5)
+pdf("results/3_distance_metrics/environmental_variables_bdmean_map2.pdf", width = 8, height = 5)
 for(var in names(envt_layers_Pcrop)){
   # plot(envt_layers_Pcrop[[var]], col=my.colors(1000))
   # plot(vect_sites, add = T, col = "grey20")

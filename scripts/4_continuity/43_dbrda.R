@@ -54,19 +54,24 @@ coord_sites <-
   dplyr::select(-number_samples)
 
 # compute MEM
-dbMEM_inwater <- adespatial::dbmem(dist_mat$seadist, MEM.autocor = "non-null", store.listw = TRUE)
+dbMEM_inwater <- adespatial::dbmem(dist_mat$seadist, store.listw = TRUE) # MEM.autocor = "non-null",
 dbMEM.vectors.inwater <- as.data.frame(dbMEM_inwater)
 
 # Look at general output
 summary(dbMEM_inwater)
-dbmem <- as.data.frame(dbMEM_inwater)
+
+## >>>> MEM selection ----
+dbrda_GD0 <- vegan::capscale(dist_mat$Fst ~ 1, data = dbMEM_inwater) # null model, only intercept
+dbrda_GDgeo <- vegan::capscale(dist_mat$Fst ~ ., data = dbMEM_inwater)
+selGEO <- ordiR2step(dbrda_GD0, scope = formula(dbrda_GDgeo), direction="both") 
+selGEO$anova
+
+dbMEM_inwater
 
 ## euclidian dist MEM ----
 
 # library(adespatial)
 # library(SoDA)
-# 
-
 # 
 # # spatial coordinates to cartesian coordinates
 # coord_sites_cart <- SoDA::geoXY(data_sites$latitude, data_sites$longitude, unit=1000)
@@ -119,13 +124,12 @@ fviz_eig(envt_PCA)
 
 # ---- 3. Run RDA ----
 ## all variables ----
-# correlations between X axes
-# X = cbind(dbMEM_inwater[,1:3], envt_PCAaxis[,1:4])
-X = cbind(dbMEM_inwater[,1:2], envt_site_scaled[c(1,2,3,4,6)])
+X = cbind(dbMEM_inwater[,1:3], envt_PCAaxis[,1:4])
+# X = cbind(dbMEM_inwater[,1:2], envt_site_scaled[c(1,2,3,4,6)])
 
 # genetic IBD/IBE
 dbrda_GD0 <- vegan::capscale(dist_mat$Fst ~ 1, data = X) # null model, only intercept
-dbrda_GDgeo <- vegan::capscale(dist_mat$Fst ~ ., data = dbMEM_inwater)
+dbrda_GDgeo <- vegan::capscale(dist_mat$Fst ~ ., data = dbMEM_inwater[,1:5])
 dbrda_GDenv <- vegan::capscale(dist_mat$Fst ~ ., data = envt_PCAaxis)
 dbrda_GDall <- vegan::capscale(dist_mat$Fst ~ .,
                                data = X) # all variables
@@ -150,7 +154,7 @@ dbrda_GSDC <- vegan::capscale(dist_mat$Fst ~ ., data = pcoaSD$li)
 ## selection of explanatory variables ----
 
 ### anova ----
-selGD <- ordiR2step(dbrda_GD0, scope = formula(dbrda_GDall), direction="both") 
+selGD <- ordiR2step(dbrda_GD0, scope = formula(dbrda_GDgeo), direction="both") 
 selGD$anova
 
 selSD <- ordiR2step(dbrda_SD0, scope = formula(dbrda_SDall), direction="both") 
@@ -180,7 +184,7 @@ vif(dbrda_SDall)
 
 
 ## final models ----
-dbrda_GDfin <- vegan::capscale(dist_mat$Fst ~ MEM1 + BO2_dissoxmean_bdmean, data = X) # MEM 3
+dbrda_GDfin <- vegan::capscale(dist_mat$Fst ~ MEM1 + MEM3, data = X) # BO2_dissoxmean_bdmean
 RsquareAdj(dbrda_GDfin)
 anova(dbrda_GDfin)    
 
@@ -312,11 +316,12 @@ plot(dbrda_GSDCfin)
 
 
 # 5. Var decomp ----
-vpGD <- varpart(dist_mat$Fst, dbMEM_inwater[,1:2], envt_PCAaxis[,1:2])
+# 
+vpGD <- varpart(dist_mat$Fst, dbMEM_inwater[,c(1,3)], envt_PCAaxis[,1:2])
 vpGD
 plot(vpGD, bg = c(3, 5), Xnames = c("spatial", "environment"))
 
-vpSD <- varpart(dist_mat$Lutjanidae.beta.jtu, dbMEM_inwater[,1:2], envt_PCAaxis[,1:3])
+vpSD <- varpart(dist_mat$Lutjanidae.beta.jtu, dbMEM_inwater[,c(1)], envt_PCAaxis[,1:2])
 vpSD
 plot(vpSD, bg = c(3, 5), Xnames = c("spatial", "environment"))
 
