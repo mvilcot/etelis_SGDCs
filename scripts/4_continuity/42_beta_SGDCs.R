@@ -192,21 +192,6 @@ library(boot)
 metricGD = "Fst"
 
 # create empty table
-SGDC_beta <- tibble(community_delineation = NA,
-                    locations = NA,
-                    taxonomic_scale = NA,
-                    metricGD = NA,
-                    metricSD = NA,
-                    Mantel_r = NA,
-                    Mantel_rlwr = NA,
-                    Mantel_rupr = NA,
-                    Mantel_pval = NA,
-                    dbRDA_R2 = NA,
-                    dbRDA_adjR2 = NA,
-                    dbRDA_pval = NA,
-                    Pearson_r = NA,
-                    Pearson_pval = NA
-)
 
 # coeff_function <- function(formula, data, indices) {
 #   d <- data[indices,] #allows boot to select sample
@@ -215,6 +200,7 @@ SGDC_beta <- tibble(community_delineation = NA,
 # }
 library(ecodist)        # MRM
 
+SGDC_beta <- tibble()
 i=1 # initialisation
 for(comm_delin in comm_delin_list[1]) { #[1]
 
@@ -235,7 +221,7 @@ for(comm_delin in comm_delin_list[1]) { #[1]
 
         metricSDcomm <- paste(comm, metricSD, sep = ".")
 
-        ### MANTEL ----
+        ### Mantel ----
         sMantel <- vegan::mantel(dist_mat[[metricSDcomm]], dist_mat[[metricGD]], permutations = 9999)
         
         ## Get bootstraps on R²
@@ -256,42 +242,48 @@ for(comm_delin in comm_delin_list[1]) { #[1]
                                                   alternative = c("two.sided"), method = "pearson", 
                                                   num.sim = 9999)
         
+        
+        ### Procruste ----
+        sProtest <- vegan::protest(dist_merge[[metricGD]], dist_merge[[metricSDcomm]])
+        
+        
         ### dbRDA ----
-        pcoaSD <- prcomp(quasieuclid(dist_mat[[metricSDcomm]]))
-        # pcoaSD <- prcomp(dist_mat[[metricSDcomm]])
-        # factoextra::fviz_eig(pcoaSD)
-        
-
-        ## variable selection
-        # dbrda_SGDC0 <- vegan::capscale(dist_mat[[metricGD]] ~ 1, data = as.data.frame(pcoaSD$x[, 1:7]))
-        # dbrda_SGDCall <- vegan::capscale(dist_mat[[metricGD]] ~ ., data = as.data.frame(pcoaSD$x[, 1:7]))
-        # selSGDC <- ordistep(dbrda_SGDC0,
-        #                       scope = formula(dbrda_SGDCall),
-        #                       direction="both")
+        # pcoaSD <- prcomp(quasieuclid(dist_mat[[metricSDcomm]]))
+        # # # pcoaSD <- prcomp(dist_mat[[metricSDcomm]])
+        # # # factoextra::fviz_eig(pcoaSD)
+        # # ## variable selection
+        # # dbrda_SGDC0 <- vegan::capscale(dist_mat[[metricGD]] ~ 1, data = as.data.frame(pcoaSD$x[, 1:7]))
+        # # dbrda_SGDCall <- vegan::capscale(dist_mat[[metricGD]] ~ ., data = as.data.frame(pcoaSD$x[, 1:7]))
+        # # selSGDC <- ordistep(dbrda_SGDC0,
+        # #                       scope = formula(dbrda_SGDCall),
+        # #                       direction="both")
+        # # 
+        # # RsquareAdj(selSGDC) # rsquared RDA
+        # # anova.cca(selSGDC) # global signicativity of the RDA
         # 
-        # RsquareAdj(selSGDC) # rsquared RDA
-        # anova.cca(selSGDC) # global signicativity of the RDA
+        # dbrda_SGDCfin <- vegan::capscale(dist_mat[[metricGD]] ~ ., data = as.data.frame(pcoaSD$x[, 1:7]))
+        
+        
 
-        dbrda_SGDCfin <- vegan::capscale(dist_mat[[metricGD]] ~ ., data = as.data.frame(pcoaSD$x[, 1:7]))
+        ### Store results in table ----
+        SGDC_beta[i, "community_delineation"] <- comm_delin
+        SGDC_beta[i, "locations"] <- locations
+        SGDC_beta[i, "taxonomic_scale"] <- comm
+        SGDC_beta[i, "metricGD"] <- metricGD
+        SGDC_beta[i, "metricSD"] <- metricSD
+        SGDC_beta[i, "Mantel_r"] <- sMantel$statistic #sMantel3[1]
+        SGDC_beta[i, "Mantel_rlwr"] <- sMantel2$coefficients[2,1] - 1.96*sMantel2$coefficients[2,2] # or sMantel3[5]  # or boots_ci$bca[4] 
+        SGDC_beta[i, "Mantel_rupr"] <- sMantel2$coefficients[2,1] + 1.96*sMantel2$coefficients[2,2] # or sMantel3[6]  # orboots_ci$bca[5]
+        SGDC_beta[i, "Mantel_pval"] <- sMantel$signif #sMantel3[2] ##Ha: r>0
+        # SGDC_beta[i, "dbRDA_R2"] <- RsquareAdj(dbrda_SGDCfin)$r.squared #selSGDC
+        # SGDC_beta[i, "dbRDA_adjR2"] <- RsquareAdj(dbrda_SGDCfin)$adj.r.squared
+        # SGDC_beta[i, "dbRDA_pval"] <- anova.cca(dbrda_SGDCfin)[1,4]
+        SGDC_beta[i, "Pearson_r"] <- sPearson$estimate
+        SGDC_beta[i, "Pearson_pval"] <- sPearsonPERM$p.value
+        SGDC_beta[i, "Procruste_r"] <- sqrt(1-sProtest$ss)
+        SGDC_beta[i, "Procruste_pval"] <- sProtest$signif
         
-        
-        ### put in table ----
-        SGDC_beta[i,]$community_delineation <- comm_delin
-        SGDC_beta[i,]$locations <- locations
-        SGDC_beta[i,]$taxonomic_scale <- comm
-        SGDC_beta[i,]$metricGD <- metricGD
-        SGDC_beta[i,]$metricSD <- metricSD
-        SGDC_beta[i,]$Mantel_r <- sMantel$statistic #sMantel3[1]
-        SGDC_beta[i,]$Mantel_rlwr <- sMantel2$coefficients[2,1] - 1.96*sMantel2$coefficients[2,2] # or sMantel3[5]  # or boots_ci$bca[4] 
-        SGDC_beta[i,]$Mantel_rupr <- sMantel2$coefficients[2,1] + 1.96*sMantel2$coefficients[2,2] # or sMantel3[6]  # orboots_ci$bca[5]
-        SGDC_beta[i,]$Mantel_pval <- sMantel$signif #sMantel3[2] ##Ha: r>0
-        SGDC_beta[i,]$dbRDA_R2 <- RsquareAdj(dbrda_SGDCfin)$r.squared #selSGDC
-        SGDC_beta[i,]$dbRDA_adjR2 <- RsquareAdj(dbrda_SGDCfin)$adj.r.squared
-        SGDC_beta[i,]$dbRDA_pval <- anova.cca(dbrda_SGDCfin)[1,4]
-        SGDC_beta[i,]$Pearson_r <- sPearson$estimate #selSGDC
-        SGDC_beta[i,]$Pearson_pval <- sPearsonPERM$p.value
-        
-        cat(i, "\n")
+        cat(comm_delin, locations, comm, metricSD, "\n")
         i=i+1
       }
     }
@@ -302,15 +294,49 @@ for(comm_delin in comm_delin_list[1]) { #[1]
 SGDC_beta$Mantel_signif <- ifelse(SGDC_beta$Mantel_pval < 0.001, "***", 
                                   ifelse(SGDC_beta$Mantel_pval < 0.01, "**", 
                                          ifelse(SGDC_beta$Mantel_pval < 0.05, "*", "NS")))
-SGDC_beta$dbRDA_signif <- ifelse(SGDC_beta$dbRDA_pval < 0.001, "***", 
-                                 ifelse(SGDC_beta$dbRDA_pval < 0.01, "**", 
-                                        ifelse(SGDC_beta$dbRDA_pval < 0.05, "*", "NS")))
-SGDC_beta$Pearson_signif <- ifelse(SGDC_beta$Pearson_pval < 0.001, "***", 
-                                 ifelse(SGDC_beta$Pearson_pval < 0.01, "**", 
+# SGDC_beta$dbRDA_signif <- ifelse(SGDC_beta$dbRDA_pval < 0.001, "***",
+#                                  ifelse(SGDC_beta$dbRDA_pval < 0.01, "**",
+#                                         ifelse(SGDC_beta$dbRDA_pval < 0.05, "*", "NS")))
+SGDC_beta$Pearson_signif <- ifelse(SGDC_beta$Pearson_pval < 0.001, "***",
+                                 ifelse(SGDC_beta$Pearson_pval < 0.01, "**",
                                         ifelse(SGDC_beta$Pearson_pval < 0.05, "*", "NS")))
+SGDC_beta$Procruste_signif <- ifelse(SGDC_beta$Procruste_pval < 0.001, "***", 
+                                   ifelse(SGDC_beta$Procruste_pval < 0.01, "**", 
+                                          ifelse(SGDC_beta$Procruste_pval < 0.05, "*", "NS")))
+
+# plot(SGDC_beta$Mantel_r^2, SGDC_beta$Procruste_r^2)
+# cor.test(SGDC_beta$Mantel_r^2, SGDC_beta$Procruste_r^2)
+# 
+# temp <- 
+#   SGDC_beta %>% 
+#   filter(metricSD != "beta.jne") %>% 
+#   mutate(LABEL = paste(locations, taxonomic_scale, metricSD, sep = '-'))
+# gg <-
+#   ggplot(temp, aes(Mantel_pval, Procruste_pval, label = LABEL)) +
+#   geom_point() 
+# plotly::ggplotly(gg)
+# cor.test(temp$Mantel_pval, temp$Procruste_pval)
+
 
 SGDC_beta %>%
-  write_csv("results/4_continuity/beta_SGDCs_table_CIlm_dbRDA_Pearson_taxonomy_allPCoAaxis.csv")
+  write_csv("results/4_continuity/beta_SGDCs_table_CIlm_Pearson_Procruste_taxonomy.csv")
+
+# temp <- 
+#   SGDC_beta %>%
+#   dplyr::filter(metricSD != "beta.jne") %>% 
+#   mutate(Mantel_pval = paste(round(Mantel_pval, 3), Mantel_signif)) %>% 
+#   mutate(Procruste_pval = paste(round(Procruste_pval, 3), Procruste_signif)) %>% 
+#   mutate(Mantel_pval = gsub(" NS", "", Mantel_pval)) %>% 
+#   mutate(Procruste_pval = gsub(" NS", "", Procruste_pval)) %>% 
+#   dplyr::select(locations, metricGD, metricSD, taxonomic_scale, Mantel_r, Mantel_pval, Procruste_r, Procruste_pval) %>% 
+#   dplyr::arrange(locations, metricSD)
+# 
+# temp 
+# temp %>% 
+#   write_csv("results/4_continuity/_beta_SGDCs_table_CIlm_Pearson_Procruste_taxonomy.csv")
+
+
+
 
 
 ## plot one community delin ----
