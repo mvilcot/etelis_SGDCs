@@ -244,7 +244,7 @@ for(comm_delin in comm_delin_list[1]) { #[1]
         
         
         ### Procruste ----
-        sProtest <- vegan::protest(dist_merge[[metricGD]], dist_merge[[metricSDcomm]])
+        sProtest <- vegan::protest(dist_mat[[metricGD]], dist_mat[[metricSDcomm]])
         
         
         ### dbRDA ----
@@ -321,19 +321,19 @@ SGDC_beta$Procruste_signif <- ifelse(SGDC_beta$Procruste_pval < 0.001, "***",
 SGDC_beta %>%
   write_csv("results/4_continuity/beta_SGDCs_table_CIlm_Pearson_Procruste_taxonomy.csv")
 
-# temp <- 
+# temp <-
 #   SGDC_beta %>%
-#   dplyr::filter(metricSD != "beta.jne") %>% 
-#   mutate(Mantel_pval = paste(round(Mantel_pval, 3), Mantel_signif)) %>% 
-#   mutate(Procruste_pval = paste(round(Procruste_pval, 3), Procruste_signif)) %>% 
-#   mutate(Mantel_pval = gsub(" NS", "", Mantel_pval)) %>% 
-#   mutate(Procruste_pval = gsub(" NS", "", Procruste_pval)) %>% 
-#   dplyr::select(locations, metricGD, metricSD, taxonomic_scale, Mantel_r, Mantel_pval, Procruste_r, Procruste_pval) %>% 
+#   dplyr::filter(metricSD != "beta.jne") %>%
+#   mutate(Mantel_r = paste(round(Mantel_r, 3), Mantel_signif)) %>%
+#   mutate(Procruste_r = paste(round(Procruste_r, 3), Procruste_signif)) %>%
+#   mutate(Mantel_r = gsub(" NS", "", Mantel_r)) %>%
+#   mutate(Procruste_r = gsub(" NS", "", Procruste_r)) %>%
+#   dplyr::select(locations, metricGD, metricSD, taxonomic_scale, Mantel_r, Procruste_r) %>%
 #   dplyr::arrange(locations, metricSD)
 # 
-# temp 
-# temp %>% 
-#   write_csv("results/4_continuity/_beta_SGDCs_table_CIlm_Pearson_Procruste_taxonomy.csv")
+# temp
+# temp %>%
+#   write_csv("results/4_continuity/_beta_SGDCs_table_Mantel_Procruste.csv")
 
 
 
