@@ -1,4 +1,5 @@
 library(tidyverse)
+library(ggridges)
 
 # Read data ----
 data_traits <- read_csv("data/traits_Luiz_et_al_2013.csv")
@@ -42,7 +43,6 @@ data_traits %>%
 
 
 # Density by family ----
-library(ggridges)
 data_traits %>% 
   filter(Order == "Eupercaria/misc") %>%
   ggplot(aes(MeanPLD_days, Family)) + 
@@ -145,28 +145,54 @@ data0_scales <-
         data3_Subfam,
         data4_Subfam) %>% 
   dplyr::select(Species, MeanPLD_days, Scale) %>% 
-  mutate(Scale = factor(Scale, levels = c("Etelinae", "Lutjanidae", "Eupercaria/misc", "Teleostei")))
+  mutate(Scale = gsub("/misc", "", Scale)) %>% 
+  mutate(Scale = factor(Scale, levels = c("Etelinae", "Lutjanidae", "Eupercaria", "Teleostei")))
 
-data0_scales %>% 
-  ggplot(aes(MeanPLD_days, Scale)) +
-  geom_density_ridges(quantile_lines = FALSE, quantiles = 0.5,
-                      jittered_points = TRUE,
-                      position = position_points_jitter(width = 0.05, height = 0),
-                      point_shape = '|', point_size = 3, point_alpha = 1, alpha = 0.7) +
-  xlab("") +
-  coord_flip() +
-  theme_light()
+# data0_scales %>% 
+#   ggplot(aes(MeanPLD_days, Scale)) +
+#   geom_density_ridges(quantile_lines = FALSE, quantiles = 0.5,
+#                       jittered_points = TRUE,
+#                       position = position_points_jitter(width = 0.05, height = 0),
+#                       point_shape = '|', point_size = 3, point_alpha = 1, alpha = 0.7) +
+#   xlab("") +
+#   coord_flip() +
+#   theme_light()
+# Statistics ----
+pldSUMMARY <- 
+  data0_scales %>% 
+  group_by(Scale) %>% 
+  summarise(n = n(),
+            mean_PLD = mean(MeanPLD_days),
+            sd_PLD = sd(MeanPLD_days))
 
-data0_scales %>% 
+pldSUMMARY %>% write_csv("results/2_species_diversity/Functional_diversity_by_community_PLD.csv")
+
+
+
+
+
+### {FIGURE 3} ####
+temp <- 
+  data0_scales %>% 
+  left_join(pldSUMMARY, by = "Scale") %>% 
+  mutate(Scale = paste0(Scale, "\n", "(n=", n, ")")) 
+
+temp <- 
+  temp %>%
+  mutate(Scale = factor(Scale, levels = rev(unique(TEST$Scale))))
+         
+temp %>% 
   ggplot(aes(Scale, MeanPLD_days)) +
   geom_violin(fill = "grey50", color = "grey50") +
   geom_boxplot(width=0.1) +
-  # geom_hline(yintercept = 45, color = "orange") +
-  xlab("") +
+  geom_hline(yintercept = 45, color = "darkorange", linetype = 2) +
+  xlab("") + ylab("PLD (days)") +
   theme_light()
 
-ggsave("results/2_species_diversity/_Sx_Functional_diversity_by_community_PLD.png", 
-       width = 6, height = 5, dpi = 500)
+ggsave("results/2_species_diversity/_3_Functional_diversity_by_community_PLD.png", 
+       width = 4, height = 4, dpi = 500)
+ggsave("results/2_species_diversity/_3_Functional_diversity_by_community_PLD.pdf", 
+       width = 4, height = 4)
 
 
 # TESTS STATS ----
@@ -176,6 +202,15 @@ data2_scales <-
 
 # Homogénéité des variances
 bartlett.test(data2_scales$MeanPLD_days, data2_scales$Scale)
+
+library(car)
+leveneTest(MeanPLD_days ~ Scale, data = data2_scales)
+fligner.test(MeanPLD_days ~ Scale, data = data2_scales)
+
+leveneTest(MeanPLD_days ~ Scale, data = data0_scales %>% filter(Scale %in% c("Teleostei", "Eupercaria")))
+leveneTest(MeanPLD_days ~ Scale, data = data0_scales %>% filter(Scale %in% c("Teleostei", "Lutjanidae")))
+leveneTest(MeanPLD_days ~ Scale, data = data0_scales %>% filter(Scale %in% c("Eupercaria", "Lutjanidae")))
+
 
 # ANOVA
 model <- lm(data2_scales$MeanPLD_days ~ data2_scales$Scale)
@@ -192,17 +227,6 @@ plot(hsd)
 
 
 
-
-
-# Statistics ----
-SUMMARY <- 
-  data0_scales %>% 
-  group_by(Scale) %>% 
-  summarise(n = n(),
-            mean_PLD = mean(MeanPLD_days),
-            sd_PLD = sd(MeanPLD_days))
-
-SUMMARY %>% write_csv("results/2_species_diversity/Functional_diversity_by_community_PLD.csv")
 
 
 

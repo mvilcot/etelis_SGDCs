@@ -83,7 +83,6 @@ ggplot(gd_alpha, aes(x=popFst.WG, y=Hs, color = .data[[level]])) +
   xlab('site-specific Fst') +
   theme_light()
 
-## {FIGURE 2} ####
 ggsave(paste0("results/1_genetic_diversity/_2_plot_Hs_Fst_pop_specific_", level, "_light.png"),
        width = 6, height = 4, dpi = 500)
 ggsave(paste0("results/1_genetic_diversity/_2_plot_Hs_Fst_pop_specific_", level, "_light.pdf"),

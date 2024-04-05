@@ -210,7 +210,7 @@ gg_structure2
 
 
 
-## {FIGURE 3} ####
+## {FIGURE 2} ####
 
 gg <- 
   gg_dapc1 + gg_dapc2 + 
@@ -219,10 +219,10 @@ gg <-
   plot_annotation(tag_levels = 'a', tag_prefix = '(', tag_suffix = ')')
 gg
 
-ggsave(paste0("results/1_genetic_diversity/_3_DAPC_STRUCTURE.png"),
+ggsave(paste0("results/1_genetic_diversity/_2_DAPC_STRUCTURE.png"),
        gg, 
        height = 8, width = 14, dpi = 500)
-ggsave(paste0("results/1_genetic_diversity/_3_DAPC_STRUCTURE.pdf"),
+ggsave(paste0("results/1_genetic_diversity/_2_DAPC_STRUCTURE.pdf"),
        gg, 
        height = 8, width = 14)
 

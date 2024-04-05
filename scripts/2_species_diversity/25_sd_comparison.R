@@ -7,6 +7,7 @@ comm_delin = "taxonomy"
 # comm_delin = "taxonomy_depth3_within45-400m"
 # comm_delin = "taxonomy_env_reef-associated"
 list_communities <- readRDS(paste0("intermediate/2_species_diversity/List_community_", comm_delin, ".RDS"))
+names_communities <- c("Etelinae", "Lutjanidae", "Eupercaria", "Teleostei")
 
 # parameters
 comm = names(list_communities)[2]
@@ -132,5 +133,40 @@ ggsave(paste0("results/2_species_diversity/_S4_alpha_sd_richness_longitude_site.
 ## richness ~ dist to CT ----
 ### !!!!!!!! TO DO !!!!!!!!!!!!!!!! ----
 
+
+# Violin plots by community ----
+## alpha ----
+sd_alpha <- 
+  sd_alpha %>% 
+  mutate(site = factor(site, levels = levels(data_sites$site))) %>% 
+  mutate(community = gsub("/misc", "", community)) %>% 
+  mutate(community = factor(community, levels = names_communities)) %>% 
+  arrange(community, site)
+
+sd_alpha %>% 
+  ggplot(aes(community, richness_site)) +
+  geom_violin(fill = "grey50", color = "grey50") +
+  geom_boxplot(width=0.1) +
+  # geom_hline(yintercept = 45, color = "orange") +
+  xlab("") + ylab('α-diversity') +
+  theme_light()
+
+## beta ----
+temp_beta <- 
+  dist_merge %>% 
+  dplyr::select(-c(Fst, GstPP.hed, D.Jost, jtu, jac, jne)) %>% 
+  pivot_longer(cols = -c(site, site1, site2, geodist, seadist, environment), 
+               names_to = "variable") %>% 
+  separate(variable, c("community", "drop", "variable"), sep = "\\.") %>% 
+  mutate(variable = paste0("β-", variable)) %>% 
+  dplyr::filter(variable != "β-jne")
+
+temp_beta %>% 
+  ggplot(aes(community, value, fill = variable)) +
+  geom_violin() +
+  geom_boxplot(width=0.1) +
+  # geom_hline(yintercept = 45, color = "orange") +
+  xlab("") + ylab('β-diversity') +
+  theme_light()
 
 
