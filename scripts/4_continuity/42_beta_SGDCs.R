@@ -27,12 +27,6 @@ envt_site <-
   read_csv("intermediate/3_distance_metrics/bio_oracle_variables_bdmean_stationbuffer_siteaverage.csv") # %>%
 
 
-## subset sites ----
-if (sites == "noSeychelles"){
-  dist_mat <- lapply(dist_mat, function(x) mat.subset(x, "Seychelles"))
-  dist_merge <- mat.subset(dist_merge, "Seychelles")
-}
-
 
 
 # ---- 0. check assumptions ----
@@ -55,11 +49,13 @@ qqnorm(dist_mat[[metricGD]])
 
 
 # ---- 1. IBD and IBE ----
+## a. IBD ----
 metricGD <- "Fst"
 metricSDs <- paste(names_communities, "beta.jtu", sep = ".")
 metricDIST <- 'seadist' #'environment'
 
 gg_list <- list()
+IBD_table <- tibble()
 i=1
 
 library(lmPerm)
@@ -85,8 +81,13 @@ for (metricDIV in c(metricGD, metricSDs)){
     ## Mantel
     sMantel <- vegan::mantel(dist_matSUB[[metricDIV]], dist_matSUB[[metricDIST]], permutations = 9999)
 
-    if(metricDIST == 'seadist') color_x <- "#3182BD"
-    if(metricDIST == 'environment') color_x <- "#31A354"
+    ## Procruste
+    sProtest <- vegan::protest(dist_matSUB[[metricDIV]], dist_matSUB[[metricDIST]], permutations = 9999)
+    sProtest
+    
+    ## PLOT
+    # color
+    color_x <- "#3182BD"
     if(metricDIV %in% metricGD) color_y <- "#F69C73FF" # rocket
     if(metricDIV %in% metricSDs) color_y <- "#395D9CFF" # mako
     
@@ -96,8 +97,8 @@ for (metricDIV in c(metricGD, metricSDs)){
         temp <- str_split_1(metricLAB, '[.]')
       metricLAB <- paste0(temp[2], ' (', temp[1], ')')
     }
-
     
+    # plot linear model if significant
     if(sMantel$signif < 0.05){
       gg_list[[i]] <-
         ggplot(dist_mergeSUB, aes(.data[[metricDIST]], .data[[metricDIV]])) + #, color = Seychelles
@@ -109,14 +110,15 @@ for (metricDIV in c(metricGD, metricSDs)){
                  hjust = 0, vjust = 1,
                  label=paste0("r = ", sprintf("%.3f", sMantel$statistic), "\np = ", sMantel$signif)) +
         theme_light() +
-        ylab(metricLAB) +
+        ylab(metricLAB) + xlab('Distance by sea') +
         theme(
           axis.title.x = element_text(colour = color_x),
           # axis.title.y = element_text(colour = color_y)
         )
     }
     
-    if(sMantel$signif > 0.05){
+    # no linear model if not significant
+    if(sMantel$signif > 0.05 | (locations == "allsites" & metricDIV == "Fst")){
       gg_list[[i]] <-
         ggplot(dist_mergeSUB, aes(.data[[metricDIST]], .data[[metricDIV]], shape = Seychelles)) + #
         geom_point(aes(shape = Seychelles), show.legend = F, color = color_y) +
@@ -126,29 +128,182 @@ for (metricDIV in c(metricGD, metricSDs)){
                  hjust = 0, vjust = 1,
                  label=paste0("r = ", sprintf("%.3f", sMantel$statistic), "\np = ", sMantel$signif)) +
         theme_light() +
-        ylab(metricLAB) +
+        ylab(metricLAB) + xlab('Distance by sea') +
         theme(
           axis.title.x = element_text(colour = color_x),
           # axis.title.y = element_text(colour = color_y)
         )
     }
     
+    IBD_table <- 
+      IBD_table %>% 
+      rbind(tibble(locations = locations,
+                   metric = metricDIV,
+                   isolation_by = metricDIST,
+                   Mantel_r = sMantel$statistic,
+                   Mantel_pval = sMantel$signif,
+                   Procruste_r = sqrt(1-sProtest$ss),
+                   Procruste_pval = sProtest$signif))
+    
     i = i+1
   }
 }
 
 
-### {FIGURES S7 and S8} ####
-
+### {FIGURE S7} ####
 gg_grob <-
   patchwork::wrap_plots(gg_list, ncol = 2, tag_level = "new") +
   plot_annotation(tag_level = "a", tag_prefix = "(", tag_suffix = ")")
 plot(gg_grob)
+
 ggsave(gg_grob, width = 10, height = 15, dpi = 500,
-       filename = paste0("results/4_continuity/_S7_isolation_by_", metricDIST, "_", comm_delin, ".png"))
+       filename = paste0("results/4_continuity/_S7_isolation_by_", metricDIST, "_", comm_delin, "_2.png"))
+
+
+### {TABLE Sx} ####
+IBD_table$Mantel_signif <- ifelse(IBD_table$Mantel_pval < 0.001, "***", 
+                                  ifelse(IBD_table$Mantel_pval < 0.01, "**", 
+                                         ifelse(IBD_table$Mantel_pval < 0.05, "*", "NS")))
+IBD_table$Procruste_signif <- ifelse(IBD_table$Procruste_pval < 0.001, "***", 
+                                     ifelse(IBD_table$Procruste_pval < 0.01, "**", 
+                                            ifelse(IBD_table$Procruste_pval < 0.05, "*", "NS")))
+IBD_table <-
+  IBD_table %>%
+  mutate(Mantel_r = paste(round(Mantel_r, 3), Mantel_signif)) %>%
+  mutate(Procruste_r = paste(round(Procruste_r, 3), Procruste_signif)) %>%
+  mutate(Mantel_r = gsub(" NS", "", Mantel_r)) %>%
+  mutate(Procruste_r = gsub(" NS", "", Procruste_r)) %>%
+  dplyr::select(-c(Mantel_pval, Procruste_pval, Mantel_signif, Procruste_signif)) %>%
+  dplyr::arrange(locations)
+
+write_csv(IBD_table, paste0("results/4_continuity/_Sx_isolation_by_", metricDIST, "_", comm_delin, ".csv"))
 
 
 
+## b. IBE ----
+metricGD <- "Fst"
+metricSDs <- paste(names_communities, "beta.jtu", sep = ".")
+metricDIST <- 'environment'
+
+gg_list <- list()
+IBE_table <- tibble()
+i=1
+
+for (metricDIV in c(metricGD, metricSDs)){
+  for (locations in c("allsites", "noSeychelles")){
+    
+    ## get locations
+    dist_mergeSUB <- dist_merge
+    dist_matSUB <- dist_mat
+    if(locations == "noSeychelles"){
+      dist_mergeSUB <- mat.subset(dist_merge, "Seychelles")
+      dist_matSUB <- lapply(dist_mat, function(x) mat.subset(x, "Seychelles"))
+    }
+    
+    ## add Seychelles color
+    dist_mergeSUB$Seychelles <- "No"
+    dist_mergeSUB[grep("Seychelles", dist_mergeSUB$site),]$Seychelles <- "Yes"
+    
+    
+    ## Mantel
+    sMantel <- vegan::mantel(dist_matSUB[[metricDIV]], dist_matSUB[[metricDIST]], permutations = 9999)
+    
+    ## Procruste
+    sProtest <- vegan::protest(dist_matSUB[[metricDIV]], dist_matSUB[[metricDIST]], permutations = 9999)
+    sProtest
+    
+    ## PLOT
+    # color
+    color_x <- "#31A354"
+    if(metricDIV %in% metricGD) color_y <- "#F69C73FF" # rocket
+    if(metricDIV %in% metricSDs) color_y <- "#395D9CFF" # mako
+    
+    # proper beta and families
+    metricLAB <- gsub('beta.', 'β', metricDIV)
+    if(metricDIV %in% metricSDs){
+      temp <- str_split_1(metricLAB, '[.]')
+      metricLAB <- paste0(temp[2], ' (', temp[1], ')')
+    }
+    
+    # plot linear model if significant
+    if(sMantel$signif < 0.05){
+      gg_list[[i]] <-
+        ggplot(dist_mergeSUB, aes(.data[[metricDIST]], .data[[metricDIV]])) + #, color = Seychelles
+        geom_smooth(method = "lm", color = "grey50", se = F) +
+        geom_point(aes(shape = Seychelles), show.legend = F, color = color_y) +
+        scale_shape_manual(values = c(19, 1)) +
+        annotate('text',
+                 x=min(dist_mergeSUB[[metricDIST]]), y=max(dist_mergeSUB[[metricDIV]]),
+                 hjust = 0, vjust = 1,
+                 label=paste0("r = ", sprintf("%.3f", sMantel$statistic), "\np = ", sMantel$signif)) +
+        theme_light() +
+        ylab(metricLAB) + xlab('Environmental distance') +
+        theme(
+          axis.title.x = element_text(colour = color_x),
+          # axis.title.y = element_text(colour = color_y)
+        )
+    }
+    
+    # no linear model if not significant
+    if(sMantel$signif > 0.05 | (locations == "allsites" & metricDIV == "Fst")){
+      gg_list[[i]] <-
+        ggplot(dist_mergeSUB, aes(.data[[metricDIST]], .data[[metricDIV]], shape = Seychelles)) + #
+        geom_point(aes(shape = Seychelles), show.legend = F, color = color_y) +
+        scale_shape_manual(values = c(19, 1)) +
+        annotate('text',
+                 x=min(dist_mergeSUB[[metricDIST]]), y=max(dist_mergeSUB[[metricDIV]]),
+                 hjust = 0, vjust = 1,
+                 label=paste0("r = ", sprintf("%.3f", sMantel$statistic), "\np = ", sMantel$signif)) +
+        theme_light() +
+        ylab(metricLAB) + xlab('Environmental distance') +
+        theme(
+          axis.title.x = element_text(colour = color_x),
+          # axis.title.y = element_text(colour = color_y)
+        )
+    }
+    
+    IBE_table <- 
+      IBE_table %>% 
+      rbind(tibble(locations = locations,
+                   metric = metricDIV,
+                   isolation_by = metricDIST,
+                   Mantel_r = sMantel$statistic,
+                   Mantel_pval = sMantel$signif,
+                   Procruste_r = sqrt(1-sProtest$ss),
+                   Procruste_pval = sProtest$signif))
+    
+    i = i+1
+  }
+}
+
+
+### {FIGURE S8} ####
+gg_grob <-
+  patchwork::wrap_plots(gg_list, ncol = 2, tag_level = "new") +
+  plot_annotation(tag_level = "a", tag_prefix = "(", tag_suffix = ")")
+plot(gg_grob)
+
+ggsave(gg_grob, width = 10, height = 15, dpi = 500,
+       filename = paste0("results/4_continuity/_S8_isolation_by_", metricDIST, "_", comm_delin, "_2.png"))
+
+
+### {TABLE Sx} ####
+IBE_table$Mantel_signif <- ifelse(IBE_table$Mantel_pval < 0.001, "***", 
+                                  ifelse(IBE_table$Mantel_pval < 0.01, "**", 
+                                         ifelse(IBE_table$Mantel_pval < 0.05, "*", "NS")))
+IBE_table$Procruste_signif <- ifelse(IBE_table$Procruste_pval < 0.001, "***", 
+                                     ifelse(IBE_table$Procruste_pval < 0.01, "**", 
+                                            ifelse(IBE_table$Procruste_pval < 0.05, "*", "NS")))
+IBE_table <-
+  IBE_table %>%
+  mutate(Mantel_r = paste(round(Mantel_r, 3), Mantel_signif)) %>%
+  mutate(Procruste_r = paste(round(Procruste_r, 3), Procruste_signif)) %>%
+  mutate(Mantel_r = gsub(" NS", "", Mantel_r)) %>%
+  mutate(Procruste_r = gsub(" NS", "", Procruste_r)) %>%
+  dplyr::select(-c(Mantel_pval, Procruste_pval, Mantel_signif, Procruste_signif)) %>%
+  dplyr::arrange(locations)
+
+write_csv(IBE_table, paste0("results/4_continuity/_Sx_isolation_by_", metricDIST, "_", comm_delin, ".csv"))
 
 
 
@@ -288,19 +443,19 @@ SGDC_beta$Procruste_signif <- ifelse(SGDC_beta$Procruste_pval < 0.001, "***",
 SGDC_beta %>%
   write_csv("results/4_continuity/beta_SGDCs_table_CIlm_Pearson_Procruste_taxonomy.csv")
 
-# temp <-
-#   SGDC_beta %>%
-#   dplyr::filter(metricSD != "beta.jne") %>%
-#   mutate(Mantel_r = paste(round(Mantel_r, 3), Mantel_signif)) %>%
-#   mutate(Procruste_r = paste(round(Procruste_r, 3), Procruste_signif)) %>%
-#   mutate(Mantel_r = gsub(" NS", "", Mantel_r)) %>%
-#   mutate(Procruste_r = gsub(" NS", "", Procruste_r)) %>%
-#   dplyr::select(locations, metricGD, metricSD, taxonomic_scale, Mantel_r, Procruste_r) %>%
-#   dplyr::arrange(locations, metricSD)
-# 
-# temp
-# temp %>%
-#   write_csv("results/4_continuity/_beta_SGDCs_table_Mantel_Procruste.csv")
+temp <-
+  SGDC_beta %>%
+  dplyr::filter(metricSD != "beta.jne") %>%
+  mutate(Mantel_r = paste(round(Mantel_r, 3), Mantel_signif)) %>%
+  mutate(Procruste_r = paste(round(Procruste_r, 3), Procruste_signif)) %>%
+  mutate(Mantel_r = gsub(" NS", "", Mantel_r)) %>%
+  mutate(Procruste_r = gsub(" NS", "", Procruste_r)) %>%
+  dplyr::select(locations, metricGD, metricSD, taxonomic_scale, Mantel_r, Procruste_r) %>%
+  dplyr::arrange(locations, metricSD)
+
+temp
+temp %>%
+  write_csv("results/4_continuity/_beta_SGDCs_table_Mantel_Procruste.csv")
 
 
 
@@ -638,6 +793,8 @@ for (locations in c("All sites", "Without Seychelles")){
     
     ### c. best model table ----
     X = cbind(dbMEM_seadist, PCA_envtaxis)
+    ade4::s.value(dfxy = coord_sites, z = X[, c("MEM1")])
+    
     dbrda_GD0 <- vegan::capscale(dist_mat[[metricGD]] ~ 1, data = X) # null model, only intercept
     dbrda_GDall <- vegan::capscale(dist_mat[[metricGD]] ~ ., data = X)
     

@@ -174,14 +174,15 @@ dev.off()
 #   dplyr::select(-c(x, y, longitude, latitude))
 
 envt_var <- 
-  envt_site_scaled %>% 
+  envt_site %>% 
   column_to_rownames("site")
 
 library(corrplot)
 corrplot(cor(envt_var))
 
 # run pca
-pca_env <- dudi.pca(df = envt_var, scannf = FALSE, nf = 5)
+
+pca_env <- dudi.pca(df = envt_var, scannf = F, nf = 5)
 pca_env$li %>%
   rownames_to_column("site") %>%
   write_csv("intermediate/3_distance_metrics/PCA_environment_axis_site.csv")
@@ -202,17 +203,21 @@ labels <- c(glue("PC1 ({pretty_pe[1]}%)"),
             glue("PC2 ({pretty_pe[2]}%)"))
 
 # plot
+LABELS <- gsub("_", " ", rownames(pca_env$li))
+LABELS <- gsub('W Australia', 'Western Australia', LABELS)
 gg <-
   ggplot(pca_env$li, aes(x=Axis1, y=Axis2, color=rownames(pca_env$li))) +
   geom_point() +
   labs(x=labels[1], y=labels[2]) +
-  ggrepel::geom_text_repel(label = rownames(pca_env$li)) +
+  ggrepel::geom_text_repel(label = LABELS) +
   scale_color_manual(values = color_perso) +
   theme_light() +
   theme(legend.position="none")
-ggsave("results/3_distance_metrics/PCA_environmental_variables_bdmean_scaled.png",
+gg
+
+ggsave("results/3_distance_metrics/_PCA_environmental_variables_bdmean_absolute.png",
        gg,
-       height = 7, width = 7, units = "in", dpi = 300)
+       height = 5.5, width = 6, units = "in", dpi = 300)
 
 
 # # eigenvalues

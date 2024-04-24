@@ -130,43 +130,53 @@ ggsave(paste0("results/2_species_diversity/_S4_alpha_sd_richness_longitude_site.
        width = 10, height = 3.5, dpi = 500)
 
 
-## richness ~ dist to CT ----
-### !!!!!!!! TO DO !!!!!!!!!!!!!!!! ----
+
+
 
 
 # Violin plots by community ----
 ## alpha ----
-sd_alpha <- 
+gga <-
   sd_alpha %>% 
   mutate(site = factor(site, levels = levels(data_sites$site))) %>% 
   mutate(community = gsub("/misc", "", community)) %>% 
   mutate(community = factor(community, levels = names_communities)) %>% 
-  arrange(community, site)
-
-sd_alpha %>% 
   ggplot(aes(community, richness_site)) +
-  geom_violin(fill = "grey50", color = "grey50") +
+  geom_violin(fill = "grey50", color = "grey50", scale = "width") +
   geom_boxplot(width=0.1) +
   # geom_hline(yintercept = 45, color = "orange") +
-  xlab("") + ylab('α-diversity') +
+  xlab("") + ylab('α-diversity (species richness by site)') +
   theme_light()
 
+
+
 ## beta ----
-temp_beta <- 
+ggb <-
   dist_merge %>% 
   dplyr::select(-c(Fst, GstPP.hed, D.Jost, jtu, jac, jne)) %>% 
   pivot_longer(cols = -c(site, site1, site2, geodist, seadist, environment), 
                names_to = "variable") %>% 
   separate(variable, c("community", "drop", "variable"), sep = "\\.") %>% 
+  mutate(community = factor(community, levels = names_communities)) %>% 
   mutate(variable = paste0("β-", variable)) %>% 
-  dplyr::filter(variable != "β-jne")
+  dplyr::filter(variable != "β-jne") %>% 
+  ggplot(aes(community, value)) +
+  geom_violin(aes(fill = variable), color = NA, scale = "width", position = position_dodge(0.8)) +
+  geom_boxplot(aes(color = variable), width=0.1, position = position_dodge(0.8)) +
+  scale_color_manual(values = c("grey20", "grey")) +
+  scale_fill_manual(values = c("grey", "grey20")) +
+  theme_light() +
+  # theme(legend.position = "none") +
+  xlab("") + ylab('β-diversity (between pairs of sites)')
+  
 
-temp_beta %>% 
-  ggplot(aes(community, value, fill = variable)) +
-  geom_violin() +
-  geom_boxplot(width=0.1) +
-  # geom_hline(yintercept = 45, color = "orange") +
-  xlab("") + ylab('β-diversity') +
-  theme_light()
+ggall <- 
+  gga / ggb +
+  plot_annotation(tag_level = "a", tag_prefix = "(", tag_suffix = ")")
+ggall
 
+ggsave(ggall, width = 7, height = 9, dpi = 500,
+       filename = paste0("results/2_species_diversity/_Sx_violin_plot_alpha_beta_SD_by_site.png"))
+ggsave(ggall, width = 7, height = 9, 
+       filename = paste0("results/2_species_diversity/_Sx_violin_plot_alpha_beta_SD_by_site.pdf"))
 
