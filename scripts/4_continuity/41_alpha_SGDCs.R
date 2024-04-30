@@ -3,13 +3,7 @@
 level = "site"
 
 # communtity delineation
-comm_delin_list <-
-  c("taxonomy",
-    "taxonomy_depth1_crosses45-400m",
-    "taxonomy_depth2_contains45-400m",
-    "taxonomy_depth3_within45-400m",
-    "taxonomy_env_reef-associated")
-comm_delin <- comm_delin_list[1]
+comm_delin <- "taxonomy"
 
 list_communities <- readRDS(paste0("intermediate/2_species_diversity/List_community_", comm_delin, ".RDS"))
 names_communities <- c("Etelinae", "Lutjanidae", "Eupercaria", "Teleostei")
@@ -20,8 +14,8 @@ metricGD = "Hs"
 
 
 
-
-# ---- table ----
+# ---- alpha-SGDC ----
+## table ----
 i=1
 metricGD = "Hs"
 SGDC_alpha <- tibble(community_delineation = NA,
@@ -33,35 +27,32 @@ SGDC_alpha <- tibble(community_delineation = NA,
                      pval = NA
 )
 
-for(comm_delin in comm_delin_list) {
-  
-  alpha_merge <- read_csv(paste0("results/3_distance_metrics/alpha_diversity_", comm_delin, ".csv"))
-  
-  for (locations in c("all sites", "without Seychelles")){
-    
-    if(locations == "without Seychelles"){
-      alpha_sub <- filter(alpha_merge, site != "Seychelles")
-    }
-    alpha_sub <- alpha_merge
+alpha_merge <- read_csv(paste0("results/3_distance_metrics/alpha_diversity_", comm_delin, ".csv"))
 
+for (locations in c("all sites", "without Seychelles")){
+  
+  if(locations == "without Seychelles"){
+    alpha_sub <- filter(alpha_merge, site != "Seychelles")
+  }
+  alpha_sub <- alpha_merge
+  
+  
+  for (metricSD in names_communities){
     
-    for (metricSD in names_communities){
+    # corr
+    stat_pearson <- cor.test(alpha_sub[[metricGD]], alpha_sub[[metricSD]])
     
-        # corr
-        stat_pearson <- cor.test(alpha_sub[[metricGD]], alpha_sub[[metricSD]])
-        
-        SGDC_alpha[i,]$community_delineation <- comm_delin
-        SGDC_alpha[i,]$locations <- locations
-        SGDC_alpha[i,]$taxonomic_scale <- metricSD
-        SGDC_alpha[i,]$metricGD <- metricGD
-        SGDC_alpha[i,]$metricSD <- "species richness"
-        SGDC_alpha[i,]$r <- stat_pearson$estimate
-        SGDC_alpha[i,]$pval <- stat_pearson$p.value
-        
-        cat(i, "\n")
-        i=i+1
+    SGDC_alpha[i,]$community_delineation <- comm_delin
+    SGDC_alpha[i,]$locations <- locations
+    SGDC_alpha[i,]$taxonomic_scale <- metricSD
+    SGDC_alpha[i,]$metricGD <- metricGD
+    SGDC_alpha[i,]$metricSD <- "species richness"
+    SGDC_alpha[i,]$r <- stat_pearson$estimate
+    SGDC_alpha[i,]$pval <- stat_pearson$p.value
     
-    }
+    cat(i, "\n")
+    i=i+1
+    
   }
 }
 
@@ -76,8 +67,7 @@ SGDC_alpha %>%
 
 
 
-# ---- plot ----
-comm_delin <- comm_delin_list[1]
+## plot ----
 alpha_merge <- read_csv(paste0("results/3_distance_metrics/alpha_diversity_", comm_delin, ".csv"))
 alpha_merge$site <- factor(alpha_merge$site,
                            level = unique(alpha_merge$site))
@@ -87,11 +77,8 @@ for (comm in names_communities){
   # filter Seychelles
   alpha_sub <- filter(alpha_merge, site != "Seychelles")
   LABELS_sub <- LABELS[-1]
-  # alpha_sub <- alpha_merge
-  # LABELS_sub <- LABELS
   
   # corr
-  # stat_pearson <- summary(lm(alpha_sub[[metricGD]] ~ alpha_sub[[metricSD]]))
   stat_pearson <- cor.test(alpha_sub[[comm]], alpha_sub[[metricGD]])
   
   # plot
@@ -100,7 +87,6 @@ for (comm in names_communities){
            aes(.data[[comm]], .data[[metricGD]], 
                color = .data[[level]], label = .data[[level]])) +
     geom_point(size = 3, alpha = 0.7) +
-    # geom_text_repel(bg.color = "grey70", bg.r = 0.02, max.overlaps = 0.5, show.legend = F) +
     xlab(paste0("species richness (", comm, ")")) +
     scale_color_manual('', values = color_perso, labels = LABELS_sub) +
     annotate('text', 
@@ -108,18 +94,16 @@ for (comm in names_communities){
              hjust = 0, vjust = 1,
              label=paste0("r = ", round(stat_pearson$estimate, 3), "\np = ", round(stat_pearson$p.value, 3))) +
     theme_light()
-    # theme(legend.position = "none")
-  
   
 }
 
-### {FIGURE S6} ####
+### {FIGURE S7} ####
 gg_grob <-
   patchwork::wrap_plots(gg_list, tag_level = "new", guides = "collect") +
   plot_annotation(tag_level = "a", tag_prefix = "(", tag_suffix = ")")
 plot(gg_grob)
 ggsave(gg_grob, width = 9, height = 7, dpi = 500,
-       filename = paste0("results/4_continuity/_S6_alpha_SGDCs_noSeychelles_plot_", comm_delin, ".png"))
+       filename = paste0("results/4_continuity/_S7_alpha_SGDCs_noSeychelles_plot_", comm_delin, ".png"))
 
 
 
@@ -129,7 +113,7 @@ ggsave(gg_grob, width = 9, height = 7, dpi = 500,
 
 
 
-# richness ~ longitude ----
+# Richness ~ longitude ----
 
 ## distance to coral triangle ----
 
@@ -180,15 +164,15 @@ for(var in levels(df_long$variable)){
   df_sub <- 
     df_long %>% 
     dplyr::filter(variable == var)
-    
-    df_subALL <- 
-      df_sub %>% 
+  
+  df_subALL <- 
+    df_sub %>% 
     dplyr::filter(locations == 'All sites')
   
   df_subNS <- 
     df_sub %>% 
     dplyr::filter(locations == "Without Seychelles")
-
+  
   LMall <- cor.test(df_subALL$value, df_subALL$longitude) # distCT
   LMns <- cor.test(df_subNS$value, df_subNS$longitude) # distCT
   
@@ -213,33 +197,13 @@ for(var in levels(df_long$variable)){
 gg_grob <-
   patchwork::wrap_plots(gglist, guides = 'collect', ncol = 2) +
   xlab('Distance to Coral Triangle')
-  
+
 plot(gg_grob)
 
 
-### {FIGURE S4} ####
-ggsave(paste0("results/4_continuity/_S4_alpha_sd_richness_longitude_site.png"),
+### {FIGURE S1} ####
+ggsave(paste0("results/4_continuity/_S1_alpha_sd_richness_longitude_site.png"),
        width = 9, height = 9, dpi = 500)
-ggsave(paste0("results/4_continuity/_S4_alpha_sd_richness_longitude_site.pdf"),
+ggsave(paste0("results/4_continuity/_S1_alpha_sd_richness_longitude_site.pdf"),
        width = 9, height = 9)
-
-
-# plot
-# library(ggpubr)
-# df_long %>% 
-#   ggplot(aes(x=longitude, y=value, color=site, linetype = locations)) + 
-#   facet_wrap( ~ variable, scales ="free_y", ncol = 2) +
-#   geom_smooth(method = "lm", color = "grey40", se = F) +
-#   # geom_bar(position = "dodge", stat="identity") +
-#   geom_point() +
-#   # scale_linetype_manual('', values = c(1,2)) +
-#   scale_color_manual('', values = color_perso, labels = LABELS) +
-#   ylab('α-diversity') +
-#   xlab('Longitude') +
-#   theme_light() +
-#   stat_cor(aes(label = after_stat(rr.label, eq.label)), color = "black", geom = "label")
-
-  # theme(legend.text=element_text(size=5))
-
-
 

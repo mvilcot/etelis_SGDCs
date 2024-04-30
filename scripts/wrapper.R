@@ -1,12 +1,10 @@
 # Wrapper script for the Etelis coruscans analyses
 
-# ---- libraries ----
+# ---- load libraries ----
 ## global
 library(tidyverse)      # the beautiful beautiful tidyverse
 library(ecodist)        # MRM
 library(glue)           # use braces for PXA axis
-# library(dotwhisker)     # dotwhisket plot
-# library(pracma)         # findintervals
 
 ## plot
 library(ggplot2)        # plots
@@ -24,7 +22,7 @@ library(geodist)        # geographic distance
 library(marmap)         # bathymetry data
 library(gdistance)
 # library(sf) 
-## >>> --> sf causes an issue on distance matrix when loaded !!! #####
+## :::::: --> sf causes an issue on distance matrix when loaded !!! #####
 # check in which script it is necessary....
 
 ## taxonomy
@@ -40,30 +38,18 @@ library(mmod)
 library(pegas)          # genind2loci
 library(jacpop)         # generate_pw_jaccard
 library(LEA)            # SNMF
-# library(pcadapt)
-# library(qvalue)
-# library(OutFLANK)
 
 ## phylogenetics
 library(picante)        # pd, mpd
 library(phytools)       # midpoint.root
 library(ape)
-# library(ggtree)         # beautiful tree plot
 
 
 
-# ---- data ----
+# ---- load data ----
 
-## genetic data
-# data_samples <- read.csv("data/metadata_samples.csv")
-# data_stations <- read.csv("data/metadata_stations.csv")
-# 
-# data_samples <-
-#   data_samples %>%
-#   left_join(data_stations, by = c("station", "site")) %>%
-#   arrange(order)
-
-data_samples <- read.csv("data/metadata_samples.csv")
+## genetic data ----
+data_samples <- read_csv("data/metadata_samples.csv")
 
 for (level in c("site", "station")){ # order levels
   data_samples[[level]] <- 
@@ -72,47 +58,23 @@ for (level in c("site", "station")){ # order levels
     droplevels()
 }
 
-# data_samples[,1:19] %>%
-#   write.csv("intermediate/0_sampling_design/metadata_samples_ordered.csv", row.names = F, quote = F, na = "")
 
-
-
-## ---- presence data ----
+## presence data ----
 data_Etelis <- readRDS("data/Presence_data_Fishbase_Etelis_coruscans.RDS")
 
 
-
-## ---- taxonomy data ----
-## data_species2 <- read.csv("data/data_species.csv")
-##  data_fishtree <- read.csv("data/PFC_taxonomy.csv")
-
-
-# data_taxo <- rfishbase::load_taxa()
-# data_taxo$Species <- gsub(" ", "_", data_taxo$Species)
-# data_taxo %>% write_csv("data/Taxonomy_Fishbase.csv")
+## taxonomy data ----
 data_taxo <- read_csv("data/Taxonomy_Fishbase.csv")
 
 
-# species_list <- 
-#   data_taxo %>% 
-#   dplyr::filter(Family == "Lutjanidae") %>% 
-#   pull(Species)
-# 
-# temp <- 
-#   rfishbase::ecology(species_list)
-
-
-
-## ---- depth data ----
+## depth data ----
 data_depth <- read_csv("data/data_species_depth_range_teleo.csv")
 
 
-
-## ---- spatial data ----
+## spatial data ----
 data_stations <- read_csv("data/metadata_stations.csv")
 
-# relevel
-for (level in c("site", "station")){
+for (level in c("site", "station")){ # order levels
   data_stations[[level]] <- 
     data_stations[[level]] %>% 
     ordered(levels = unique(data_stations[order(data_stations$order),][[level]])) %>% 
@@ -127,20 +89,6 @@ data_sites <-
             latitude=mean(Latitude_approx),
             number_samples=sum(number_samples)) %>% 
   arrange(factor(site, levels(data_samples$site)))
-# %>%
-  # column_to_rownames("site")
-
-## >>> remove 3 filtered individuals in Hawaii and WAustralia ######
-# # get number of Etelis coruscans sample by site
-# temp <- as.data.frame(table(data_samples$site))
-# colnames(temp) <- c("site", "N")
-# 
-# # merge to coordinates
-# data_sites <-
-#   data_sites %>%
-#   left_join(temp) %>%
-#   as_tibble()
-
 
 
 # ---- personalised plot ----
@@ -153,7 +101,6 @@ LABELS <- gsub('W Australia', 'Western Australia', LABELS)
 
 
 # ---- functions ----
-
 ## Melt distance matrix
 melt.dist <- function(distmat, metric) {
   if(class(distmat)[1] == "dist") {distmat <- as.matrix(distmat)}
@@ -245,8 +192,6 @@ shift.lon = function(x) {
 
 
 ## remove location from distance matrix
-loc = "Seychelles"
-
 mat.subset <- function(distmat, location){
   if("dist" %in% class(distmat)){
     distmat <- as.matrix(distmat)
@@ -261,25 +206,6 @@ mat.subset <- function(distmat, location){
 }
 
 
-
-
-
-
-
-# # check species database
-# temp1 <-
-#   data_species %>%
-#   dplyr::filter(family == "Lutjanidae")
-# 
-# temp2 <-
-#   data_species2 %>%
-#   dplyr::filter(family == "Lutjanidae")
-# 
-# species1 <- temp1$species
-# species2 <- temp2$species
-# 
-# species1[!(species1 %in% species2)]
-# species2[!(species2 %in% species1)]
 
 
 

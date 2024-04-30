@@ -20,8 +20,8 @@ genlight
 
 # ---- DAPC pop as prior ----
 ## run dapc----
-# set.seed(999) # Setting a seed for a consistent result
-# if you already give the PCA, much faster because it doesn't have to compute the dimention reduction
+set.seed(999) # Setting a seed for a consistent result
+
 npca <- length(genlight@ind.names) - 1 # all axes
 nda <- length(levels(pop(genlight))) - 1
 PCA <- readRDS(paste0("intermediate/1_genetic_diversity/PCA_output_", filters, "_", sites, "_", level, "_", npca, "PCA.RDS"))
@@ -62,13 +62,6 @@ xval %>% saveRDS(paste0("intermediate/1_genetic_diversity/DAPC_xval_100PCmax_", 
 
 
 
-# 
-# xval <- adegenet::xvalDapc(x = mat,
-#                            grp = pop(genlight), 
-#                            n.pca.max = 100, 
-#                            n.rep = 3)
-  
-
 # ---- PLOTS ----
 # set up custom facet strips
 facetstrips <- 
@@ -106,8 +99,6 @@ gg_scat1 <- ggplot(dapc_geo, aes(x=LD1, y=LD2, color=grp)) +
   scale_color_manual(values = color_perso) +
   labs(x="LD1") +
   labs(y="LD2") +
-  # geom_text(label=dapc_geo$id, nudge_x = 0.25, nudge_y = 0.25,
-  #           check_overlap = T, show.legend = FALSE)+
   theme_light() +
   theme(legend.position = "none") +
   labs(color = level)
@@ -195,8 +186,6 @@ gg_scat2 <- ggplot(dapc_geo, aes(x=LD1, y=LD2, color=grp)) +
   scale_color_manual(values = color_perso) +
   labs(x="LD1") +
   labs(y="LD2") +
-  # geom_text(label=dapc_geo$id, nudge_x = 0.25, nudge_y = 0.25,
-  #           check_overlap = T, show.legend = FALSE)+
   theme_light() +
   theme(legend.position = "none") +
   labs(color = level)
@@ -317,11 +306,6 @@ ggplot(probs_long, aes(id, prob, fill = factor(cluster))) +
     strip.background = element_rect(fill = 'white', color = "white")) 
 
 saveRDS(dapc, paste0("intermediate/DAPC_clustering_", filters, "_allsites_5groups.RDS"))
-
-
-
-
-
 
 
 

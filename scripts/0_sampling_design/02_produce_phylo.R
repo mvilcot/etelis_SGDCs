@@ -1,16 +1,10 @@
 
 # ---- setup phylogeny ----
-
-# list_species <- 
-#   data_species %>% 
-#   filter(family %in% "Lutjanidae") %>%
-#   pull(species) # keep only species info
-# tree_sp  <- fishtree_phylogeny(species = list_species)
-
 tree_lutj  <- fishtree_phylogeny(rank = "Lutjanidae")
 tree_lutj$tip.label
 
 tree_lutj %>% saveRDS("data/phylogeny_Lutjanidae.RDS")
+
 
 
 # ---- plot parameters ----
@@ -37,6 +31,7 @@ tipfont[tip] <- 2
 
 
 # ---- save plot ----
+
 for (phylotype in c("fan", "tidy", "unrooted")){
   png(paste0("results/0_sampling_design/Phylogeny_lutjanidae_", phylotype, "_raboskytaxo.png"),
       height = 10, width = 10, 
@@ -52,8 +47,4 @@ for (phylotype in c("fan", "tidy", "unrooted")){
              no.margin = TRUE)
   
   dev.off()
-  
 }
-
-
-

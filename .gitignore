@@ -6,7 +6,7 @@ _archive/
 data/
 intermediate/
 results/
-scripts/unsorted/
+scripts/_unpublished/
 
 marmap_coord_*.csv
 gtypes.*.structureRun

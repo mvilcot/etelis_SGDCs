@@ -1,5 +1,5 @@
 
-# ---- all sites ----
+# ---- All sites ----
 filters = "missind1_callrate0.70_maf0.05"
 level = "site"
 sites = "allsites"
@@ -86,7 +86,6 @@ gg_structure1 <-
   scale_fill_viridis_d('Cluster', labels = c('Cluster 1', 'Cluster 2')) +
   theme(
     panel.spacing.x = unit(0.15, "lines"),
-    # axis.text.x = element_text(size=2, angle = 90, vjust = 0.5, hjust=1),
     axis.text.x = element_blank(),
     axis.ticks.x = element_blank(),
     panel.grid = element_blank(),
@@ -99,7 +98,7 @@ gg_structure1
 
 
 
-# ---- no Seychelles ----
+# ---- Without Seychelles ----
 ## load ----
 filters = "missind1_callrate0.70_maf0.05"
 level = "site"
@@ -198,7 +197,6 @@ gg_structure2 <-
   scale_fill_viridis_d('Cluster', labels = c('Cluster 1', 'Cluster 2')) +
   theme(
     panel.spacing.x = unit(0.15, "lines"),
-    # axis.text.x = element_text(size=2, angle = 90, vjust = 0.5, hjust=1),
     axis.text.x = element_blank(),
     axis.ticks.x = element_blank(),
     panel.grid = element_blank(),
@@ -210,7 +208,7 @@ gg_structure2
 
 
 
-## {FIGURE 2} ####
+# {FIGURE 2} ###########
 
 gg <- 
   gg_dapc1 + gg_dapc2 + 

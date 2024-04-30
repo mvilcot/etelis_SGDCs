@@ -84,7 +84,7 @@ t5 %>%
 # ---- Filtering ----
 
 ## 1 - Individual callrate ----
-# !!!! ALSO REMOVE POPULATIONS IN WHICH LESS THAN TWO INDIVIDUALS
+# ALSO REMOVE POPULATIONS IN WHICH LESS THAN TWO INDIVIDUALS
 # Filter individuals called below 50%, identified with vcftools
 # 84913 SNPs, 364 individuals
 # Delete monomorphic loci here, that's why we have a different number of SNPs from vcftools pipeline

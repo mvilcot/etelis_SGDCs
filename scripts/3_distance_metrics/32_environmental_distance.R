@@ -6,8 +6,7 @@ dist_mat <-
 # ---- load environmental predictors ----
 ## choose variables
 variables <-
-  c(# "BO2_ph", # does not exist for bottom depth
-    "BO2_chlomean_bdmean",
+  c("BO2_chlomean_bdmean",
     "BO2_dissoxmean_bdmean",
     "BO2_nitratemean_bdmean",
     "BO2_salinitymean_bdmean",
@@ -24,10 +23,6 @@ envt_layers <-
 envt_layers <-
   rast(envt_layers)
 
-# ## OR load from downloaded file
-# envt_layers <- 
-#   rast(list.files("intermediate/3_distance_metrics/bio-oracle", full.names = T))
-
 
 
 # ---- add buffer around stations ----
@@ -39,7 +34,6 @@ vect_stations <-
 
 
 # ---- extract variables by station ----
-## >>>> ERROR MHI AND NEW CALEDONIA if too small buffer... ----
 envt_station <- 
   terra::extract(envt_layers,
                  vect_stations,
@@ -57,7 +51,6 @@ envt_station %>%
 
 
 # ---- average by site ----
-## >>>>> TRY TO AVERAGE ACROSS ALL STATION BUFFER DIRECTLY ##########
 envt_site <-
   envt_station %>%
   pivot_longer(-c(site, station), names_to = "variable") %>% 
@@ -75,7 +68,6 @@ envt_site %>%
 # ---- scale data ----
 envt_site_scaled <-
   envt_site %>%
-  # mutate(across(where(is.numeric), log)) %>%
   column_to_rownames("site") %>%
   scale() %>%
   as_tibble(rownames = NA) %>%
@@ -129,10 +121,6 @@ vect_sites <-
   vect(geom = c("longitude", "latitude"), crs = "WGS84") %>% 
   terra::rotate(left = FALSE) # to put in 0/360 instead of -180/180
 
-# vect_sites <- # do the same thing, manually
-#   vect(shift.lon(data_sites), geom=c("longitude", "latitude"), 
-#        crs = "EPSG:4326")
-
 envt_layers_Pcrop <- 
   envt_layers %>% 
   terra::rotate(left = FALSE) %>% # to put in 0/360 instead of -180/180
@@ -142,18 +130,12 @@ envt_layers_Pcrop <-
 ## plot
 pdf("results/3_distance_metrics/environmental_variables_bdmean_map2.pdf", width = 8, height = 5)
 for(var in names(envt_layers_Pcrop)){
-  # plot(envt_layers_Pcrop[[var]], col=my.colors(1000))
-  # plot(vect_sites, add = T, col = "grey20")
-  # title(cex.sub = 1.25, main = var)
-  
   gg <- 
     ggplot() +
     geom_spatraster(data = envt_layers_Pcrop[[var]]) +
     scale_fill_whitebox_c(palette = "muted") +
     geom_spatvector(data = vect_sites) +
     labs(fill = gsub("BO2_|_bdmean", "", var)) +
-    # scale_fill_viridis_c() +
-    # scale_fill_distiller(palette = "YlGnBu") +
     theme_light() +
     theme(panel.grid.major = element_blank(),
           legend.position="bottom") 
@@ -166,13 +148,6 @@ dev.off()
 
 
 # ---- PCA ----
-# read variables 
-
-# keep environmental variables
-# envt_var <- 
-#   envt_site %>% 
-#   dplyr::select(-c(x, y, longitude, latitude))
-
 envt_var <- 
   envt_site %>% 
   column_to_rownames("site")
@@ -181,7 +156,6 @@ library(corrplot)
 corrplot(cor(envt_var))
 
 # run pca
-
 pca_env <- dudi.pca(df = envt_var, scannf = F, nf = 5)
 pca_env$li %>%
   rownames_to_column("site") %>%
@@ -202,6 +176,7 @@ pretty_pe <- format(round(percent_explained, digits =1), nsmall=1, trim=TRUE)
 labels <- c(glue("PC1 ({pretty_pe[1]}%)"),
             glue("PC2 ({pretty_pe[2]}%)"))
 
+#### {FIGURE S8} ####
 # plot
 LABELS <- gsub("_", " ", rownames(pca_env$li))
 LABELS <- gsub('W Australia', 'Western Australia', LABELS)
@@ -215,21 +190,13 @@ gg <-
   theme(legend.position="none")
 gg
 
-ggsave("results/3_distance_metrics/_PCA_environmental_variables_bdmean_absolute.png",
+ggsave("results/3_distance_metrics/_S8_PCA_environmental_variables_bdmean_absolute.png",
        gg,
        height = 5.5, width = 6, units = "in", dpi = 300)
 
 
-# # eigenvalues
-# percent_explained <- pca_env$eig / sum(pca_env$eig) * 100
-# 
-
 
 # ---- environmental distance ----
-# # euclidian distance from the first 3 PCA axes
-# dist_mat$environment <-
-#   vegdist(pca_env$li, method = "euclidean", na.rm = TRUE) #
-
 # OR more directly, euclidian distance between scaled values
 dist_mat$environment <-
   vegdist(envt_var, method = "euclidean", na.rm = TRUE) 
@@ -238,16 +205,4 @@ dist_mat$environment <-
 # export
 dist_mat %>% 
   saveRDS("intermediate/3_distance_metrics/dist_geo_envtbdmean.RDS")
-
-
-
-
-# ---- *** DRAFTS ----
-## *** current velocity ----
-# layers_velocity <- 
-#   list_layers() %>%
-#   filter(dataset_code == "Bio-ORACLE") %>% 
-#   filter(grepl("Current velocity", name))
-# write.csv(layers_velocity, "intermediate/0_sampling_design/layers_bio-oracle_velocity.csv",
-#           quote = F, row.names = F)
 

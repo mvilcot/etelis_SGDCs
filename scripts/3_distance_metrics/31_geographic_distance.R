@@ -6,6 +6,7 @@ coord_sites <-
   column_to_rownames("site") %>% 
   dplyr::select(-number_samples)
 
+
 # ---- geographic distance ----
 # compute distance between locations (in meters)
 dist_mat$geodist <- 
@@ -26,14 +27,11 @@ Bathy <- readRDS("intermediate/0_sampling_design/_archive/bathymetry.RDS")
 
 trans <- 
   trans.mat(Bathy, min.depth=-5, max.depth=NULL)
-  # trans.mat(Bathy, min.depth=-45, max.depth=5000)
-# trans %>% saveRDS("intermediate/3_distance_metrics/transition_matrix.RDS")
+trans %>% saveRDS("intermediate/3_distance_metrics/transition_matrix.RDS")
 
-#### >>>>> !!! error when too high resolution for Guam ############
 dist_mat$seadist <- 
   lc.dist(trans, shift.lon(coord_sites), res = "dist")
 
-# get.depth(Bathy, shift.lon(coord_sites), locator = F)
 
 # ---- export ----
 dist_mat %>% 
