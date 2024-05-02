@@ -23,12 +23,26 @@ dist_mat$geodist <-
 
 
 # ---- distance by sea ----
-Bathy <- readRDS("intermediate/0_sampling_design/_archive/bathymetry.RDS")
+library(marmap)
+#load
+Bathy <- 
+  marmap::getNOAA.bathy(lon1 = -180, lon2 = 180,
+                        lat1 = -30, lat2 = 30,
+                        resolution = 10,
+                        antimeridian = TRUE, # to be centered around pacific
+                        keep = TRUE)
 
+Bathy %>% saveRDS("intermediate/3_distance_metrics/bathymetry_10.RDS")
+
+
+## transition matrix
 trans <- 
   trans.mat(Bathy, min.depth=-5, max.depth=NULL)
+
 trans %>% saveRDS("intermediate/3_distance_metrics/transition_matrix.RDS")
 
+
+## distance by sea
 dist_mat$seadist <- 
   lc.dist(trans, shift.lon(coord_sites), res = "dist")
 

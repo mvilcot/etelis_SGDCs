@@ -22,8 +22,7 @@ library(geodist)        # geographic distance
 library(marmap)         # bathymetry data
 library(gdistance)
 # library(sf) 
-## :::::: --> sf causes an issue on distance matrix when loaded !!! #####
-# check in which script it is necessary....
+## :::::: --> sf causes an issue on distance matrix when loaded #####
 
 ## taxonomy
 library(fishtree)       # fish tree of life 
@@ -65,10 +64,6 @@ data_Etelis <- readRDS("data/Presence_data_Fishbase_Etelis_coruscans.RDS")
 
 ## taxonomy data ----
 data_taxo <- read_csv("data/Taxonomy_Fishbase.csv")
-
-
-## depth data ----
-data_depth <- read_csv("data/data_species_depth_range_teleo.csv")
 
 
 ## spatial data ----

@@ -3,8 +3,8 @@ library(ggspatial)
 
 # ---- Prepare data ----
 ## reefs ----
+# First download this file from the WCMC ressource https://data.unep-wcmc.org/datasets/1
 reefs <- vect("data/seascape/14_001_WCMC008_CoralReefs2021_v4_1/01_Data/WCMC008_CoralReef2021_Py_v4_1.shp")
-# from https://data.unep-wcmc.org/datasets/1
 
 reefsC <-
   reefs %>% 
@@ -42,7 +42,7 @@ gg <-
   ## Countries
   geom_polygon(data = map, aes(x = long, y = lat, group = group), fill="grey20") +
    
-  ## reefs
+  ## reefs (optional if reef shp file not available)
   geom_spatvector(data = reefsC, color = "grey40", linewidth = 0.02) +
   
   ## Sites
