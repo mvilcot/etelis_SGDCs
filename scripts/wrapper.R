@@ -58,12 +58,12 @@ for (level in c("site", "station")){ # order levels
 }
 
 
-## presence data ----
-data_Etelis <- readRDS("data/Presence_data_Fishbase_Etelis_coruscans.RDS")
-
-
 ## taxonomy data ----
+## can either be loaded directly on fishbase, of from the dataset
 data_taxo <- read_csv("data/Taxonomy_Fishbase.csv")
+
+# data_taxo <- rfishbase::load_taxa() 
+# data_taxo$Species <- gsub(" ", "_", data_taxo$Species)
 
 
 ## spatial data ----
@@ -203,9 +203,7 @@ mat.subset <- function(distmat, location){
 
 
 
-
-
-# ---- arborescence ----
+# ---- create arborescence ----
 dir.create("intermediate/", showWarnings = F)
 dir.create("intermediate/0_sampling_design/", showWarnings = F)
 dir.create("intermediate/1_genetic_diversity/", showWarnings = F)
@@ -219,13 +217,5 @@ dir.create("results/1_genetic_diversity/", showWarnings = F)
 dir.create("results/2_species_diversity/", showWarnings = F)
 dir.create("results/3_distance_metrics/", showWarnings = F)
 dir.create("results/4_continuity/", showWarnings = F)
-
-
-
-# ---- scripts ----
-# 1. ...
-# source("scripts/1_genetic_diversity/11_snp_fitering.R")
-
-
 
 

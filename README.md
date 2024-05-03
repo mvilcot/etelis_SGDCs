@@ -1,9 +1,11 @@
-# Etelis SGDCs
-Codes for the paper:  
-__Neutral processes and taxonomic scale drive beta species-genetic diversity correlations in a submesophotic tropical reef fish__  
-contact: Maurine Vilcot (maurine.vilcot@gmail.com)
+# Neutral processes and taxonomic scale drive beta species-genetic diversity correlations in a submesophotic tropical reef fish
+Maurine Vilcot, Nadia Faure, Kimberly R. Andrews, Brian W. Bowen, Fabien Leprieur4, Stéphanie Manel1
+contact: maurine.vilcot@gmail.com
+
+This repository contains R scripts to reproduce the analyses and figures from the above article.
 
 
-# Data set
-First, open the "Etelis.Rproj" file.  
-Before running any of the R scripts, the "wrapper.R" file must be loaded.  
+# Scripts
+The data must be downloaded from the Zenodo repository (...) and placed in a folder called "data".  
+Please open the "Etelis.Rproj" file to open RStudio to ensure that relative file paths work correctly.  
+The "wrapper.R" file must be loaded before running any other script.  

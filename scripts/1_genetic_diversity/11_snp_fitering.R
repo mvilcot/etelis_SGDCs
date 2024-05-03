@@ -4,6 +4,7 @@
 DART <- 
   read.csv("data/Report_DEtel22-6705_SNP_2.csv", header = F)
 
+data_samplesRAW <- read_csv("data/metadata_samples_full.csv")
 
 # ---- reorder individuals ----
 # reorder Dart columns (individuals) according to metadata order 
@@ -11,7 +12,7 @@ DART <-
 
 # get individuals order from metadata
 ind_order <- 
-  match(data_samples$id, DART[7, ]) # DART 7th row stores individuals names
+  match(data_samplesRAW$id, DART[7, ]) # DART 7th row stores individuals names
 
 # reorder Dart
 DART <- 
@@ -30,7 +31,7 @@ DART %>%
 # read sorted DART file as genlight
 gl <- 
   gl.read.dart(filename = "intermediate/1_genetic_diversity/Report_DEtel22-6705_SNP_2_ordered.csv",
-               ind.metafile = "data/metadata_samples.csv") # takes the order of the DART columns for individuals
+               ind.metafile = "data/metadata_samples_full.csv") # takes the order of the DART columns for individuals
 
 # add site as pop info
 gl@pop <- 
@@ -101,6 +102,7 @@ gl1
 
 ## 2 - Populations with only 1 indiviual left ----
 # 84875 SNPs, 363 individuals
+# "ECO1111" removed
 gl2 <- 
   gl1 %>% 
   gl.drop.pop(pop.list = names(which(table(gl1@pop) < 2)), recalc = T, mono.rm = T)
@@ -139,16 +141,10 @@ gl4@pop <-
 
 # ---- subset metadata ----
 # data_samples <-
-#   data_samples %>%
+#   data_samplesRAW %>%
 #   dplyr::filter(id %in% gl4$ind.names)
-# data_samples %>% write.csv("intermediate/0_sampling_design/metadata_samples_subset.csv",
+# data_samples %>% write.csv("data/metadata_samples.csv",
 #                               row.names = F, quote = T)
-# 
-# data_stations <-
-#   data_stations %>%
-#   dplyr::filter(station %in% data_samples$station)
-# data_stations %>% write.csv("intermediate/0_sampling_design/metadata_stations_subset.csv",
-#                          row.names = F, quote = T)
 
 
 

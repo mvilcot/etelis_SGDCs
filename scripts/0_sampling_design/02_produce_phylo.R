@@ -3,8 +3,6 @@
 tree_lutj  <- fishtree_phylogeny(rank = "Lutjanidae")
 tree_lutj$tip.label
 
-tree_lutj %>% saveRDS("data/phylogeny_Lutjanidae.RDS")
-
 
 
 # ---- plot parameters ----
