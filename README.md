@@ -6,6 +6,6 @@ This repository contains R scripts to reproduce the analyses and figures from th
 
 
 # Scripts
-The data must be downloaded from the Zenodo repository (https://doi.org/10.5281/zenodo.11119522) and placed in a folder called "data".  
+The data must be downloaded from the Zenodo repository (https://doi.org/10.5281/zenodo.11119523) and placed in a folder called "data".  
 Please open the "Etelis.Rproj" file to open RStudio to ensure that relative file paths work correctly.  
 The "wrapper.R" file must be loaded before running any other script.  
