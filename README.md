@@ -1,8 +1,8 @@
-# Neutral processes and taxonomic scale drive beta species-genetic diversity correlations in a submesophotic tropical reef fish
-Maurine Vilcot, Nadia Faure, Kimberly R. Andrews, Brian W. Bowen, Fabien Leprieur4, Stéphanie Manel1
-contact: maurine.vilcot@gmail.com
+# Neutral processes and taxonomic scale drive beta species-genetic diversity correlations in a submesophotic tropical reef fish  
+Maurine Vilcot, Nadia Faure, Kimberly R. Andrews, Brian W. Bowen, Fabien Leprieur, Stéphanie Manel  
+contact: maurine.vilcot@gmail.com  
 
-This repository contains R scripts to reproduce the analyses and figures from the above article.
+This repository contains R scripts to reproduce the analyses and figures from the above article.  
 
 
 # Scripts
