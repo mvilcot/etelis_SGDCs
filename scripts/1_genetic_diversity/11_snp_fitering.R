@@ -1,14 +1,19 @@
 
-# ---- read Dart file into genlight ----
-# read DART output file
-DART <- 
-  read.csv("data/Report_DEtel22-6705_SNP_2.csv", header = F)
-
+# ---- load ----
 data_samplesRAW <- read_csv("data/metadata_samples_full.csv")
 
-# ---- reorder individuals ----
-# reorder Dart columns (individuals) according to metadata order 
 
+# ---- merge datasets ----
+DART_Seamounts <- 
+  read.csv("data/Report_DEtel22-6705_SNP_2_ordered_Seamounts.csv", header = F)
+
+DART_Bowen <- 
+  read.csv("data/Report_DEtel22-6705_SNP_2_ordered_Bowen.csv", header = F)
+
+# merge
+DART <- 
+  DART_Bowen %>% 
+  cbind(DART_Seamounts[, -c(1:18)])
 
 # get individuals order from metadata
 ind_order <- 
@@ -22,15 +27,15 @@ cat("nb individuals =", length(ind_order))
 
 # save reordered dart SNP file
 DART %>% 
-  write.table("intermediate/1_genetic_diversity/Report_DEtel22-6705_SNP_2_ordered.csv",
-              sep = ",", row.names = F, col.names = F)
+  write.table("intermediate/1_genetic_diversity/Report_DEtel22-6705_SNP_2_ordered_full.csv",
+              sep = ",", row.names = F, col.names = F, quote = F)
 
 
 # ---- setup genlight ----
 
 # read sorted DART file as genlight
 gl <- 
-  gl.read.dart(filename = "intermediate/1_genetic_diversity/Report_DEtel22-6705_SNP_2_ordered.csv",
+  gl.read.dart(filename = "intermediate/1_genetic_diversity/Report_DEtel22-6705_SNP_2_ordered_full.csv",
                ind.metafile = "data/metadata_samples_full.csv") # takes the order of the DART columns for individuals
 
 # add site as pop info
@@ -38,8 +43,7 @@ gl@pop <-
   gl@other$ind.metrics[["site"]]
 
 # save as RDS 
-gl %>% 
-  saveRDS(file = "intermediate/1_genetic_diversity/Genlight_Etelis_coruscans_ordered.RDS")
+gl <- readRDS(file = "intermediate/1_genetic_diversity/Genlight_Etelis_coruscans_ordered.RDS")
 
 # number of SNPs and individuals: 105144 SNPs, 369 individuals
 gl
@@ -48,7 +52,7 @@ gl
 
 # ---- Graphic visualisation ----
 gl <- 
-  readRDS(file = "intermediate/1_genetic_diversity/Genlight_Etelis_coruscans_ordered.RDS")
+  readRDS(file = "intermediate/1_genetic_diversity/Genlight_Etelis_coruscans_ordered2.RDS")
 
 gl.report.bases(gl)
 gl.report.callrate(gl, method = 'loc')
@@ -78,7 +82,7 @@ t5 <-
 
 options(max.print=1000)
 
-t5 %>% 
+t5bis %>% 
   write_csv("results/1_genetic_diversity/gl_report_callrate_ind_Etelis_coruscans.csv")
 
 
